@@ -69,6 +69,14 @@ function Component.defineComponent<T>(
             widget.listen("GuiObjectCreated", fn)
         end
 
+        for _, fn in bucket.onBeforeDestroyedHooks do
+            widget.listen("Destroying", fn)
+        end
+
+        for _, fn in bucket.onDestroyedHooks do
+            widget.listen("Destroyed", fn)
+        end
+
         return widget
     end
 end

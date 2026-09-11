@@ -317,6 +317,10 @@ local function createConstructor(
     propertyCalcFn: {[string]: (component: Modifier.Component, getProp: (string) -> any) -> any},
     setupFn: (Modifier.Component) -> ()?
 ): (properties: {[string]: any}) -> Modifier.Component
+    table.freeze(defaultProperties)
+    table.freeze(linkedProperties)
+    table.freeze(propertyCalcFn)
+
     return function(properties: {[string]: any})
         local newProperties = table.clone(defaultProperties)
 

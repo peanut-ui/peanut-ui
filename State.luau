@@ -110,8 +110,14 @@ function State.scalePx(px: number, getOriginal: boolean?): number
     return scaleFunction(px, getOriginal)
 end
 
-function State.setScaleFunction(fn: (px: number, getOriginal: boolean?) -> ())
+function State.setScaleFunction(fn: (px: number, getOriginal: boolean?) -> number)
     scaleFunction = fn
+end
+
+function State.redrawAll()
+    for _, widget in registeredWidgets do
+        (widget :: Widget.InternalInterface)._redraw()
+    end
 end
 
 return State

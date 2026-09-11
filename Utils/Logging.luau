@@ -79,6 +79,14 @@ function Logger.getLogger(name: string): Instance
     return table.freeze(logger)
 end
 
+--[[
+    **Log levels:**
+    * 1 -> debug
+    * 2 -> info
+    * 3 -> warn
+    * 4 -> error
+    * 5 -> critical
+]]
 function Logger.setLevel(newLevel: number)
     level = newLevel
 end

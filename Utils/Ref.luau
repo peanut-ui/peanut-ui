@@ -25,6 +25,10 @@ type Watchable = {
 }
 
 local function createReactiveProxy(rawTarget: {[any]: any}, isShallow: boolean?): any
+    if rawCache[rawTarget] then
+        return rawTarget
+    end
+
     if proxyCache[rawTarget] then
         return proxyCache[rawTarget]
     end
@@ -203,16 +207,7 @@ function Ref.new<T>(value: T | Utils.Ref<T>): Utils.Ref<T>
             stopWatchingFunc = nil
         end
 
-        if typeof(newValue) == "table" and newValue._typeName == "ref" then
-            local value = (newValue :: Utils.Ref<T>).getValue()
-            assertType(currentValue, value)
-
-            currentValue = value
-            stopWatchingFunc = (newValue :: Utils.Ref<T>).watch(function(value)
-                currentValue = value
-                notifyWatchers()
-            end)
-        elseif proxyToRefMap[newValue] then
+        if proxyToRefMap[newValue] then
             -- No type checking is needed here
             -- Proxies work only on tables anyways (I think)
 
@@ -221,6 +216,15 @@ function Ref.new<T>(value: T | Utils.Ref<T>): Utils.Ref<T>
 
             local originalRef = proxyToRefMap[newValue]
             stopWatchingFunc = originalRef.watch(function(value)
+                notifyWatchers()
+            end)
+        elseif typeof(newValue) == "table" and newValue._typeName == "ref" then
+            local value = (newValue :: Utils.Ref<T>).getValue()
+            assertType(currentValue, value)
+
+            currentValue = value
+            stopWatchingFunc = (newValue :: Utils.Ref<T>).watch(function(value)
+                currentValue = value
                 notifyWatchers()
             end)
         else
@@ -287,23 +291,7 @@ function Ref.new<T>(value: T | Utils.Ref<T>): Utils.Ref<T>
     ref.notifyChanged = notifyWatchers
     ref.notifyImmediate = notifyImmediate
 
-    if typeof(value) ~= "table" or value._typeName ~= "ref" then
-        currentValue = value
-    elseif proxyToRefMap[value] then
-        -- Copy-paste :T
-        currentValue = value
-
-        local originalRef = proxyToRefMap[value]
-        stopWatchingFunc = originalRef.watch(function(value)
-            notifyWatchers()
-        end)
-    else
-        currentValue = (value :: Utils.Ref<T>).getValue()
-        stopWatchingFunc = (value :: Utils.Ref<T>).watch(function(value)
-            currentValue = value
-            notifyWatchers()
-        end)
-    end
+    ref.setValue(value, true)
 
     table.freeze(ref)
 

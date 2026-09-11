@@ -161,6 +161,8 @@ local defaultScreenProperties: SpaceType.ScreenSpaceProps = {
     screenInsets = Enum.ScreenInsets.CoreUISafeInsets
 }
 
+table.freeze(defaultScreenProperties)
+
 Space.createScreenSpace = createConstructor(
     registeredScreenSpaces,
     function(): LayerCollector

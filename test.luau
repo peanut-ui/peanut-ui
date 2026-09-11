@@ -4,9 +4,13 @@
 const Component = require(script.Parent.Classes.Component)
 const Space = require(script.Parent.Classes.Space)
 const Widgets = require(script.Parent.Components.Widgets)
+const State = require(script.Parent.State)
+const Widget = require(script.Parent.Types.Widget)
+const Logging = require(script.Parent.Utils.Logging)
 const Ref = require(script.Parent.Utils.Ref)
 const Units = require(script.Parent.Utils.Units)
 
+Logging.setLevel(1)
 local space = Space.createScreenSpace("Main")
 
 local backgroundColors = {
@@ -16,6 +20,15 @@ local backgroundColors = {
     Color3.fromHex("#ff69d7"),
     Color3.fromHex("#697dff"),
 }
+
+local scale = 3
+State.setScaleFunction(function(px: number, getOriginal: boolean?)
+    if getOriginal then
+        return px / scale
+    else
+        return px * scale
+    end
+end)
 
 local Counter = Component.defineComponent(function(props)
     local clickCount = Ref.new(0)
@@ -29,7 +42,7 @@ local Counter = Component.defineComponent(function(props)
         properties = {
             anchorPoint = Vector2.new(0.5, 0.5),
             position = Units.Position(nil, nil, 0.5, 0.5),
-            size = Units.Size(300, 300),
+            size = Units.Size(150, 150),
             backgroundColor = color
         },
         children = {
@@ -54,12 +67,17 @@ local Counter = Component.defineComponent(function(props)
                 events = {
                     Activated = function()
                         clickCount.increaseValue(1)
+                        scale /= 2
+                        State.redrawAll()
                     end
+                },
+                modifiers = {
+                    cornerRadius = { px = 8 }
                 }
             }
         },
         modifiers = {
-            cornerRadius = { px = 16 },
+            cornerRadius = { px = 24 },
             padding = { px = 16 }
         }
     }

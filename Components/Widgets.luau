@@ -4,6 +4,8 @@ const Widget = require(script.Parent.Parent.Classes.Widget)
 const WidgetClass = require(script.Parent.Parent.Types.Widget)
 const State = require(script.Parent.Parent.State)
 
+local defaultFontFace = Font.new("rbxasset://fonts/families/Roboto.json")
+
 export type CreateFn<
     Object = GuiObject,
     Props = WidgetClass.DefaultProperties,
@@ -45,7 +47,6 @@ export type TextProps = WidgetClass.DefaultProperties & {
     textTransparency: number,
     textStrokeColor: Color3,
     textStrokeTransparency: number,
-    font: Enum.Font,
     fontFace: Font,
     textSize: number,
     textScaled: boolean,
@@ -123,8 +124,8 @@ local function linkProperties(
     for name, property in properties do
         link(
             name :: any, property,
-            transformFn and transformFn[property],
-            syncWithObject and syncWithObject[property]
+            transformFn and transformFn[name],
+            syncWithObject and syncWithObject[name]
         )
     end
 end
@@ -147,7 +148,7 @@ local function createBasicObject<T>(
             widget.createObject = createFn
 
             if linkedProperties then
-                linkProperties(widget, linkedProperties)
+                linkProperties(widget, linkedProperties, transformFn, syncWithObject)
             end
 
             if setupFn then
@@ -165,18 +166,18 @@ local function createBasicObject<T>(
         end
 
         local properties = table.clone(defaultProperties)
-        if args.properties then
-            for key, value in pairs(args.properties) do
+        if argsCopy.properties then
+            for key, value in pairs(argsCopy.properties :: any) do
                 properties[key] = value
             end
         end
 
-        args.properties = properties
-        if not args.widgetName then
-            args.widgetName = widgetName
+        argsCopy.properties = properties
+        if not argsCopy.widgetName then
+            argsCopy.widgetName = widgetName
         end
 
-        return Widget.new(args)
+        return Widget.new(argsCopy)
     end
 end
 
@@ -315,7 +316,7 @@ return {
             textTransparency = 0,
             textStrokeColor = Color3.new(0, 0, 0),
             textStrokeTransparency = 1,
-            font = Enum.Font.Gotham,
+            fontFace = defaultFontFace,
             textSize = 14,
             textScaled = false,
             textWrapped = false,
@@ -324,7 +325,7 @@ return {
             richText = false,
             lineHeight = 1,
             maxVisibleGraphemes = -1,
-            textTruncate = Enum.TextTruncate.None,
+            textTruncate = Enum.TextTruncate.None
         },
         function()
             return Instance.new("TextLabel")
@@ -335,7 +336,6 @@ return {
             textTransparency = "TextTransparency",
             textStrokeColor = "TextStrokeColor3",
             textStrokeTransparency = "TextStrokeTransparency",
-            font = "Font",
             fontFace = "FontFace",
             textSize = "TextSize",
             textScaled = "TextScaled",
@@ -345,7 +345,12 @@ return {
             richText = "RichText",
             lineHeight = "LineHeight",
             maxVisibleGraphemes = "MaxVisibleGraphemes",
-            textTruncate = "TextTruncate",
+            textTruncate = "TextTruncate"
+        },
+        nil,
+        nil,
+        {
+            textSize = State.scalePx,
         }
     ) :: CreateFn<TextLabel, TextProps>,
     TextButton = createBasicObject(
@@ -357,7 +362,7 @@ return {
             textTransparency = 0,
             textStrokeColor = Color3.new(0, 0, 0),
             textStrokeTransparency = 1,
-            font = Enum.Font.Gotham,
+            fontFace = defaultFontFace,
             textSize = 14,
             textScaled = false,
             textWrapped = false,
@@ -370,6 +375,7 @@ return {
             autoButtonColor = true,
             modal = false,
             selected = false,
+            style = Enum.ButtonStyle.Custom
         },
         function()
             return Instance.new("TextButton")
@@ -380,7 +386,6 @@ return {
             textTransparency = "TextTransparency",
             textStrokeColor = "TextStrokeColor3",
             textStrokeTransparency = "TextStrokeTransparency",
-            font = "Font",
             fontFace = "FontFace",
             textSize = "TextSize",
             textScaled = "TextScaled",
@@ -394,14 +399,13 @@ return {
             autoButtonColor = "AutoButtonColor",
             modal = "Modal",
             selected = "Selected",
-            style = "Style",
+            style = "Style"
         },
         nil,
         {"Activated", "SecondaryActivated"},
         {
-            textSize = State.scalePx
-        },
-        { selected = true }
+            textSize = State.scalePx,
+        }
     ) :: CreateFn<TextButton, TextButtonProps, ButtonEvents>,
     TextBox = createBasicObject(
         "textBox",
@@ -412,7 +416,7 @@ return {
             textTransparency = 0,
             textStrokeColor = Color3.new(0, 0, 0),
             textStrokeTransparency = 1,
-            font = Enum.Font.Gotham,
+            fontFace = defaultFontFace,
             textSize = 14,
             textScaled = false,
             textWrapped = false,
@@ -438,7 +442,6 @@ return {
             textTransparency = "TextTransparency",
             textStrokeColor = "TextStrokeColor3",
             textStrokeTransparency = "TextStrokeTransparency",
-            font = "Font",
             fontFace = "FontFace",
             textSize = "TextSize",
             textScaled = "TextScaled",
@@ -458,10 +461,12 @@ return {
         },
         nil,
         nil,
-        nil,
+        {
+            textSize = State.scalePx,
+        },
         {
             cursorPosition = true,
-            selectionStart = true,
+            selectionStart = true
         }
     ) :: CreateFn<TextBox, TextBoxProps>,
     ViewportFrame = createBasicObject(

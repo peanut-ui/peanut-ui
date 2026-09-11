@@ -39,6 +39,8 @@ local defaultProperties: Widget.DefaultProperties = {
     name = "Widget"
 }
 
+table.freeze(defaultProperties)
+
 local function defaultSetup(widget: Widget.BaseInterface)
     local link = widget._linkProperty
     local linkEvent = widget._linkEvent
@@ -182,6 +184,7 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
 
     local id = counter
     local isDestroyed = false
+    logger.debug("New widget with id %d created", id)
 
     local nextLayoutOrder = 1
 
@@ -300,7 +303,7 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
             logger.error("Cannot set readonly property")
         end
 
-        if type(value) == "table" then
+        if typeof(value) == "table" and value._typeName ~= "ref" then
             value = Ref.reactive(value)
         end
 
@@ -366,6 +369,12 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
             logger.error("Cannot link property that is already linked")
         end
 
+        logger.debug(
+            "[%s %d] Linking property. Name %s, Property %s, Transform %s, Sync %s, Readonly %s",
+            instance._widgetName, id, name, property, typeof(transformFn), typeof(syncWithObject),
+            tostring(readonly or false)
+        )
+
         if
             readonly ~= true
             and syncWithObject ~= nil
@@ -397,6 +406,7 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
 
         local function update(value)
             if rbxPropertyLocked[name] == true then
+                logger.debug("[%s %d] Skipped update of %s cause it's locked", instance._widgetName, id, name)
                 return
             end
 
@@ -414,6 +424,10 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
                     value = transformFn(value)
                 end
 
+                logger.debug(
+                    "[%s %d] Updating property %s to %s (type %s)",
+                    instance._widgetName, id, name, tostring(value), typeof(value)
+                )
                 if transitions[name] then
                     transitions[name].animate(object, property, value)
                 else
@@ -461,7 +475,8 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
 
         local ref = propertiesRefs[key]
         if not ref then
-            return
+            propertiesRefs[key] = Ref.new(nil)
+            ref = propertiesRefs[key]
         end
 
         rbxPropertyLocked[key] = true
@@ -639,6 +654,7 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
         if widgetsAreSame(child, instance) then
             logger.error("I can't be parent of myself!")
         end
+        logger.debug("[%s %d] Adding child: %s %d", instance._widgetName, id, child._widgetName, child._uniqueId)
 
         -- Yummy auto order
         local currentOrder = child.getProperty("layoutOrder")
@@ -673,6 +689,7 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
             logger.error("Child had different parent!")
         end
 
+        logger.debug("[%s %d] Removing child: %s %d", instance._widgetName, id, child._widgetName, child._uniqueId)
         -- Swap and pop!!!
         local index = childrenIndex[child]
         if index ~= nil then
@@ -716,6 +733,15 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
     local function redraw()
         ensureNotDestroyed()
 
+        if parent and parent.getGuiObject() then
+            if object then
+                object.Parent = parent.getGuiObject()
+            else
+                instance._createObject()
+            end
+        end
+
+        logger.debug("[%s %d] redraw was called", instance._widgetName, id)
         if object then
             for key, _ in pairs(rbxLinkedProperties) do
                 syncRbxProperty(key)
@@ -726,12 +752,8 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
             ref.notifyImmediate()
         end
 
-        if parent and parent.getGuiObject() then
-            if object then
-                object.Parent = parent.getGuiObject()
-            else
-                instance._createObject()
-            end
+        for _, modifier in pairs(modifierComponents) do 
+            modifier._redraw()
         end
     end
 
@@ -740,21 +762,25 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
 
     function instance._createObject(): Instance?
         ensureNotDestroyed()
-
         if object then
             return object
         end
 
+        logger.debug("[%s %d] _createObject is called", instance._widgetName, id)
+
         local createObjectFn = instance.createObject
         if not createObjectFn then
+            logger.debug("[%s %d] _createObject skipped (no create function)", instance._widgetName, id)
             return nil
         end
 
         if not getProperty("visible") or not parent or not parent.getGuiObject() then
+            logger.debug("[%s %d] _createObject skipped (not visible)", instance._widgetName, id)
             -- Not creating object when it's not needed
             return nil
         end
 
+        logger.debug("[%s %d] _createObject is creating new object", instance._widgetName, id)
         local newObject = createObjectFn()
         object = newObject
 
@@ -777,6 +803,7 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
         end
 
         events.fire("GuiObjectCreated", newObject)
+        logger.debug("[%s %d] _createObject created object", instance._widgetName, id)
 
         return object
     end
@@ -853,9 +880,6 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
 
     if args and args.properties then
         for key, value in pairs(args.properties :: {[string]: any}) do
-            if typeof(value) == "table" then
-                value = table.clone(value)
-            end
             setProperty(key, value)
         end
     end
