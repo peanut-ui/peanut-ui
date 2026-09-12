@@ -197,7 +197,7 @@ return {
         },
         function()
             return Instance.new("Frame")
-        end, nil
+        end
     ) :: CreateFn<Frame>,
     CanvasGroup = createBasicObject(
         "canvasGroup",
@@ -353,7 +353,6 @@ return {
             maxVisibleGraphemes = "MaxVisibleGraphemes",
             textTruncate = "TextTruncate"
         },
-        nil,
         nil,
         {
             textSize = State.scalePx,

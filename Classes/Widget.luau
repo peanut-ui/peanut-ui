@@ -418,17 +418,17 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
             end
 
             if object then
-                local oldValue = (object :: any)[property]
-                if oldValue == nil or value == oldValue then
-                    return
-                end
-
                 if value == Undefined then
                     value = nil
                 end
 
                 if transformFn then
                     value = transformFn(value)
+                end
+
+                local oldValue = (object :: any)[property]
+                if oldValue == nil or value == oldValue then
+                    return
                 end
 
                 logger.debug(
