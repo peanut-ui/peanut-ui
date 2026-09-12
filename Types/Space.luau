@@ -6,6 +6,7 @@ const Widget = require(script.Parent.Widget)
 
 export type KeyOf<Table> = TypeFuncs.KeyOf<Table>
 export type Resolve<Table, Key> = TypeFuncs.Resolve<Table, Key>
+export type Flatten<Table> = TypeFuncs.Flatten<Table>
 
 export type SpaceProps = {
     [string]: any,
@@ -16,7 +17,7 @@ export type SpaceProps = {
     absoluteRotation: number,
 }
 
-export type ScreenSpaceProps = SpaceProps & {
+export type ScreenSpaceProps = Flatten<SpaceProps & {
     visible: boolean,
     displayOrder: number,
     zIndexBehavior: Enum.ZIndexBehavior,
@@ -24,7 +25,7 @@ export type ScreenSpaceProps = SpaceProps & {
     ignoreGuiInset: boolean,
     safeAreaCompatibility: Enum.SafeAreaCompatibility,
     screenInsets: Enum.ScreenInsets
-}
+}>
 
 export type SpaceEvents<Object = LayerCollector> = {
     ChildAdded: (child: Widget.BaseInterface) -> ...boolean?,

@@ -131,4 +131,23 @@ export type function Partial(TableType: type): type
     return result
 end
 
+export type function Flatten(IntersectionType: type): type
+    local queue = { IntersectionType }
+    local result = {}
+
+    while #queue > 0 do
+        local current = table.remove(queue) :: type
+
+        if current:is("intersection") then
+            for _, comp in current:components() do
+                table.insert(queue, comp)
+            end
+        else
+            table.insert(result, current)
+        end
+    end
+
+    return types.intersectionof(table.unpack(result))
+end
+
 return {}

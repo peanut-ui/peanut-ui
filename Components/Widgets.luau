@@ -3,7 +3,9 @@
 const Widget = require(script.Parent.Parent.Classes.Widget)
 const WidgetClass = require(script.Parent.Parent.Types.Widget)
 const State = require(script.Parent.Parent.State)
+const TypeFuncs = require(script.Parent.Parent.Types.TypeFuncs)
 
+export type Flatten<Table> = TypeFuncs.Flatten<Table>
 local defaultFontFace = Font.new("rbxasset://fonts/families/Roboto.json")
 
 export type CreateFn<
@@ -14,13 +16,13 @@ export type CreateFn<
     (WidgetClass.Args<Props, Object, Events>?) -> WidgetClass.Interface<Props, Object, Events>
 )
 
-export type CanvasGroupProps = WidgetClass.DefaultProperties & {
+export type CanvasGroupProps = Flatten<{
     groupColor: Color3,
     groupTransparency: number,
     selectionImageObject: GuiObject?
-}
+} & WidgetClass.DefaultProperties>
 
-export type ImageProps = WidgetClass.DefaultProperties & {
+export type ImageProps = Flatten<{
     image: string,
     imageColor: Color3,
     imageTransparency: number,
@@ -31,17 +33,17 @@ export type ImageProps = WidgetClass.DefaultProperties & {
     tileSize: UDim2,
     imageRectOffset: Vector2,
     imageRectSize: Vector2,
-}
+} & WidgetClass.DefaultProperties>
 
-export type ImageButtonProps = ImageProps & {
+export type ImageButtonProps = Flatten<{
     hoverImage: string,
     pressedImage: string,
     autoButtonColor: boolean,
     modal: boolean,
     selected: boolean,
-}
+} & ImageProps>
 
-export type TextProps = WidgetClass.DefaultProperties & {
+export type TextProps = Flatten<{
     text: string,
     textColor: Color3,
     textTransparency: number,
@@ -57,25 +59,25 @@ export type TextProps = WidgetClass.DefaultProperties & {
     lineHeight: number,
     maxVisibleGraphemes: number,
     textTruncate: Enum.TextTruncate,
-}
+} & WidgetClass.DefaultProperties>
 
-export type TextButtonProps = TextProps & {
+export type TextButtonProps = Flatten<{
     autoButtonColor: boolean,
     modal: boolean,
     selected: boolean,
     style: Enum.ButtonStyle,
-}
+} & TextProps>
 
-export type TextBoxProps = TextProps & {
+export type TextBoxProps = Flatten<{
     clearTextOnFocus: boolean,
     multiLine: boolean,
     placeholderText: string,
     placeholderColor: Color3,
     cursorPosition: number,
     selectionStart: number,
-}
+} & TextProps>
 
-export type ScrollingFrameProps = WidgetClass.DefaultProperties & {
+export type ScrollingFrameProps = Flatten<{
     canvasPosition: Vector2,
     canvasSize: UDim2,
     automaticCanvasSize: Enum.AutomaticSize,
@@ -87,18 +89,18 @@ export type ScrollingFrameProps = WidgetClass.DefaultProperties & {
     verticalScrollBarInset: Enum.ScrollBarInset,
     horizontalScrollBarInset: Enum.ScrollBarInset,
     elasticBehavior: Enum.ElasticBehavior,
-}
+} & WidgetClass.DefaultProperties>
 
-export type ViewportFrameProps = WidgetClass.DefaultProperties & {
+export type ViewportFrameProps = Flatten<{
     currentCamera: Camera?,
     imageColor: Color3,
     imageTransparency: number,
     ambient: Color3,
     lightColor: Color3,
     lightDirection: Vector3,
-}
+} & WidgetClass.DefaultProperties>
 
-export type VideoFrameProps = WidgetClass.DefaultProperties & {
+export type VideoFrameProps = Flatten<{
     video: string,
     playing: boolean,
     looped: boolean,
@@ -107,12 +109,12 @@ export type VideoFrameProps = WidgetClass.DefaultProperties & {
     playbackSpeed: number,
     imageColor: Color3,
     imageTransparency: number,
-}
+} & WidgetClass.DefaultProperties>
 
-export type ButtonEvents = {
+export type ButtonEvents = Flatten<{
     Activated: (obj: InputObject, clickCount: number) -> (),
     SecondaryActivated: (obj: InputObject) -> ()
-} & WidgetClass.DefaultEvents
+} & WidgetClass.DefaultEvents>
 
 local function linkProperties(
     widget: WidgetClass.Interface,
