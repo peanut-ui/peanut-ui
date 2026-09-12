@@ -214,6 +214,9 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
     local children: {Widget.InternalInterface} = {}
     local childrenIndex: {[Widget.InternalInterface]: number} = {}
 
+    -- So redraw doesn't start any transitions
+    local inRedrawMode = false
+
     local instance = {
         _typeName = "widget",
         _widgetName = args and args.widgetName or "widget",
@@ -346,6 +349,10 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
     function instance.setTransition(key: string, transition: Animations.Transition?)
         ensureNotDestroyed()
 
+        if not linkedProperties[key] then
+            logger.warn("Transition was set on property that is not linked to object (key: %s)", key)
+        end
+
         if transitions[key] and object then
             transitions[key].stop(object, key)
         end
@@ -428,7 +435,7 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
                     "[%s %d] Updating property %s to %s (type %s)",
                     instance._widgetName, id, name, tostring(value), typeof(value)
                 )
-                if transitions[name] then
+                if transitions[name] and not inRedrawMode then
                     transitions[name].animate(object, property, value)
                 else
                     (object :: any)[property] = value
@@ -733,6 +740,9 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
     local function redraw()
         ensureNotDestroyed()
 
+        inRedrawMode = true
+        logger.debug("[%s %d] redraw was called", instance._widgetName, id)
+    
         if parent and parent.getGuiObject() then
             if object then
                 object.Parent = parent.getGuiObject()
@@ -741,7 +751,6 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
             end
         end
 
-        logger.debug("[%s %d] redraw was called", instance._widgetName, id)
         if object then
             for key, _ in pairs(rbxLinkedProperties) do
                 syncRbxProperty(key)
@@ -755,6 +764,8 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
         for _, modifier in pairs(modifierComponents) do
             modifier._redraw()
         end
+
+        inRedrawMode = false
     end
 
     instance._redraw = redraw
@@ -900,6 +911,10 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
 
         if args.transitions then
             for key, transition in pairs(args.transitions) do
+                if not linkedProperties[key] then
+                    logger.warn("Transition was set on property that is not linked to object (key: %s)", key)
+                end
+
                 transitions[key] = transition
             end
         end
