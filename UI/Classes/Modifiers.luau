@@ -357,6 +357,12 @@ local function scalePx(property: string)
     end
 end
 
+local function scaleVector2(property: string)
+    return function(c: Modifier.Component)
+        return State.scaleVector2(c.getProperty(property) :: Vector2)
+    end
+end
+
 Modifiers.createModifier = createModifier
 Modifiers.createConstructor = createConstructor
 Modifiers.components = {
@@ -555,7 +561,186 @@ Modifiers.components = {
             Spread = useUDim2("spread")
         }
     ),
-    shadows = "shadow"
+    shadows = "shadow",
+    list = createConstructor(
+        "list",
+        "UIList",
+        {
+            gapPx = 0,
+            gapScale = 0,
+            horizontal = false,
+            sortByName = false,
+            wraps = false,
+            horizontalAlign = "Left",
+            verticalAlign = "Top",
+            horizontalFlex = "None",
+            itemLineAlign = "Auto"
+        },
+        {
+            Gap = {"gapPx", "gapScale"},
+            Horizontal = "horizontal",
+            SortByName = "sortByName",
+            Wraps = "wraps",
+            HorizontalAlignment = "horizontalAlign",
+            VerticalAlignment = "verticalAlign",
+            HorizontalFlex = "horizontalFlex",
+            ItemLineAlignment = "itemLineAlign"
+        },
+        {
+            Gap = function(_, getProp)
+                return UDim.new(
+                    getProp("gapScale"),
+                    State.scalePx(getProp("gapPx"))
+                )
+            end,
+            HorizontalAlignment = useEnum(Enum.HorizontalAlignment, "horizontalAlign"),
+            VerticalAlignment = useEnum(Enum.VerticalAlignment, "verticalAlign"),
+            HorizontalFlex = useEnum(Enum.UIFlexAlignment, "horizontalFlex"),
+            ItemLineAlignment = useEnum(Enum.ItemLineAlignment, "itemLineAlign")
+        }
+    ),
+    grid = createConstructor(
+        "grid",
+        "UIGrid",
+        {
+            cellGapPx = Vector2.zero,
+            cellGapScale = Vector2.zero,
+            cellSizePx = Vector2.zero,
+            cellSizeScale = Vector2.zero,
+            horizontal = false,
+            sortByName = false,
+            fillDirectionMaxCells = 0,
+            horizontalAlign = "Left",
+            verticalAlign = "Top",
+            startCorner = "TopLeft"
+        },
+        {
+            CellPadding = {"cellGapPx", "cellGapScale"},
+            CellSize = {"cellSizePx", "cellSizeScale"},
+            Horizontal = "horizontal",
+            SortByName = "sortByName",
+            FillDirectionMaxCells = "fillDirectionMaxCells",
+            HorizontalAlignment = "horizontalAlign",
+            VerticalAlignment = "verticalAlign",
+            StartCorner = "startCorner"
+        },
+        {
+            CellPadding = function(_, getProp)
+                return UDim2.new(
+                    getProp("cellGapScale").X,
+                    State.scalePx(getProp("cellGapPx").X),
+                    getProp("cellGapScale").Y,
+                    State.scalePx(getProp("cellGapPx").Y)
+                )
+            end,
+            CellSize = function(_, getProp)
+                return UDim2.new(
+                    getProp("cellSizeScale").X,
+                    State.scalePx(getProp("cellSizePx").X),
+                    getProp("cellSizeScale").Y,
+                    State.scalePx(getProp("cellSizePx").Y)
+                )
+            end,
+            HorizontalAlignment = useEnum(Enum.HorizontalAlignment, "horizontalAlign"),
+            VerticalAlignment = useEnum(Enum.VerticalAlignment, "verticalAlign"),
+            StartCorner = useEnum(Enum.StartCorner, "startCorner")
+        }
+    ),
+    table = createConstructor(
+        "table",
+        "UITable",
+        {
+            horizontal = false,
+            sortByName = false,
+            horizontalAlign = "Left",
+            verticalAlign = "Top",
+            majorAxis = "RowMajor",
+            gapPx = Vector2.zero,
+            gapScale = Vector2.zero
+        },
+        {
+            Horizontal = "horizontal",
+            SortByName = "sortByName",
+            HorizontalAlignment = "horizontalAlign",
+            VerticalAlignment = "verticalAlign",
+            MajorAxis = "majorAxis",
+            CellPadding = {"gapPx", "gapScale"}
+        },
+        {
+            HorizontalAlignment = useEnum(Enum.HorizontalAlignment, "horizontalAlign"),
+            VerticalAlignment = useEnum(Enum.VerticalAlignment, "verticalAlign"),
+            MajorAxis = useEnum(Enum.TableMajorAxis, "majorAxis"),
+            CellPadding = function(_, getProp)
+                return UDim2.new(
+                    getProp("gapScale").X,
+                    State.scalePx(getProp("gapPx").X),
+                    getProp("gapScale").Y,
+                    State.scalePx(getProp("gapPx").Y)
+                )
+            end
+        }
+    ),
+    aspectRatio = createConstructor(
+        "aspectRatio",
+        "UIAspectRatioConstraint",
+        {
+            ratio = 1,
+            type = "FitWithinMaxSize",
+            dominantAxis = "Width"
+        },
+        {
+            AspectRatio = "ratio",
+            AspectType = "type",
+            DominantAxis = "dominantAxis"
+        },
+        {
+            AspectType = useEnum(Enum.AspectType, "type"),
+            DominantAxis = useEnum(Enum.DominantAxis, "dominantAxis")
+        }
+    ),
+    sizeConstraint = createConstructor(
+        "sizeConstraint",
+        "UISizeConstraint",
+        {
+            max = Vector2.zero,
+            min = Vector2.zero
+        },
+        {
+            MaxSize = "max",
+            MinSize = "min"
+        },
+        {
+            MaxSize = scaleVector2("max"),
+            MinSize = scaleVector2("min")
+        }
+    ),
+    textSizeConstraint = createConstructor(
+        "textSizeConstraint",
+        "UITextSizeConstraint",
+        {
+            max = 0,
+            min = 0
+        },
+        {
+            MaxTextSize = "max",
+            MinTextSize = "min"
+        },
+        {
+            MaxTextSize = scalePx("max"),
+            MinTextSize = scalePx("min")
+        }
+    ),
+    scale = createConstructor(
+        "scale",
+        "UIScale",
+        {
+            scale = 1
+        },
+        {
+            Scale = "scale"
+        },
+        {}
+    )
 } :: {[string]: string | (properties: {[string]: any}) -> Modifier.Component}
 
 return Modifiers

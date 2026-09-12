@@ -79,38 +79,38 @@ export type Shadow = {
 
 -- Layouts
 export type List = {
-    gapPx: number?,
-    gapScale: number?,
-    horizontal: boolean?,
-    sortByName: boolean?,
-    wraps: boolean?,
-    horizontalAlign: "Left" | "Center" | "Right"?,
-    verticalAlign: "Top" | "Center" | "Bottom"?,
-    horizontalFlex: "None" | "Fill" | "SpaceAround" | "SpaceBetween" | "SpaceEvenly"?,
-    itemLineAlign: "Auto" | "Center" | "End" | "Start" | "Stretch"?,
+    gapPx: number,
+    gapScale: number,
+    horizontal: boolean,
+    sortByName: boolean,
+    wraps: boolean,
+    horizontalAlign: "Left" | "Center" | "Right",
+    verticalAlign: "Top" | "Center" | "Bottom",
+    horizontalFlex: "None" | "Fill" | "SpaceAround" | "SpaceBetween" | "SpaceEvenly",
+    itemLineAlign: "Auto" | "Center" | "End" | "Start" | "Stretch",
 }
 
 export type Grid = {
-    cellPaddingPx: Vector2?,
-    cellPaddingScale: Vector2?,
-    cellSizePx: Vector2?,
-    cellSizeScale: Vector2?,
-    fillDirection: "Horizontal" | "Vertical"?,
-    fillDirectionMaxCells: number?,
-    horizontalAlign: "Left" | "Center" | "Right"?,
-    verticalAlign: "Top" | "Center" | "Bottom"?,
-    sortOrder: "LayoutOrder" | "Name" | "Custom"?,
-    startCorner: "TopLeft" | "TopRight" | "BottomLeft" | "BottomRight"?
+    cellGapPx: Vector2,
+    cellGapScale: Vector2,
+    cellSizePx: Vector2,
+    cellSizeScale: Vector2,
+    horizontal: boolean,
+    sortByName: boolean,
+    fillDirectionMaxCells: number,
+    horizontalAlign: "Left" | "Center" | "Right",
+    verticalAlign: "Top" | "Center" | "Bottom",
+    startCorner: "TopLeft" | "TopRight" | "BottomLeft" | "BottomRight"
 }
 
-export type TableLayout = {
-    fillDirection: "Horizontal" | "Vertical"?,
-    horizontalAlign: "Left" | "Center" | "Right"?,
-    verticalAlign: "Top" | "Center" | "Bottom"?,
-    sortOrder: "LayoutOrder" | "Name" | "Custom"?,
-    majorAxis: "RowMajor" | "ColumnMajor"?,
-    paddingPx: Vector2?,
-    paddingScale: Vector2?
+export type Table = {
+    horizontal: boolean,
+    sortByName: boolean,
+    horizontalAlign: "Left" | "Center" | "Right",
+    verticalAlign: "Top" | "Center" | "Bottom",
+    majorAxis: "RowMajor" | "ColumnMajor",
+    gapPx: Vector2,
+    gapScale: Vector2
 }
 
 -- Constraints
@@ -176,7 +176,7 @@ export type Modifiers = {
     -- Layouts
     list: Partial<List>?,
     grid: Partial<Grid>?,
-    tableLayout: Partial<TableLayout>?,
+    table: Partial<Table>?,
 
     -- Constraints
     aspectRatio: Partial<AspectRatio>?,
@@ -199,7 +199,7 @@ export type Components = {
     -- Layouts
     list: Component<List>?,
     grid: Component<Grid>?,
-    tableLayout: Component<TableLayout>?,
+    table: Component<Table>?,
 
     -- Constraints
     aspectRatio: Component<AspectRatio>?,
