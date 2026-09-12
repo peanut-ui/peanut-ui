@@ -184,13 +184,13 @@ export type Modifiers = {
     stroke: Partial<Stroke>?,
     gradient: Partial<Gradient>?,
     shadow: Partial<Shadow>?,
-    
+
     -- Layouts
     list: Partial<List>?,
     grid: Partial<Grid>?,
     pageLayout: Partial<PageLayout>?,
     tableLayout: Partial<TableLayout>?,
-    
+
     -- Constraints
     aspectRatio: Partial<AspectRatio>?,
     sizeConstraint: Partial<SizeConstraint>?,
@@ -208,13 +208,13 @@ export type Components = {
     stroke: Component<Stroke>?,
     gradient: Component<Gradient>?,
     shadow: Component<Shadow>?,
-    
+
     -- Layouts
     list: Component<List>?,
     grid: Component<Grid>?,
     pageLayout: Component<PageLayout>?,
     tableLayout: Component<TableLayout>?,
-    
+
     -- Constraints
     aspectRatio: Component<AspectRatio>?,
     sizeConstraint: Component<SizeConstraint>?,

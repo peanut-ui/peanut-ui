@@ -501,7 +501,7 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
             if object and rbxKey then
                 return (object :: any)[rbxKey]
             end
-        
+
             return nil
         else
             if rbxLinkedProperties[key] then
@@ -551,7 +551,7 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
         end
     end
 
-    local function observe(key: string, callback: (newValue: any) -> boolean?): () -> ()
+    local function observe(key: string, callback: (newValue: any) -> ...boolean?): () -> ()
         ensureNotDestroyed()
 
         local ref = propertiesRefs[key]
@@ -752,7 +752,7 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
             ref.notifyImmediate()
         end
 
-        for _, modifier in pairs(modifierComponents) do 
+        for _, modifier in pairs(modifierComponents) do
             modifier._redraw()
         end
     end
@@ -817,7 +817,7 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
         if typeof(params) == "table" and typeof(params[1]) == "table" then
             for i, config in ipairs(params :: { {[string]: any} }) do
                 local stackKey = `{name}_{i}`
-                
+
                 if Helpers.removeUndefined(config) == nil then
                     local component = modifierComponents[stackKey]
                     if component then
@@ -917,10 +917,10 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
                 instance.addChild(child :: Widget.InternalInterface)
             end
         end
-    end
 
-    if args and args.onSetup then
-        args.onSetup(instance :: any)
+        if args.onSetup then
+            args.onSetup(instance :: any)
+        end
     end
 
     if isDestroyed then

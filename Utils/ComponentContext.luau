@@ -12,7 +12,7 @@ local Module = {}
 
 local function disableYielding<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R?)
     local thread = coroutine.create(fn)
-    
+
     local ok, result = coroutine.resume(thread, ...)
 
     if not ok then
@@ -23,7 +23,7 @@ local function disableYielding<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R
     if coroutine.status(thread) ~= "dead" then
         local trace = debug.traceback(thread)
         coroutine.close(thread)
-        
+
         return false, `Cannot yield in current context.\nHINT: check for tags: yield in method's description\nTraceback: {trace}`
     end
 

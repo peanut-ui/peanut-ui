@@ -84,7 +84,7 @@ export type function UnionProperties(TableType: type, UnionWith: type): type
 
                 if propType and keyName and not seen[keyName] then
                     seen[keyName] = true
-                    
+
                     local optionalProp = types.unionof(propType, UnionWith)
 
                     result:setproperty(key, optionalProp)
@@ -115,7 +115,7 @@ export type function Partial(TableType: type): type
 
                 if propType and keyName and not seen[keyName] then
                     seen[keyName] = true
-                    
+
                     local optionalProp = makeOptional(propType)
 
                     result:setproperty(key, optionalProp)

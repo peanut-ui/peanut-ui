@@ -36,7 +36,7 @@ local function createReactiveProxy(rawTarget: {[any]: any}, isShallow: boolean?)
     local proxy = {}
     local myRef = Ref.new(proxy)
     proxyToRefMap[proxy] = myRef
-    
+
     local childWatchers: {[any]: () -> ()} = {}
     proxyChildWatchers[proxy] = childWatchers
 
@@ -44,7 +44,7 @@ local function createReactiveProxy(rawTarget: {[any]: any}, isShallow: boolean?)
         if type(childRaw) == "table" then
             local childProxy = createReactiveProxy(childRaw)
             local childRef = proxyToRefMap[childProxy]
-            
+
             childWatchers[key] = childRef.watch(function()
                 myRef.notifyChanged()
             end)
@@ -161,7 +161,7 @@ function Ref.new<T>(value: T | Utils.Ref<T>): Utils.Ref<T>
             end
         end
     end
-    
+
     local function notifyWatchers()
         if isDestroyed then return end
         if scheduled then return end
