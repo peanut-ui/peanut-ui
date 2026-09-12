@@ -56,24 +56,25 @@ export type Stroke = {
 }
 
 export type Gradient = {
-    enabled: boolean?,
-    color: ColorSequence?,
-    offset: Vector2?,
-    scale: number?,
-    rotation: number?,
-    transparency: NumberSequence?,
-    tileMode: "Clamp" | "Mirror" | "Repeat"?,
-    type: "Conical" | "Linear" | "Radial"?
+    enabled: boolean,
+    color: ColorSequence,
+    offset: Vector2,
+    scale: number,
+    rotation: number,
+    transparency: NumberSequence,
+    tileMode: "Clamp" | "Mirror" | "Repeat",
+    type: "Conical" | "Linear" | "Radial"
 }
 
 export type Shadow = {
     enabled: boolean,
-    blurRadius: UDim?,
-    color: Color3?,
-    offset: UDim2?,
-    spread: UDim2?,
-    transparency: number?,
-    zIndex: number?
+    blurRadiusPx: number,
+    blurRadiusScale: number,
+    color: Color3,
+    offset: Utils.Position,
+    spread: Utils.Size,
+    transparency: number,
+    zIndex: number
 }
 
 -- Layouts
@@ -102,20 +103,6 @@ export type Grid = {
     startCorner: "TopLeft" | "TopRight" | "BottomLeft" | "BottomRight"?
 }
 
-export type PageLayout = {
-    animated: boolean?,
-    circular: boolean?,
-    easingDirection: "In" | "Out" | "InOut"?,
-    easingStyle: "Linear" | "Sine" | "Back" | "Quad" | "Quart" | "Quint" | "Bounce" | "Elastic" | "Exponential" | "Circular" | "Cubic"?,
-    paddingPx: number?,
-    paddingScale: number?,
-    tweenTime: number?,
-    fillDirection: "Horizontal" | "Vertical"?,
-    horizontalAlign: "Left" | "Center" | "Right"?,
-    verticalAlign: "Top" | "Center" | "Bottom"?,
-    sortOrder: "LayoutOrder" | "Name" | "Custom"?
-}
-
 export type TableLayout = {
     fillDirection: "Horizontal" | "Vertical"?,
     horizontalAlign: "Left" | "Center" | "Right"?,
@@ -128,19 +115,19 @@ export type TableLayout = {
 
 -- Constraints
 export type AspectRatio = {
-    aspectRatio: number?,
-    aspectType: "FitWithinMaxSize" | "ScaleWithParentSize"?,
+    ratio: number?,
+    type: "FitWithinMaxSize" | "ScaleWithParentSize"?,
     dominantAxis: "Width" | "Height"?
 }
 
 export type SizeConstraint = {
-    maxSize: Vector2?,
-    minSize: Vector2?
+    max: Vector2?,
+    min: Vector2?
 }
 
 export type TextSizeConstraint = {
-    maxTextSize: number?,
-    minTextSize: number?
+    max: number?,
+    min: number?
 }
 
 export type Scale = {
@@ -184,11 +171,11 @@ export type Modifiers = {
     stroke: Partial<Stroke>?,
     gradient: Partial<Gradient>?,
     shadow: Partial<Shadow>?,
+    shadows: {Partial<Shadow>}?,
 
     -- Layouts
     list: Partial<List>?,
     grid: Partial<Grid>?,
-    pageLayout: Partial<PageLayout>?,
     tableLayout: Partial<TableLayout>?,
 
     -- Constraints
@@ -212,7 +199,6 @@ export type Components = {
     -- Layouts
     list: Component<List>?,
     grid: Component<Grid>?,
-    pageLayout: Component<PageLayout>?,
     tableLayout: Component<TableLayout>?,
 
     -- Constraints

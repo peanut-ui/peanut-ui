@@ -822,8 +822,22 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
     local function setModifier(name: string, params: {[string]: any} | { {[string]: any} })
         ensureNotDestroyed()
 
-        local modifierFactory = Modifiers.components[name]
-        if not modifierFactory then return end
+        local modifierFactory: (props: {[string]: any}) -> Modifier.Component
+
+        do
+            local component = Modifiers.components[name]
+            if not component then return end
+
+            if typeof(component) == "string" then
+                component = Modifiers.components[component]
+                if not component or typeof(component) == "string" then
+                    return
+                end
+                modifierFactory = component
+            else
+                modifierFactory = component
+            end
+        end
 
         if typeof(params) == "table" and typeof(params[1]) == "table" then
             for i, config in ipairs(params :: { {[string]: any} }) do

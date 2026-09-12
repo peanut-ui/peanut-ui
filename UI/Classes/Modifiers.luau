@@ -7,6 +7,7 @@ const State = require(script.Parent.Parent.State)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Utils.Ref)
 const Undefined = require(script.Parent.Parent.Utils.Undefined)
+const Units = require(script.Parent.Parent.Utils.Units)
 
 local logger = Logging.getLogger("PeanutUI.Classes.Modifiers")
 
@@ -338,6 +339,18 @@ local function useEnum(enum: Enum, property: string)
     end
 end
 
+local function useUDim2(property: string)
+    return function(c: Modifier.Component)
+        return Units.ToUDim2(c.getProperty(property) :: any)
+    end
+end
+
+local function useUDim(property: string)
+    return function(c: Modifier.Component)
+        return Units.ToUDim(c.getProperty(property) :: any)
+    end
+end
+
 local function scalePx(property: string)
     return function(c: Modifier.Component)
         return State.scalePx(c.getProperty(property) :: number)
@@ -483,7 +496,66 @@ Modifiers.components = {
             BorderStrokePosition = useEnum(Enum.BorderStrokePosition, "borderPosition"),
             LineJoinMode = useEnum(Enum.LineJoinMode, "lineJoinMode"),
         }
-    )
-} :: {[string]: (properties: {[string]: any}) -> Modifier.Component}
+    ),
+    gradient = createConstructor(
+        "gradient",
+        "UIGradient",
+        {
+            enabled = true,
+            color = ColorSequence.new(Color3.new(1, 1, 1)),
+            offset = Vector2.zero,
+            scale = 1,
+            rotation = 0,
+            transparency = NumberSequence.new(0),
+            tileMode = "Clamp",
+            type = "Linear"
+        },
+        {
+            Enabled = "enabled",
+            Color = "color",
+            Offset = "offset",
+            Scale = "scale",
+            Rotation = "rotation",
+            Transparency = "transparency",
+            TileMode = "tileMode",
+            Type = "type"
+        },
+        {}
+    ),
+    shadow = createConstructor(
+        "shadow",
+        "UIShadow",
+        {
+            enabled = true,
+            blurRadiusPx = 0,
+            blurRadiusScale = 0,
+            color = Color3.new(0, 0, 0),
+            offset = Units.Position(),
+            spread = Units.Size(),
+            transparency = 0,
+            zIndex = 0
+        },
+        {
+            Enabled = "enabled",
+            BlurRadius = {"blurRadiusPx", "blurRadiusScale"},
+            Color = "color",
+            Offset = "offset",
+            Spread = "spread",
+            Transparency = "transparency",
+            ZIndex = "zIndex"
+        },
+        {
+            BlurRadius = function(_, getProp)
+                return UDim.new(
+                    getProp("blurRadiusScale"),
+                    State.scalePx(getProp("blurRadiusPx"))
+                )
+            end,
+            Offset = useUDim2("offset"),
+            Spread = useUDim2("spread")
+        }
+    ),
+    shadows = "shadow"
+} :: {[string]: string | (properties: {[string]: any}) -> Modifier.Component}
 
 return Modifiers
