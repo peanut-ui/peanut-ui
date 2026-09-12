@@ -135,27 +135,23 @@ local function createBasicObject<T>(
     defaultProperties: T & {[string]: any},
     createFn: () -> any,
     linkedProperties: {[string]: string}?,
-    setupFn: (any) -> ()?,
     linkEvents: {string}?,
     transformFn: {[string]: (any) -> any}?,
-    syncWithObject: {[string]: boolean?}?
+    syncWithObject: {[string]: boolean?}?,
+    setupFn: (any) -> ()?
 ): (WidgetClass.Args) -> WidgetClass.Interface
     return function(args)
         local argsCopy = table.clone(args)
 
-        local originalOnSetup = argsCopy.onSetup
-        argsCopy.onSetup = function(widget)
+        local function setup(widget: any, defaultSetup)
+            defaultSetup(widget)
             widget.createObject = createFn
 
             if linkedProperties then
                 linkProperties(widget, linkedProperties, transformFn, syncWithObject)
             end
-
             if setupFn then
                 setupFn(widget)
-            end
-            if originalOnSetup then
-                originalOnSetup(widget)
             end
 
             if linkEvents then
@@ -163,6 +159,16 @@ local function createBasicObject<T>(
                     widget._linkEvent(eventName)
                 end
             end
+        end
+
+        local originalOverride = argsCopy.defaultSetupOverride
+        argsCopy.defaultSetupOverride = function(widget: any, defaultSetup)
+            if originalOverride then
+                originalOverride(widget, setup)
+                return
+            end
+
+            setup(widget, defaultSetup)
         end
 
         local properties = table.clone(defaultProperties)
@@ -265,7 +271,6 @@ return {
             modal = "Modal",
             selected = "Selected",
         },
-        nil,
         {"Activated", "SecondaryActivated"},
         { tileSize = State.scaleUDim2 },
         { selected = true }
@@ -302,7 +307,6 @@ return {
             horizontalScrollBarInset = "HorizontalScrollBarInset",
             elasticBehavior = "ElasticBehavior",
         },
-        nil,
         nil,
         nil,
         { canvasPosition = true }
@@ -401,7 +405,6 @@ return {
             selected = "Selected",
             style = "Style"
         },
-        nil,
         {"Activated", "SecondaryActivated"},
         {
             textSize = State.scalePx,
@@ -460,7 +463,6 @@ return {
             selectionStart = "SelectionStart",
         },
         nil,
-        nil,
         {
             textSize = State.scalePx,
         },
@@ -516,7 +518,6 @@ return {
             imageColor = "ImageColor3",
             imageTransparency = "ImageTransparency",
         },
-        nil,
         nil,
         nil,
         {
