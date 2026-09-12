@@ -7,7 +7,8 @@ export type Instance = {
     read info: (string | () -> string, ...any) -> (),
     read warn: (string | () -> string, ...any) -> (),
     read error: (string | () -> string, ...any) -> ...unknown,
-    read critical: (string | () -> string, ...any) -> ...unknown
+    read critical: (string | () -> string, ...any) -> ...unknown,
+    read getLogger: (string) -> Instance
 }
 
 --[[
@@ -42,11 +43,11 @@ local function log(name: string, formatOrFn: string | () -> string, logLevel: nu
     elseif logLevel == 2 then
         print(`[INFO] [{name}] {message}`)
     elseif logLevel == 3 then
-        warn(`[WARNING] [{name}] {message}\n[TRACEBACK] {debug.traceback()}`)
+        warn(`[WARNING] [{name}] {message}\n[TRACEBACK] {debug.traceback(nil, 3)}`)
     elseif logLevel == 4 then
-        error(`[ERROR] [{name}] {message}\n[TRACEBACK] {debug.traceback()}`)
+        error(`[ERROR] [{name}] {message}\n[TRACEBACK] {debug.traceback(nil, 3)}`)
     elseif logLevel == 5 then
-        error(`[CRITICAL] [{name}] {message}\n[TRACEBACK] {debug.traceback()}`)
+        error(`[CRITICAL] [{name}] {message}\n[TRACEBACK] {debug.traceback(nil, 3)}`)
     end
 end
 
@@ -74,6 +75,10 @@ function Logger.getLogger(name: string): Instance
     function logger.critical(string: string | () -> string, ...)
         log(name, string, 5, ...)
         error(string)  -- Same as in logger.error
+    end
+
+    function logger.getLogger(newName: string): Instance
+        return Logger.getLogger(`{name}.{newName}`)
     end
 
     return table.freeze(logger)
