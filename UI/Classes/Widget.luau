@@ -31,6 +31,11 @@ local defaultProperties: Widget.DefaultProperties = {
     layoutOrder = 0,
     autoLayoutOrder = 0,
     rotation = 0,
+    sizeConstraint = Enum.SizeConstraint.RelativeXY,
+
+    selectable = true,
+    interactable = true,
+    active = true,
 
     absolutePosition = Vector2.zero,
     absoluteSize = Vector2.zero,

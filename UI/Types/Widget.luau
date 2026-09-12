@@ -61,6 +61,8 @@ export type DefaultProperties = {
     position: Utils.Position,
     anchorPoint: Vector2,
     rotation: number,
+    sizeConstraint: Enum.SizeConstraint,
+    selectable: boolean,
 
     backgroundColor: Color3,
     backgroundTransparency: number,
