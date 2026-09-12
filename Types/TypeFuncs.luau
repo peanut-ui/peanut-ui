@@ -132,22 +132,35 @@ export type function Partial(TableType: type): type
 end
 
 export type function Flatten(IntersectionType: type): type
+    local result = types.newtable()
     local queue = { IntersectionType }
-    local result = {}
+    local seen = {}
 
     while #queue > 0 do
         local current = table.remove(queue) :: type
 
-        if current:is("intersection") then
+        if current:is("table") then
+            for key, value in current:properties() do
+                local keyName = if key:is("singleton") then key:value() else nil
+
+                if keyName and not seen[keyName] then
+                    seen[keyName] = true
+
+                    if value.read then
+                        result:setproperty(key, value.read)
+                    elseif value.write then
+                        result:setproperty(key, value.write)
+                    end
+                end
+            end
+        elseif current:is("intersection") then
             for _, comp in current:components() do
                 table.insert(queue, comp)
             end
-        else
-            table.insert(result, current)
         end
     end
 
-    return types.intersectionof(table.unpack(result))
+    return result
 end
 
 return {}
