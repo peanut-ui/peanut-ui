@@ -115,23 +115,23 @@ export type Table = {
 
 -- Constraints
 export type AspectRatio = {
-    ratio: number?,
-    type: "FitWithinMaxSize" | "ScaleWithParentSize"?,
-    dominantAxis: "Width" | "Height"?
+    ratio: number,
+    type: "FitWithinMaxSize" | "ScaleWithParentSize",
+    dominantAxis: "Width" | "Height"
 }
 
 export type SizeConstraint = {
-    max: Vector2?,
-    min: Vector2?
+    max: Vector2,
+    min: Vector2
 }
 
 export type TextSizeConstraint = {
-    max: number?,
-    min: number?
+    max: number,
+    min: number
 }
 
 export type Scale = {
-    scale: number?
+    scale: number
 }
 
 -- Types
