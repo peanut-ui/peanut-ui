@@ -80,6 +80,10 @@ local function defaultSetup(widget: Widget.BaseInterface)
     link("backgroundColor", "BackgroundColor3")
     link("backgroundTransparency", "BackgroundTransparency")
 
+    link("selectable", "Selectable")
+    link("interactable", "Interactable")
+    link("active", "Active")
+
     link("absoluteSize", "AbsoluteSize", nil, function(v)
         return State.scaleVector2(v, true)
     end, true)
