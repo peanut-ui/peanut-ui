@@ -122,7 +122,7 @@ local function linkProperties(
     widget: WidgetClass.Interface,
     properties: {[string]: string},
     transformFn: {[string]: (any) -> any}?,
-    syncWithObject: {[string]: boolean?}?,
+    syncWithObject: {[string]: (boolean | (any) -> any)?}?,
     readonly: {[string]: boolean?}?
 )
     local link = (widget :: WidgetClass.InternalInterface)._linkProperty
@@ -144,7 +144,7 @@ local function createBasicObject<T>(
     linkedProperties: {[string]: string}?,
     linkEvents: {string}?,
     transformFn: {[string]: (any) -> any}?,
-    syncWithObject: {[string]: boolean?}?,
+    syncWithObject: {[string]: (boolean | (any) -> any)?}?,
     readonly: {[string]: boolean?}?,
     setupFn: (any) -> ()?
 ): (WidgetClass.Args) -> WidgetClass.Interface
@@ -303,8 +303,8 @@ return {
         "scrollingFrame",
         {
             name = "ScrollingFrame",
-            canvasPosition = Vector2.new(0, 0),
-            canvasSize = UDim2.new(0, 0, 0, 0),
+            canvasPosition = Vector2.zero,
+            canvasSize = UDim2.new(1, 0, 1, 0),
             automaticCanvasSize = Enum.AutomaticSize.None,
             scrollingDirection = Enum.ScrollingDirection.Y,
             scrollingEnabled = true,
@@ -333,7 +333,11 @@ return {
         },
         nil,
         nil,
-        { canvasPosition = true }
+        {
+            canvasPosition = function(value: Vector2)
+                return State.scaleVector2(value, true)
+            end
+        }
     ) :: CreateFn<ScrollingFrame, ScrollingFrameProps>,
     TextLabel = createBasicObject(
         "textLabel",
