@@ -3,6 +3,7 @@
 const Utils = require(script.Parent.Types.Utils)
 const Widget = require(script.Parent.Types.Widget)
 const Logging = require(script.Parent.Utils.Logging)
+const Signals = require(script.Parent.Utils.Signals)
 const Units = require(script.Parent.Utils.Units)
 
 local uiVersion = {
@@ -27,6 +28,8 @@ local State = {}
 
 State.Version = uiVersion
 State.VersionString = buildVersion()
+
+State.signals = Signals.new()
 
 local registeredWidgets: {[number]: Widget.Interface} = {}
 
