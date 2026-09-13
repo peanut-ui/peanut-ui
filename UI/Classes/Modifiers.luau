@@ -578,8 +578,8 @@ Modifiers.components = {
         },
         {
             Gap = {"gapPx", "gapScale"},
-            Horizontal = "horizontal",
-            SortByName = "sortByName",
+            FillDirection = "horizontal",
+            SortOrder = "sortByName",
             Wraps = "wraps",
             HorizontalAlignment = "horizontalAlign",
             VerticalAlignment = "verticalAlign",
@@ -596,7 +596,13 @@ Modifiers.components = {
             HorizontalAlignment = useEnum(Enum.HorizontalAlignment, "horizontalAlign"),
             VerticalAlignment = useEnum(Enum.VerticalAlignment, "verticalAlign"),
             HorizontalFlex = useEnum(Enum.UIFlexAlignment, "horizontalFlex"),
-            ItemLineAlignment = useEnum(Enum.ItemLineAlignment, "itemLineAlign")
+            ItemLineAlignment = useEnum(Enum.ItemLineAlignment, "itemLineAlign"),
+            SortOrder = function(c)
+                return if c.getProperty("sortByName") then Enum.SortOrder.Name else Enum.SortOrder.LayoutOrder
+            end,
+            FillDirection = function(c)
+                return if c.getProperty("horizontal") then Enum.FillDirection.Horizontal else Enum.FillDirection.Vertical
+            end
         }
     ),
     grid = createConstructor(
@@ -617,8 +623,8 @@ Modifiers.components = {
         {
             CellPadding = {"cellGapPx", "cellGapScale"},
             CellSize = {"cellSizePx", "cellSizeScale"},
-            Horizontal = "horizontal",
-            SortByName = "sortByName",
+            FillDirection = "horizontal",
+            SortOrder = "sortByName",
             FillDirectionMaxCells = "fillDirectionMaxCells",
             HorizontalAlignment = "horizontalAlign",
             VerticalAlignment = "verticalAlign",
@@ -643,7 +649,13 @@ Modifiers.components = {
             end,
             HorizontalAlignment = useEnum(Enum.HorizontalAlignment, "horizontalAlign"),
             VerticalAlignment = useEnum(Enum.VerticalAlignment, "verticalAlign"),
-            StartCorner = useEnum(Enum.StartCorner, "startCorner")
+            StartCorner = useEnum(Enum.StartCorner, "startCorner"),
+            FillDirection = function(c)
+                return if c.getProperty("horizontal") then Enum.FillDirection.Horizontal else Enum.FillDirection.Vertical
+            end,
+            SortOrder = function(c)
+                return if c.getProperty("sortByName") then Enum.SortOrder.Name else Enum.SortOrder.LayoutOrder
+            end
         }
     ),
     table = createConstructor(
@@ -659,8 +671,8 @@ Modifiers.components = {
             gapScale = Vector2.zero
         },
         {
-            Horizontal = "horizontal",
-            SortByName = "sortByName",
+            FillDirection = "horizontal",
+            SortOrder = "sortByName",
             HorizontalAlignment = "horizontalAlign",
             VerticalAlignment = "verticalAlign",
             MajorAxis = "majorAxis",
@@ -677,6 +689,12 @@ Modifiers.components = {
                     getProp("gapScale").Y,
                     State.scalePx(getProp("gapPx").Y)
                 )
+            end,
+            FillDirection = function(c)
+                return if c.getProperty("horizontal") then Enum.FillDirection.Horizontal else Enum.FillDirection.Vertical
+            end,
+            SortOrder = function(c)
+                return if c.getProperty("sortByName") then Enum.SortOrder.Name else Enum.SortOrder.LayoutOrder
             end
         }
     ),
