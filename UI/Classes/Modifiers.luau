@@ -564,7 +564,7 @@ Modifiers.components = {
     shadows = "shadow",
     list = createConstructor(
         "list",
-        "UIList",
+        "UIListLayout",
         {
             gapPx = 0,
             gapScale = 0,
@@ -601,7 +601,7 @@ Modifiers.components = {
     ),
     grid = createConstructor(
         "grid",
-        "UIGrid",
+        "UIGridLayout",
         {
             cellGapPx = Vector2.zero,
             cellGapScale = Vector2.zero,
@@ -648,7 +648,7 @@ Modifiers.components = {
     ),
     table = createConstructor(
         "table",
-        "UITable",
+        "UITableLayout",
         {
             horizontal = false,
             sortByName = false,
