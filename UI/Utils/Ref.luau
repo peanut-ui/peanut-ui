@@ -13,16 +13,10 @@ local proxySwap: {[{[any]: any}]: ({[any]: any}, boolean?) -> ()} = setmetatable
 local proxyChildWatchers: {[{[any]: any}]: {[any]: () -> ()}} = setmetatable({}, { __mode = "k" })
 local rawCache: {[{[any]: any}]: {[any]: any}} = setmetatable({}, { __mode = "k" })
 
+local protectedRefCache: {[Utils.Ref<any>]: Utils.ProtectedRef<any>} = setmetatable({}, { __mode = "kv" })
+
 local Ref = {}
 Ref.Undefined = Undefined
-
-type Readable<T> = {
-    read getValue: () -> T,
-}
-
-type Watchable = {
-    read watch: (...any) -> ...any,
-}
 
 local function createReactiveProxy(rawTarget: {[any]: any}, isShallow: boolean?): any
     if rawCache[rawTarget] then
@@ -122,7 +116,7 @@ local function assertType(a: any, b: any)
     end
 end
 
-function Ref.new<T>(value: T | Utils.Ref<T>): Utils.Ref<T>
+function Ref.new<T>(value: T | Utils.Ref<T> | Utils.ProtectedRef<T>): Utils.Ref<T>
     local ref = {}
     ref._typeName = "ref" :: "ref"
 
@@ -196,7 +190,7 @@ function Ref.new<T>(value: T | Utils.Ref<T>): Utils.Ref<T>
         notifyWatchers()
     end
 
-    function ref.setValue(newValue: T | Utils.Ref<T>, immediate: boolean?)
+    function ref.setValue(newValue: T | Utils.Ref<T> | Utils.ProtectedRef<T>, immediate: boolean?)
         ensureNotDestroyed()
 
         if newValue == currentValue then
@@ -219,11 +213,11 @@ function Ref.new<T>(value: T | Utils.Ref<T>): Utils.Ref<T>
                 notifyWatchers()
             end)
         elseif typeof(newValue) == "table" and newValue._typeName == "ref" then
-            local value = (newValue :: Utils.Ref<T>).getValue()
+            local value = (newValue :: Utils.Gettable<T>).getValue()
             assertType(currentValue, value)
 
             currentValue = value
-            stopWatchingFunc = (newValue :: Utils.Ref<T>).watch(function(value)
+            stopWatchingFunc = (newValue :: Utils.Watchable<T>).watch(function(value)
                 currentValue = value
                 notifyWatchers()
             end)
@@ -303,7 +297,7 @@ function Ref.new<T>(value: T | Utils.Ref<T>): Utils.Ref<T>
     return ref
 end
 
-function Ref.transform<T, R>(originalRef: Watchable & Readable<T>, transformFn: (value: T) -> R): Utils.Ref<R>
+function Ref.transform<T, R>(originalRef: Utils.Watchable<T> & Utils.Gettable<T>, transformFn: (value: T) -> R): Utils.Ref<R>
     local newRef = Ref.new(transformFn(originalRef.getValue()))
 
     local unwatch = originalRef.watch(function(value)
@@ -315,7 +309,7 @@ function Ref.transform<T, R>(originalRef: Watchable & Readable<T>, transformFn: 
     return newRef
 end
 
-function Ref.computed<R>(computeFn: () -> R, dependsOn: {Utils.Ref<any>}): Utils.Ref<R>
+function Ref.computed<R>(computeFn: () -> R, dependsOn: {Utils.Watchable<any>}): Utils.Ref<R>
     local newRef = Ref.new(computeFn())
 
     local unwatchers: {() -> ()} = {}
@@ -336,7 +330,7 @@ function Ref.computed<R>(computeFn: () -> R, dependsOn: {Utils.Ref<any>}): Utils
     return newRef
 end
 
-function Ref.autoComputed<R>(computeFn: (use: <T>(Watchable & Readable<T>) -> T) -> R): Utils.Ref<R>
+function Ref.autoComputed<R>(computeFn: (use: <T>(Utils.Watchable<T> & Utils.Gettable<T>) -> T) -> R): Utils.Ref<R>
     local newRef = Ref.new(nil)
     local lastComputeRefs: {[Utils.Ref<any>]: () -> ()} = {}
     local newComputeRefs: {[Utils.Ref<any>]: boolean} = {}
@@ -475,6 +469,70 @@ end
 
 function Ref.reactive<T>(initialTable: T, isShallow: boolean?): T
     return createReactiveProxy(initialTable, isShallow)
+end
+
+--- Make protected Ref for places where value shouldn't be changed externally
+--- Also provides watch and unwatch functions for some cool functional
+function Ref.makeProtected<T>(
+    ref: Utils.Ref<T> | Utils.ProtectedRef<T>,
+    onWatch: () -> ()?,
+    onUnwatch: () -> ()?
+): Utils.ProtectedRef<T>
+    if ref._isProtected == true then
+        return ref
+    end
+
+    if protectedRefCache[ref] then
+        return protectedRefCache[ref]
+    end
+
+    local newProtectedRef = {}
+    newProtectedRef._typeName = "ref"
+    newProtectedRef._isProtected = true
+
+    function newProtectedRef.getValue(): any
+        return ref.getValue()
+    end
+
+    function newProtectedRef.notifyChanged(): any
+        return ref.notifyChanged()
+    end
+
+    function newProtectedRef.notifyImmediate(): any
+        return ref.notifyImmediate()
+    end
+
+    function newProtectedRef.watch(fn: Utils.RefWatchFn<any>, onUnwatchFn: () -> ()?): any
+        if onUnwatch then
+            if onUnwatchFn then
+                local originalOnUnwatchFn = onUnwatchFn
+                onUnwatchFn = function()
+                    originalOnUnwatchFn()
+                    if onUnwatch then
+                        onUnwatch()
+                    end
+                end
+            else
+                onUnwatchFn = onUnwatch
+            end
+        end
+
+        local unwatch = ref.watch(fn, onUnwatchFn)
+        if onWatch then
+            onWatch()
+        end
+
+        return unwatch
+    end
+
+    table.freeze(newProtectedRef)
+
+    protectedRefCache[ref] = newProtectedRef :: any
+    ref._addCleanup(function()
+        protectedRefCache[ref] = nil
+    end)
+
+    return newProtectedRef :: any
 end
 
 return Ref

@@ -3,6 +3,7 @@
 export type RefWatchFn<T> = (value: T) -> ...boolean?
 export type Ref<T> = {
     read _typeName: "ref",
+    read _isProtected: nil,
     read getValue: () -> T,
     read setValue: (value: T | Ref<T>, immediate: boolean?) -> (),
     read increaseValue: (number) -> (),
@@ -13,6 +14,23 @@ export type Ref<T> = {
     read destroy: () -> (),
 
     read _addCleanup: (() -> ()) -> ()
+}
+
+export type Gettable<T> = {
+    read getValue: () -> T,
+}
+
+export type Watchable<T> = {
+    read watch: (fn: RefWatchFn<T>, onUnwatch: () -> ()?) -> (() -> (), number),
+}
+
+export type ProtectedRef<T> = {
+    read _typeName: "ref",
+    read _isProtected: true,
+    read getValue: () -> T,
+    read notifyChanged: () -> (),
+    read notifyImmediate: () -> (),
+    read watch: (fn: RefWatchFn<T>, onUnwatch: () -> ()?) -> (() -> (), number),
 }
 
 export type Undefined = { read _typeName: "undefined" }
