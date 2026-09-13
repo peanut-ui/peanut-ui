@@ -596,10 +596,12 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
                 cleanups[#cleanups] = nil
             end
 
-            local counter = rbxPropertyWatching[key] or 0
-            rbxPropertyWatching[key] = counter - 1
+            if rbxLinkedProperties[key] then
+                local counter = rbxPropertyWatching[key] or 0
+                rbxPropertyWatching[key] = counter - 1
 
-            checkRbxPropertyEvent(key)
+                checkRbxPropertyEvent(key)
+            end
         end
 
         ref.setOnUnwatch(id, onUnwatch)
@@ -607,6 +609,35 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
         return unwatch
     end
     instance.observe = observe
+
+    function instance.getRef(key: string): Utils.ProtectedRef<any>
+        ensureNotDestroyed()
+
+        local ref = propertiesRefs[key]
+        if not ref then
+            ref = Ref.new(nil) :: Utils.Ref<any>
+            propertiesRefs[key] = ref
+        end
+
+        local onWatch: () -> ()? = nil
+        local onUnwatch: () -> ()? = nil
+        if rbxLinkedProperties[key] then
+            onWatch = function()
+                local counter = rbxPropertyWatching[key] or 0
+                rbxPropertyWatching[key] = counter + 1
+
+                checkRbxPropertyEvent(key)
+            end
+            onUnwatch = function()
+                local counter = rbxPropertyWatching[key] or 0
+                rbxPropertyWatching[key] = counter - 1
+
+                checkRbxPropertyEvent(key)
+            end
+        end
+
+        return Ref.makeProtected(ref, onWatch, onUnwatch)
+    end
 
     local function listen(name: string, callback: (...any) -> ...boolean?): () -> ()
         ensureNotDestroyed()

@@ -145,6 +145,7 @@ export type Interface<Props = DefaultProperties, Object = GuiObject, Events = De
     setProperty: <K>(key: K & KeyOf<Props>, value: Resolve<Props, K> | Utils.Ref<Resolve<Props, K>>) -> (),
     snapProperty: <K>(key: K & KeyOf<Props>, value: Resolve<Props, K> | Utils.Ref<Resolve<Props, K>>) -> (),
     getProperty: <K>(key: K & KeyOf<Props>) -> Resolve<Props, K>,
+    getRef: <K>(key: K & KeyOf<Props>) -> Utils.ProtectedRef<Resolve<Props, K>>,
     observe: <K>(key: K & KeyOf<Props>, callback: (newValue: Resolve<Props, K>) -> ...boolean?) -> (() -> ()),
     listen: <K>(name: K & KeyOf<Events>, callback: Resolve<Events, K>) -> (() -> ()),
 
