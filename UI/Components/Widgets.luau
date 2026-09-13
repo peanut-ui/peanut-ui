@@ -3,19 +3,12 @@
 const Widget = require(script.Parent.Parent.Classes.Widget)
 const WidgetClass = require(script.Parent.Parent.Types.Widget)
 const State = require(script.Parent.Parent.State)
+const RobloxTypes = require(script.Parent.Parent.Types.RobloxTypes)
 const TypeFuncs = require(script.Parent.Parent.Types.TypeFuncs)
 const Undefined = require(script.Parent.Parent.Utils.Undefined)
 
 export type Flatten<Table> = TypeFuncs.Flatten<Table>
 local defaultFontFace = Font.new("rbxasset://fonts/families/Roboto.json")
-
-export type CreateFn<
-    Object = GuiObject,
-    Props = WidgetClass.DefaultProperties,
-    Events = WidgetClass.DefaultEvents
-> = (
-    (WidgetClass.Args<Props, Object, Events>?) -> WidgetClass.Interface<Props, Object, Events>
-)
 
 export type CanvasGroupProps = Flatten<{
     groupColor: Color3,
@@ -118,6 +111,36 @@ export type ButtonEvents = Flatten<{
     SecondaryActivated: (obj: InputObject) -> ()
 } & WidgetClass.DefaultEvents>
 
+export type Frame = WidgetClass.Interface<WidgetClass.DefaultProperties, RobloxTypes.FrameObject>
+export type FrameArgs = WidgetClass.Args<WidgetClass.DefaultProperties, RobloxTypes.FrameObject>
+
+export type CanvasGroup = WidgetClass.Interface<CanvasGroupProps, RobloxTypes.CanvasGroupObject>
+export type CanvasGroupArgs = WidgetClass.Args<CanvasGroupProps, RobloxTypes.CanvasGroupObject>
+
+export type ImageLabel = WidgetClass.Interface<ImageProps, RobloxTypes.ImageLabelObject>
+export type ImageLabelArgs = WidgetClass.Args<ImageProps, RobloxTypes.ImageLabelObject>
+
+export type ImageButton = WidgetClass.Interface<ImageButtonProps, RobloxTypes.ImageButtonObject, ButtonEvents>
+export type ImageButtonArgs = WidgetClass.Args<ImageButtonProps, RobloxTypes.ImageButtonObject, ButtonEvents>
+
+export type TextButton = WidgetClass.Interface<TextButtonProps, RobloxTypes.TextButtonObject, ButtonEvents>
+export type TextButtonArgs = WidgetClass.Args<TextButtonProps, RobloxTypes.TextButtonObject, ButtonEvents>
+
+export type TextLabel = WidgetClass.Interface<TextProps, RobloxTypes.TextLabelObject>
+export type TextLabelArgs = WidgetClass.Args<TextProps, RobloxTypes.TextLabelObject>
+
+export type TextBox = WidgetClass.Interface<TextBoxProps, RobloxTypes.TextBoxObject>
+export type TextBoxArgs = WidgetClass.Args<TextBoxProps, RobloxTypes.TextBoxObject>
+
+export type ScrollingFrame = WidgetClass.Interface<ScrollingFrameProps, RobloxTypes.ScrollingFrameObject>
+export type ScrollingFrameArgs = WidgetClass.Args<ScrollingFrameProps, RobloxTypes.ScrollingFrameObject>
+
+export type ViewportFrame = WidgetClass.Interface<ViewportFrameProps, RobloxTypes.ViewportFrameObject>
+export type ViewportFrameArgs = WidgetClass.Args<ViewportFrameProps, RobloxTypes.ViewportFrameObject>
+
+export type VideoFrame = WidgetClass.Interface<VideoFrameProps, RobloxTypes.VideoFrameObject>
+export type VideoFrameArgs = WidgetClass.Args<VideoFrameProps, RobloxTypes.VideoFrameObject>
+
 local function linkProperties(
     widget: WidgetClass.Interface,
     properties: {[string]: string},
@@ -204,7 +227,7 @@ return {
         function()
             return Instance.new("Frame")
         end
-    ) :: CreateFn<Frame>,
+    ) :: (FrameArgs) -> Frame,
     CanvasGroup = createBasicObject(
         "canvasGroup",
         {
@@ -219,7 +242,7 @@ return {
             groupTransparency = "GroupTransparency",
             selectionImageObject = "SelectionImageObject",
         }
-    ) :: CreateFn<CanvasGroup, CanvasGroupProps>,
+    ) :: (CanvasGroupArgs) -> CanvasGroup,
     ImageLabel = createBasicObject(
         "imageLabel",
         {
@@ -256,7 +279,7 @@ return {
         { tileSize = State.scaleUDim2 },
         { isLoaded = true },
         { isLoaded = true }
-    ) :: CreateFn<ImageLabel, ImageProps>,
+    ) :: (ImageLabelArgs) -> ImageProps,
     ImageButton = createBasicObject(
         "imageButton",
         {
@@ -298,7 +321,7 @@ return {
         },
         { selected = true, isLoaded = true },
         { selected = true, isLoaded = true }
-    ) :: CreateFn<ImageButton, ImageButtonProps, ButtonEvents>,
+    ) :: (ImageButtonArgs) -> ImageButton,
     ScrollingFrame = createBasicObject(
         "scrollingFrame",
         {
@@ -338,7 +361,7 @@ return {
                 return State.scaleVector2(value, true)
             end
         }
-    ) :: CreateFn<ScrollingFrame, ScrollingFrameProps>,
+    ) :: (ScrollingFrameArgs) -> ScrollingFrame,
     TextLabel = createBasicObject(
         "textLabel",
         {
@@ -383,7 +406,7 @@ return {
         {
             textSize = State.scalePx,
         }
-    ) :: CreateFn<TextLabel, TextProps>,
+    ) :: (TextLabelArgs) -> TextLabel,
     TextButton = createBasicObject(
         "textButton",
         {
@@ -436,7 +459,7 @@ return {
         {
             textSize = State.scalePx,
         }
-    ) :: CreateFn<TextButton, TextButtonProps, ButtonEvents>,
+    ) :: (TextButtonArgs) -> TextButton,
     TextBox = createBasicObject(
         "textBox",
         {
@@ -497,7 +520,7 @@ return {
             cursorPosition = true,
             selectionStart = true
         }
-    ) :: CreateFn<TextBox, TextBoxProps>,
+    ) :: (TextBoxArgs) -> TextBox,
     ViewportFrame = createBasicObject(
         "viewportFrame",
         {
@@ -519,7 +542,7 @@ return {
             lightColor = "LightColor",
             lightDirection = "LightDirection",
         }
-    ) :: CreateFn<ViewportFrame, ViewportFrameProps>,
+    ) :: (ViewportFrameArgs) -> ViewportFrame,
     VideoFrame = createBasicObject(
         "videoFrame",
         {
@@ -551,5 +574,5 @@ return {
             playing = true,
             timePosition = true
         }
-    ) :: CreateFn<VideoFrame, VideoFrameProps>,
+    ) :: (VideoFrameArgs) -> VideoFrame,
 }
