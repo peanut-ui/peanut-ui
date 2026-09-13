@@ -526,7 +526,25 @@ Modifiers.components = {
             TileMode = "tileMode",
             Type = "type"
         },
-        {}
+        {
+            Color = function(_, getProp)
+                local color = getProp("color")
+                if typeof(color) == "Color3" then
+                    return ColorSequence.new(color)
+                end
+
+                return color
+            end,
+
+            Transparency = function(_, getProp)
+                local transparency = getProp("transparency")
+                if typeof(transparency) == "number" then
+                    return NumberSequence.new(transparency)
+                end
+
+                return transparency
+            end,
+        }
     ),
     shadow = createConstructor(
         "shadow",

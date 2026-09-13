@@ -57,11 +57,11 @@ export type Stroke = {
 
 export type Gradient = {
     enabled: boolean,
-    color: ColorSequence,
+    color: Color3 | ColorSequence,
     offset: Vector2,
     scale: number,
     rotation: number,
-    transparency: NumberSequence,
+    transparency: number | NumberSequence,
     tileMode: "Clamp" | "Mirror" | "Repeat",
     type: "Conical" | "Linear" | "Radial"
 }
