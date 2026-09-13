@@ -4,6 +4,7 @@ const Animations = require(script.Parent.Parent.Types.Animations)
 const Modifier = require(script.Parent.Parent.Types.Modifier)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const State = require(script.Parent.Parent.State)
+const Helpers = require(script.Parent.Parent.Utils.Helpers)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Utils.Ref)
 const Undefined = require(script.Parent.Parent.Utils.Undefined)
@@ -31,6 +32,7 @@ local function createModifier(
     modifier._componentName = name
 
     local object: UIComponent? = nil
+    local modifierComponents: {[string]: Modifier.Component} = {}
 
     local propertiesRefs: {[string]: Utils.Ref<any>} = {}
     local transitions: {[string]: Animations.Transition} = {}
@@ -177,7 +179,7 @@ local function createModifier(
             local newValue
             local fn = propertyCalcFn[rbxKey]
             if fn then
-                newValue = fn(modifier, modifier.getProperty)
+                newValue = fn(modifier :: any, modifier.getProperty)
             else
                 local property = linkedProperties[rbxKey]
                 if typeof(property) == "table" then
@@ -221,6 +223,10 @@ local function createModifier(
             ref.notifyImmediate()
         end
 
+        for _, modifier in pairs(modifierComponents) do
+            modifier._redraw()
+        end
+
         flush()
     end
 
@@ -239,6 +245,9 @@ local function createModifier(
         end
 
         (object :: UIComponent).Parent = to
+        for _, modifier in pairs(modifierComponents) do
+            modifier.mountTo(object :: UIComponent)
+        end
 
         redraw()
     end
@@ -276,14 +285,92 @@ local function createModifier(
         end
     end
 
+    local function setModifier(name: string, params: {[string]: any} | { {[string]: any} })
+        ensureNotDestroyed()
+
+        local modifierFactory: (props: {[string]: any}) -> Modifier.Component
+
+        do
+            local component = Modifiers.components[name]
+            if not component then return end
+
+            if typeof(component) == "string" then
+                component = Modifiers.components[component]
+                if not component or typeof(component) == "string" then
+                    return
+                end
+                modifierFactory = component
+            else
+                modifierFactory = component
+            end
+        end
+
+        if typeof(params) == "table" and typeof(params[1]) == "table" then
+            for i, config in ipairs(params :: { {[string]: any} }) do
+                local stackKey = `{name}_{i}`
+
+                if Helpers.removeUndefined(config) == nil then
+                    local component = modifierComponents[stackKey]
+                    if component then
+                        component.destroy()
+                        modifierComponents[stackKey] = nil
+                    end
+                    return
+                end
+
+                if not modifierComponents[stackKey] then
+                    local newMod = modifierFactory(config) :: any
+                    modifierComponents[stackKey] = newMod
+                    if object then
+                        -- Linter was screaming at me ;-;
+                        newMod.mountTo(object)
+                    end
+                else
+                    for k, v in pairs(config) do
+                        modifierComponents[stackKey].setProperty(k, v)
+                    end
+                end
+            end
+        else
+            local stackKey = `{name}_1`
+
+            if Helpers.removeUndefined(params) == nil then
+                local component = modifierComponents[stackKey]
+                if component then
+                    component.destroy()
+                    modifierComponents[stackKey] = nil
+                end
+                return
+            end
+
+            if not modifierComponents[stackKey] then
+                local newMod = modifierFactory(params :: {[string]: any}) :: any
+                modifierComponents[stackKey] = newMod
+                if object then newMod.mountTo(object) end
+            else
+                for k, v in pairs(params :: {[string]: any}) do
+                    modifierComponents[stackKey].setProperty(k, v)
+                end
+            end
+        end
+    end
+
+    modifier.setModifier = setModifier
+
+    function modifier.getModifier(name: string, index: number?)
+        return modifierComponents[`{name}_{index or 1}`]
+    end
+
     for key, value in pairs(properties) do
         if propertiesRefs[key] and propertiesRefs[key].getValue() then
             continue
         end
 
-        if typeof(value) == "table" then
-            value = table.clone(value)
+        if key == "gradient" then
+            setModifier("gradient", value)
+            continue
         end
+
         setProperty(key, value)
     end
 
@@ -304,10 +391,10 @@ local function createModifier(
     end
 
     if setupFn then
-        setupFn(modifier)
+        setupFn(modifier :: any)
     end
 
-    return table.freeze(modifier)
+    return table.freeze(modifier :: any)
 end
 
 local function createConstructor(
@@ -471,6 +558,8 @@ Modifiers.components = {
         "UIStroke",
         {
             enabled = true,
+            zIndex = 0,
+            transparency = 0,
             color = Color3.new(1, 1, 1),
             thicknessPx = 1,
             borderOffsetScale = 0,
@@ -503,6 +592,7 @@ Modifiers.components = {
             LineJoinMode = useEnum(Enum.LineJoinMode, "lineJoinMode"),
         }
     ),
+    strokes = "stroke",
     gradient = createConstructor(
         "gradient",
         "UIGradient",

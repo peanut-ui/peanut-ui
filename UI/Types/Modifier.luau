@@ -149,6 +149,9 @@ export type Component<Props = JustList> = {
 
     read setTransition: <K>(key: K & KeyOf<Props>, transition: Animations.Transition?) -> (),
 
+    read setModifier: <K>(name: string, params: JustList?) -> (),
+    read getModifier: <K>(name: string, index: number?) -> Component,
+
     read setProperty: <K>(key: K & KeyOf<Props>, value: Resolve<Props, K> | Utils.Ref<Resolve<Props, K>>) -> (),
     read snapProperty: <K>(key: K & KeyOf<Props>, value: Resolve<Props, K> | Utils.Ref<Resolve<Props, K>>) -> (),
     read getProperty: <K>(key: K & KeyOf<Props>) -> Resolve<Props, K>,
@@ -168,10 +171,11 @@ export type Modifiers = {
     flex: Partial<Flex>?,
     cornerRadius: Partial<CornerRadius>?,
     padding: Partial<Padding>?,
-    stroke: Partial<Stroke>?,
+    stroke: (Partial<Stroke> & { gradient: Partial<Gradient>? })?,
+    strokes: {Partial<Stroke> & { gradient: Partial<Gradient>? }}?,
     gradient: Partial<Gradient>?,
     shadow: Partial<Shadow>?,
-    shadows: {Partial<Shadow>}?,
+    shadows: { Partial<Shadow> }?,
 
     -- Layouts
     list: Partial<List>?,
