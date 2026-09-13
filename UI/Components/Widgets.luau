@@ -261,6 +261,7 @@ return {
         "imageButton",
         {
             name = "ImageButton",
+            imageContent = Undefined,
             imageColor = Color3.new(1, 1, 1),
             imageTransparency = 0,
             resampleMode = Enum.ResamplerMode.Default,
