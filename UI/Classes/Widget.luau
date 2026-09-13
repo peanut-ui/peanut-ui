@@ -942,16 +942,16 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
 
     instance.setModifier = setModifier
 
+    function instance.getModifier(name: string, index: number?)
+        return modifierComponents[`{name}_{index or 1}`]
+    end
+
     function instance._setObject(new: any)
         if instance._typeName == "widget" then
             logger.error("Function _setObject can be called only on custom widget-like type!")
         end
 
         object = new
-    end
-
-    function instance.getModifier(name: string, index: number?)
-        return modifierComponents[`{name}_{index or 1}`]
     end
 
     if args and args.properties then
