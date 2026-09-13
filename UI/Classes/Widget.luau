@@ -82,6 +82,9 @@ local function defaultSetup(widget: Widget.BaseInterface)
     link("backgroundColor", "BackgroundColor3")
     link("backgroundTransparency", "BackgroundTransparency")
 
+    link("automaticSize", "AutomaticSize")
+    link("sizeConstraint", "SizeConstraint")
+
     link("selectable", "Selectable")
     link("interactable", "Interactable")
     link("active", "Active")
