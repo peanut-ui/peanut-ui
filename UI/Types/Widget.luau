@@ -61,7 +61,9 @@ export type DefaultProperties = {
     position: Utils.Position,
     anchorPoint: Vector2,
     rotation: number,
+
     sizeConstraint: Enum.SizeConstraint,
+    automaticSize: Enum.AutomaticSize,
 
     selectable: boolean,
     interactable: boolean,

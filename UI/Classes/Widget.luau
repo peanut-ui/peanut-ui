@@ -31,7 +31,9 @@ local defaultProperties: Widget.DefaultProperties = {
     layoutOrder = 0,
     autoLayoutOrder = 0,
     rotation = 0,
+
     sizeConstraint = Enum.SizeConstraint.RelativeXY,
+    automaticSize = Enum.AutomaticSize.None,
 
     selectable = true,
     interactable = true,
@@ -845,6 +847,10 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
 
         for name, _ in pairs(linkedEvents) do
             checkLinkedEvent(name)
+        end
+
+        for key, _ in pairs(rbxPropertyWatching) do
+            checkRbxPropertyEvent(key)
         end
 
         for _, child in ipairs(children :: any) do
