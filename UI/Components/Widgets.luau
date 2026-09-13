@@ -4,6 +4,7 @@ const Widget = require(script.Parent.Parent.Classes.Widget)
 const WidgetClass = require(script.Parent.Parent.Types.Widget)
 const State = require(script.Parent.Parent.State)
 const TypeFuncs = require(script.Parent.Parent.Types.TypeFuncs)
+const Undefined = require(script.Parent.Parent.Utils.Undefined)
 
 export type Flatten<Table> = TypeFuncs.Flatten<Table>
 local defaultFontFace = Font.new("rbxasset://fonts/families/Roboto.json")
@@ -23,7 +24,7 @@ export type CanvasGroupProps = Flatten<{
 } & WidgetClass.DefaultProperties>
 
 export type ImageProps = Flatten<{
-    image: string,
+    imageContent: Content,
     imageColor: Color3,
     imageTransparency: number,
     resampleMode: Enum.ResamplerMode,
@@ -33,6 +34,7 @@ export type ImageProps = Flatten<{
     tileSize: UDim2,
     imageRectOffset: Vector2,
     imageRectSize: Vector2,
+    isLoaded: boolean,
 } & WidgetClass.DefaultProperties>
 
 export type ImageButtonProps = Flatten<{
@@ -120,14 +122,17 @@ local function linkProperties(
     widget: WidgetClass.Interface,
     properties: {[string]: string},
     transformFn: {[string]: (any) -> any}?,
-    syncWithObject: {[string]: boolean?}?
+    syncWithObject: {[string]: boolean?}?,
+    readonly: {[string]: boolean?}?
 )
     local link = (widget :: WidgetClass.InternalInterface)._linkProperty
     for name, property in properties do
         link(
-            name :: any, property,
+            name :: any,
+            property,
             transformFn and transformFn[name],
-            syncWithObject and syncWithObject[name]
+            syncWithObject and syncWithObject[name],
+            readonly and readonly[name]
         )
     end
 end
@@ -140,6 +145,7 @@ local function createBasicObject<T>(
     linkEvents: {string}?,
     transformFn: {[string]: (any) -> any}?,
     syncWithObject: {[string]: boolean?}?,
+    readonly: {[string]: boolean?}?,
     setupFn: (any) -> ()?
 ): (WidgetClass.Args) -> WidgetClass.Interface
     return function(args)
@@ -150,7 +156,7 @@ local function createBasicObject<T>(
             widget.createObject = createFn
 
             if linkedProperties then
-                linkProperties(widget, linkedProperties, transformFn, syncWithObject)
+                linkProperties(widget, linkedProperties, transformFn, syncWithObject, readonly)
             end
             if setupFn then
                 setupFn(widget)
@@ -218,17 +224,23 @@ return {
         "imageLabel",
         {
             name = "ImageLabel",
+            imageContent = Undefined,
             imageColor = Color3.new(1, 1, 1),
+            imageRectOffset = Vector2.zero,
+            imageRectSize = Vector2.zero,
+            tileSize = UDim2.new(1, 0, 1, 0),
             imageTransparency = 0,
             resampleMode = Enum.ResamplerMode.Default,
             scaleType = Enum.ScaleType.Stretch,
+            sliceCenter = Undefined,
             sliceScale = 1,
+            isLoaded = false,
         },
         function()
             return Instance.new("ImageLabel")
         end,
         {
-            image = "Image",
+            imageContent = "ImageContent",
             imageColor = "ImageColor3",
             imageTransparency = "ImageTransparency",
             resampleMode = "ResampleMode",
@@ -238,7 +250,12 @@ return {
             tileSize = "TileSize",
             imageRectOffset = "ImageRectOffset",
             imageRectSize = "ImageRectSize",
-        }
+            isLoaded = "IsLoaded",
+        },
+        nil,
+        { tileSize = State.scaleUDim2 },
+        { isLoaded = true },
+        { isLoaded = true }
     ) :: CreateFn<ImageLabel, ImageProps>,
     ImageButton = createBasicObject(
         "imageButton",
@@ -257,7 +274,7 @@ return {
             return Instance.new("ImageButton")
         end,
         {
-            image = "Image",
+            imageContent = "ImageContent",
             imageColor = "ImageColor3",
             imageTransparency = "ImageTransparency",
             hoverImage = "HoverImage",
@@ -272,10 +289,14 @@ return {
             autoButtonColor = "AutoButtonColor",
             modal = "Modal",
             selected = "Selected",
+            isLoaded = "IsLoaded",
         },
         {"Activated", "SecondaryActivated"},
-        { tileSize = State.scaleUDim2 },
-        { selected = true }
+        {
+            tileSize = State.scaleUDim2
+        },
+        { selected = true, isLoaded = true },
+        { selected = true, isLoaded = true }
     ) :: CreateFn<ImageButton, ImageButtonProps, ButtonEvents>,
     ScrollingFrame = createBasicObject(
         "scrollingFrame",
