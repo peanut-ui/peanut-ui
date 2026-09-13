@@ -577,7 +577,7 @@ Modifiers.components = {
             lineAlignment = "Automatic"
         },
         {
-            Gap = {"gapPx", "gapScale"},
+            Padding = {"gapPx", "gapScale"},
             FillDirection = "horizontal",
             SortOrder = "sortByName",
             Wraps = "wraps",
@@ -587,7 +587,7 @@ Modifiers.components = {
             ItemLineAlignment = "lineAlignment"
         },
         {
-            Gap = function(_, getProp)
+            Padding = function(_, getProp)
                 return UDim.new(
                     getProp("gapScale"),
                     State.scalePx(getProp("gapPx"))
