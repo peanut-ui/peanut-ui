@@ -87,7 +87,7 @@ export type List = {
     horizontalAlign: "Left" | "Center" | "Right",
     verticalAlign: "Top" | "Center" | "Bottom",
     horizontalFlex: "None" | "Fill" | "SpaceAround" | "SpaceBetween" | "SpaceEvenly",
-    itemLineAlign: "Auto" | "Center" | "End" | "Start" | "Stretch",
+    lineAlignment: "Automatic" | "Center" | "End" | "Start" | "Stretch",
 }
 
 export type Grid = {

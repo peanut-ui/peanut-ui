@@ -574,7 +574,7 @@ Modifiers.components = {
             horizontalAlign = "Left",
             verticalAlign = "Top",
             horizontalFlex = "None",
-            itemLineAlign = "Auto"
+            lineAlignment = "Automatic"
         },
         {
             Gap = {"gapPx", "gapScale"},
@@ -584,7 +584,7 @@ Modifiers.components = {
             HorizontalAlignment = "horizontalAlign",
             VerticalAlignment = "verticalAlign",
             HorizontalFlex = "horizontalFlex",
-            ItemLineAlignment = "itemLineAlign"
+            ItemLineAlignment = "lineAlignment"
         },
         {
             Gap = function(_, getProp)
@@ -596,7 +596,7 @@ Modifiers.components = {
             HorizontalAlignment = useEnum(Enum.HorizontalAlignment, "horizontalAlign"),
             VerticalAlignment = useEnum(Enum.VerticalAlignment, "verticalAlign"),
             HorizontalFlex = useEnum(Enum.UIFlexAlignment, "horizontalFlex"),
-            ItemLineAlignment = useEnum(Enum.ItemLineAlignment, "itemLineAlign"),
+            ItemLineAlignment = useEnum(Enum.ItemLineAlignment, "lineAlignment"),
             SortOrder = function(c)
                 return if c.getProperty("sortByName") then Enum.SortOrder.Name else Enum.SortOrder.LayoutOrder
             end,
