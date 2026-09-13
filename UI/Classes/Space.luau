@@ -127,7 +127,7 @@ local function createConstructor(
     registry: {[string]: any},
     createObjectFn: () -> LayerCollector,
     linkedProperties: {[string]: string},
-    defaultProperties: {[string]: any}
+    defaultProperties: any
 ): (string, {[string]: any}?) -> SpaceType.Interface
     return function(name, props)
         local properties = props and table.clone(props) or {}
