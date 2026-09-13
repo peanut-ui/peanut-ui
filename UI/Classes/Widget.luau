@@ -311,6 +311,8 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
     local function setProperty(key: string, value: any | Utils.Ref<any>)
         local ref = propertiesRefs[key]
 
+        value = Helpers.removeUndefined(value)
+
         if readonlyProperties[key] == true then
             logger.error("Cannot set readonly property")
         end
