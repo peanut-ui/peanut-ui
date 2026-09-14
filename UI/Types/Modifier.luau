@@ -152,6 +152,7 @@ export type Component<Props = JustList> = {
 
     read setTransition: <K>(key: K & KeyOf<Props>, transition: Animations.Transition?) -> (),
 
+    read getRef: <K>(key: K & KeyOf<Props>) -> Utils.ProtectedRef<Resolve<Props, K>>,
     read setModifier: <K>(name: string, params: JustList?) -> (),
     read getModifier: <K>(name: string, index: number?) -> Component,
 
