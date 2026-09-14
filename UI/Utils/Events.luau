@@ -56,7 +56,7 @@ function EventsClass.new(): Utils.Events
             end
 
             -- Context manager already got pcall >_<
-            local ok, result = ComponentContext.withNoContext(callback :: any)
+            local ok, result = ComponentContext.withNoContext(callback :: any, ...)
 
             if not ok or result == true then
                 listeners[event][callback] = nil
