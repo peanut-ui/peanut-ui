@@ -360,6 +360,10 @@ local function createModifier(
             modifier.mountTo(object :: UIComponent)
         end
 
+        for key, _ in pairs(rbxPropertyWatching) do
+            checkRbxPropertyEvent(key)
+        end
+
         redraw()
     end
 
