@@ -477,7 +477,7 @@ local function createModifier(
     end
 
     for key, value in pairs(properties) do
-        if propertiesRefs[key] and propertiesRefs[key].getValue() then
+        if propertiesRefs[key] and propertiesRefs[key].getValue() ~= nil then
             continue
         end
 

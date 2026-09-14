@@ -56,13 +56,10 @@ local function defaultSetup(widget: Widget.BaseInterface)
     local propertiesRefs = widget._propertiesRefs
 
     for key, value in pairs(defaultProperties) do
-        if propertiesRefs[key] and propertiesRefs[key].getValue() then
+        if propertiesRefs[key] and propertiesRefs[key].getValue() ~= nil then
             continue
         end
 
-        if typeof(value) == "table" then
-            value = table.clone(value)
-        end
         setProperty(key, value)
     end
 
