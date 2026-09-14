@@ -84,6 +84,7 @@ export type List = {
     horizontal: boolean,
     sortByName: boolean,
     wraps: boolean,
+    absoluteContentSize: Vector2,
     horizontalAlign: "Left" | "Center" | "Right",
     verticalAlign: "Top" | "Center" | "Bottom",
     horizontalFlex: "None" | "Fill" | "SpaceAround" | "SpaceBetween" | "SpaceEvenly",
@@ -98,6 +99,7 @@ export type Grid = {
     horizontal: boolean,
     sortByName: boolean,
     fillDirectionMaxCells: number,
+    absoluteContentSize: Vector2,
     horizontalAlign: "Left" | "Center" | "Right",
     verticalAlign: "Top" | "Center" | "Bottom",
     startCorner: "TopLeft" | "TopRight" | "BottomLeft" | "BottomRight"
@@ -106,6 +108,7 @@ export type Grid = {
 export type Table = {
     horizontal: boolean,
     sortByName: boolean,
+    absoluteContentSize: Vector2,
     horizontalAlign: "Left" | "Center" | "Right",
     verticalAlign: "Top" | "Center" | "Bottom",
     majorAxis: "RowMajor" | "ColumnMajor",

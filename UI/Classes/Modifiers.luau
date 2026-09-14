@@ -21,10 +21,17 @@ local function createModifier(
     properties: {[string]: any},
     linkedProperties: {[string]: {string} | string},
     propertyCalcFn: {[string]: (component: Modifier.Component, getProp: (string) -> any) -> any},
-    setupFn: (Modifier.Component) -> ()?
+    setupFn: (Modifier.Component) -> ()?,
+    rbxLinkBack_: {[string]: string}?,
+    rbxLinkBackTransform_: {[string]: (any) -> any}?
 ): Modifier.Component
     counter += 1
     local id = counter
+
+    local rbxLinkBack = rbxLinkBack_ or {}
+    local rbxPropertyEvent: {[string]: RBXScriptConnection} = {}
+    local rbxPropertyWatching: {[string]: number} = {}
+    local rbxPropertyTransform: {[string]: (any) -> any} = {}
 
     local modifier = {}
     modifier._typeName = "modifier"
@@ -121,8 +128,65 @@ local function createModifier(
         end
     end
 
+    local function syncRbxProperty(key: string)
+        local rbxKey = rbxLinkBack[key]
+        if not rbxKey then
+            return
+        end
+
+        local ref = propertiesRefs[key]
+        if not ref then
+            propertiesRefs[key] = Ref.new(nil)
+            ref = propertiesRefs[key]
+        end
+
+        local value = (object :: any)[rbxKey]
+
+        local transformFn = rbxPropertyTransform[key]
+        if transformFn then
+            value = transformFn(value)
+        end
+
+        ref.setValue(value, true)
+    end
+
+    local function checkRbxPropertyEvent(key: string)
+        if not object then
+            return
+        end
+
+        local rbxKey = rbxLinkBack[key]
+        if not rbxKey then
+            return
+        end
+
+        local counter = rbxPropertyWatching[key]
+        if counter and counter <= 0 then
+            rbxPropertyWatching[key] = nil
+            counter = nil
+        end
+
+        if counter == nil then
+            if rbxPropertyEvent[key] then
+                rbxPropertyEvent[key]:Disconnect()
+                rbxPropertyEvent[key] = nil
+
+                -- If signals are deferred it's better to sync property
+                syncRbxProperty(key)
+            end
+        elseif not rbxPropertyEvent[key] then
+            rbxPropertyEvent[key] = object:GetPropertyChangedSignal(rbxLinkBack[key]):Connect(function(value)
+                if object and transitions[key] and transitions[key].isRunning(object, rbxKey) then
+                    return
+                end
+                syncRbxProperty(key)
+            end)
+        end
+    end
+
     local function setProperty(key: string, value: any | Utils.Ref<any>)
         ensureNotDestroyed()
+
         local ref = propertiesRefs[key]
         if not ref then
             propertiesRefs[key] = Ref.new(value)
@@ -134,29 +198,76 @@ local function createModifier(
     modifier.setProperty = setProperty
     modifier.getProperty = getProperty
 
-    local function observe(key: string, callback: (newValue: any) -> ...boolean): () -> ()
+
+    local function observe(key: string, callback: (newValue: any) -> ...boolean?): () -> ()
         ensureNotDestroyed()
 
         local ref = propertiesRefs[key]
         if not ref then
-            propertiesRefs[key] = Ref.new(nil)
-            ref = propertiesRefs[key]
+            ref = Ref.new(nil)
+            propertiesRefs[key] = ref
         end
 
-        local unwatch = ref.watch(callback)
+        if rbxLinkBack[key] then
+            local counter = rbxPropertyWatching[key] or 0
+            rbxPropertyWatching[key] = counter + 1
+
+            checkRbxPropertyEvent(key)
+        end
+
+        local unwatch, id = ref.watch(callback)
         table.insert(cleanups, unwatch)
 
-        return function()
-            unwatch()
+        local function onUnwatch()
             local index = table.find(cleanups, unwatch)
             if index then
                 -- Swap and pop :3
                 cleanups[index] = cleanups[#cleanups]
                 cleanups[#cleanups] = nil
             end
+
+            if rbxLinkBack[key] then
+                local counter = rbxPropertyWatching[key] or 0
+                rbxPropertyWatching[key] = counter - 1
+
+                checkRbxPropertyEvent(key)
+            end
         end
+
+        ref.setOnUnwatch(id, onUnwatch)
+
+        return unwatch
     end
     modifier.observe = observe
+
+    function modifier.getRef(key: string): Utils.ProtectedRef<any>
+        ensureNotDestroyed()
+
+        local ref = propertiesRefs[key]
+        if not ref then
+            ref = Ref.new(nil) :: Utils.Ref<any>
+            propertiesRefs[key] = ref
+        end
+
+        local onWatch: () -> ()? = nil
+        local onUnwatch: () -> ()? = nil
+        if rbxLinkBack[key] then
+            onWatch = function()
+                local counter = rbxPropertyWatching[key] or 0
+                rbxPropertyWatching[key] = counter + 1
+
+                checkRbxPropertyEvent(key)
+            end
+            onUnwatch = function()
+                local counter = rbxPropertyWatching[key] or 0
+                rbxPropertyWatching[key] = counter - 1
+
+                checkRbxPropertyEvent(key)
+            end
+        end
+
+        return Ref.makeProtected(ref, onWatch, onUnwatch)
+    end
 
     function modifier._addCleanup(cleanup: RBXScriptConnection | () -> ())
         table.insert(cleanups, cleanup)
@@ -403,7 +514,9 @@ local function createConstructor(
     defaultProperties: {[string]: any},
     linkedProperties: {[string]: {string} | string},
     propertyCalcFn: {[string]: (component: Modifier.Component, getProp: (string) -> any) -> any},
-    setupFn: (Modifier.Component) -> ()?
+    setupFn: (Modifier.Component) -> ()?,
+    robloxLinkBack: {[string]: string}?,
+    robloxLinkBackTransform: {[string]: (any) -> any}?
 ): (properties: {[string]: any}) -> Modifier.Component
     table.freeze(defaultProperties)
     table.freeze(linkedProperties)
@@ -416,7 +529,16 @@ local function createConstructor(
             newProperties[key] = value
         end
 
-        return createModifier(name, className, newProperties, linkedProperties, propertyCalcFn)
+        return createModifier(
+            name,
+            className,
+            newProperties,
+            linkedProperties,
+            propertyCalcFn,
+            setupFn,
+            robloxLinkBack,
+            robloxLinkBackTransform
+        )
     end
 end
 
@@ -664,7 +786,8 @@ Modifiers.components = {
             horizontalAlign = "Left",
             verticalAlign = "Top",
             horizontalFlex = "None",
-            lineAlignment = "Automatic"
+            lineAlignment = "Automatic",
+            absoluteContentSize = Vector2.zero
         },
         {
             Padding = {"gapPx", "gapScale"},
@@ -693,6 +816,13 @@ Modifiers.components = {
             FillDirection = function(c)
                 return if c.getProperty("horizontal") then Enum.FillDirection.Horizontal else Enum.FillDirection.Vertical
             end
+        },
+        nil,
+        {
+            absoluteContentSize = "AbsoluteContentSize"
+        },
+        {
+            absoluteContentSize = State.scaleVector2
         }
     ),
     grid = createConstructor(
@@ -708,7 +838,8 @@ Modifiers.components = {
             fillDirectionMaxCells = 0,
             horizontalAlign = "Left",
             verticalAlign = "Top",
-            startCorner = "TopLeft"
+            startCorner = "TopLeft",
+            absoluteContentSize = Vector2.zero
         },
         {
             CellPadding = {"cellGapPx", "cellGapScale"},
@@ -746,6 +877,13 @@ Modifiers.components = {
             SortOrder = function(c)
                 return if c.getProperty("sortByName") then Enum.SortOrder.Name else Enum.SortOrder.LayoutOrder
             end
+        },
+        nil,
+        {
+            absoluteContentSize = "AbsoluteContentSize"
+        },
+        {
+            absoluteContentSize = State.scaleVector2
         }
     ),
     table = createConstructor(
@@ -758,7 +896,8 @@ Modifiers.components = {
             verticalAlign = "Top",
             majorAxis = "RowMajor",
             gapPx = Vector2.zero,
-            gapScale = Vector2.zero
+            gapScale = Vector2.zero,
+            absoluteContentSize = Vector2.zero
         },
         {
             FillDirection = "horizontal",
@@ -786,6 +925,13 @@ Modifiers.components = {
             SortOrder = function(c)
                 return if c.getProperty("sortByName") then Enum.SortOrder.Name else Enum.SortOrder.LayoutOrder
             end
+        },
+        nil,
+        {
+            absoluteContentSize = "AbsoluteContentSize"
+        },
+        {
+            absoluteContentSize = State.scaleVector2
         }
     ),
     aspectRatio = createConstructor(
