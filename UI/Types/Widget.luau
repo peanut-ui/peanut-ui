@@ -181,14 +181,14 @@ export type InternalInterface<Props = DefaultProperties, Object = GuiObject, Eve
     Interface<Props, Object, Events> &
     InternalFunctions<Props, Object, Events>
 
-export type Args<Props = DefaultProperties, Object = GuiObject, Events = DefaultEvents> = {
+export type Args<Props = DefaultProperties, Widget = Interface, Events = DefaultEvents> = {
     children: {any}?,
     properties: Partial<UnionProperties<Props, Utils.Ref<any>>>?,
     events: Partial<UnionProperties<Events, Utils.Ref<any>>>?,
     transitions: {[keyof<Props>]: Animations.Transition}?,
     modifiers: Modifier.Modifiers?,
-    onSetup: (widget: Interface<Props, Object, Events>) -> ()?,
-    defaultSetupOverride: (widget: Interface<Props, Object, Events>, defaultFn: (widget: Interface<Props, Object, Events>) -> ()) -> ()?,
+    onSetup: (widget: Widget) -> ()?,
+    defaultSetupOverride: (widget: Widget, defaultFn: (widget: Widget) -> ()) -> ()?,
     widgetName: string?
 }
 

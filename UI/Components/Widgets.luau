@@ -112,34 +112,34 @@ export type ButtonEvents = Flatten<{
 } & WidgetClass.DefaultEvents>
 
 export type Frame = WidgetClass.Interface<WidgetClass.DefaultProperties, RobloxTypes.FrameObject>
-export type FrameArgs = WidgetClass.Args<WidgetClass.DefaultProperties, RobloxTypes.FrameObject>
+export type FrameArgs = WidgetClass.Args<WidgetClass.DefaultProperties, Frame>
 
 export type CanvasGroup = WidgetClass.Interface<CanvasGroupProps, RobloxTypes.CanvasGroupObject>
-export type CanvasGroupArgs = WidgetClass.Args<CanvasGroupProps, RobloxTypes.CanvasGroupObject>
+export type CanvasGroupArgs = WidgetClass.Args<CanvasGroupProps, CanvasGroup>
 
 export type ImageLabel = WidgetClass.Interface<ImageProps, RobloxTypes.ImageLabelObject>
-export type ImageLabelArgs = WidgetClass.Args<ImageProps, RobloxTypes.ImageLabelObject>
+export type ImageLabelArgs = WidgetClass.Args<ImageProps, ImageLabel>
 
 export type ImageButton = WidgetClass.Interface<ImageButtonProps, RobloxTypes.ImageButtonObject, ButtonEvents>
-export type ImageButtonArgs = WidgetClass.Args<ImageButtonProps, RobloxTypes.ImageButtonObject, ButtonEvents>
+export type ImageButtonArgs = WidgetClass.Args<ImageButtonProps, ImageButton, ButtonEvents>
 
 export type TextButton = WidgetClass.Interface<TextButtonProps, RobloxTypes.TextButtonObject, ButtonEvents>
-export type TextButtonArgs = WidgetClass.Args<TextButtonProps, RobloxTypes.TextButtonObject, ButtonEvents>
+export type TextButtonArgs = WidgetClass.Args<TextButtonProps, TextButton, ButtonEvents>
 
 export type TextLabel = WidgetClass.Interface<TextProps, RobloxTypes.TextLabelObject>
-export type TextLabelArgs = WidgetClass.Args<TextProps, RobloxTypes.TextLabelObject>
+export type TextLabelArgs = WidgetClass.Args<TextProps, TextLabel>
 
 export type TextBox = WidgetClass.Interface<TextBoxProps, RobloxTypes.TextBoxObject>
-export type TextBoxArgs = WidgetClass.Args<TextBoxProps, RobloxTypes.TextBoxObject>
+export type TextBoxArgs = WidgetClass.Args<TextBoxProps, TextBox>
 
 export type ScrollingFrame = WidgetClass.Interface<ScrollingFrameProps, RobloxTypes.ScrollingFrameObject>
-export type ScrollingFrameArgs = WidgetClass.Args<ScrollingFrameProps, RobloxTypes.ScrollingFrameObject>
+export type ScrollingFrameArgs = WidgetClass.Args<ScrollingFrameProps, ScrollingFrame>
 
 export type ViewportFrame = WidgetClass.Interface<ViewportFrameProps, RobloxTypes.ViewportFrameObject>
-export type ViewportFrameArgs = WidgetClass.Args<ViewportFrameProps, RobloxTypes.ViewportFrameObject>
+export type ViewportFrameArgs = WidgetClass.Args<ViewportFrameProps, ViewportFrame>
 
 export type VideoFrame = WidgetClass.Interface<VideoFrameProps, RobloxTypes.VideoFrameObject>
-export type VideoFrameArgs = WidgetClass.Args<VideoFrameProps, RobloxTypes.VideoFrameObject>
+export type VideoFrameArgs = WidgetClass.Args<VideoFrameProps, VideoFrame>
 
 local function linkProperties(
     widget: WidgetClass.Interface,
