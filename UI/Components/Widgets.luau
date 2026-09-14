@@ -232,6 +232,7 @@ return {
         "canvasGroup",
         {
             groupColor = Color3.new(1, 1, 1),
+            selectionImageObject = Undefined,
             groupTransparency = 0,
         },
         function()
@@ -537,6 +538,7 @@ return {
             ambient = Color3.new(1, 1, 1),
             lightColor = Color3.new(1, 1, 1),
             lightDirection = Vector3.new(0, 1, -1),
+            currentCamera = Undefined
         },
         function()
             return Instance.new("ViewportFrame")
@@ -554,6 +556,7 @@ return {
         "videoFrame",
         {
             name = "VideoFrame",
+            video = Undefined,
             playing = false,
             looped = true,
             volume = 1,
