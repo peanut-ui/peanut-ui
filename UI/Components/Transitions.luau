@@ -4,20 +4,20 @@ const Ease = require(script.Parent.Parent.Engines.Ease)
 const Animations = require(script.Parent.Parent.Types.Animations)
 const Curves = require(script.Parent.Parent.Utils.Curves)
 const Logging = require(script.Parent.Parent.Utils.Logging)
+const Spring = require(script.Parent.Parent.Engines.Spring)
 
 local logger = Logging.getLogger("PeanutUI.Components.Transitions")
 local Transitions = {}
 
 function Transitions.Spring(
-    dampingRation: number,
+    dampingRatio: number,
     frequency: number
 ): Animations.Transition
-    const Spring = require(script.Parent.Parent.Engines.Spring)
     local transition = {}
     transition._typeName = "transition" :: "transition"
 
     function transition.animate(obj: Instance, property: string, to: any)
-        Spring.target(obj, dampingRation, frequency, { [property] = to })
+        Spring.target(obj, dampingRatio, frequency, { [property] = to })
     end
 
     function transition.stop(obj: Instance, property: string)
