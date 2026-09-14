@@ -20,9 +20,11 @@ type WidgetLike = {
 function Scaling.simpleScale(
     referenceObject: WidgetLike | GuiObject | ScreenGui | any,
     referenceResolution: Vector2,
-    roundScale: boolean?
+    floorScale: boolean?,
+    minScale: number?,
+    maxScale: number?
 )
-    roundScale = if roundScale == nil then false else true
+    floorScale = floorScale == true
 
     local unwatchObjectCreation: () -> ()? = nil
     local objectConnection: RBXScriptConnection? = nil
@@ -36,16 +38,31 @@ function Scaling.simpleScale(
             return
         end
 
+        local size = object.AbsoluteSize
         scale = getScale(
-            object.AbsoluteSize,
+            size,
             referenceResolution
         )
-        print(scale, object.AbsoluteSize.X, object.AbsoluteSize.Y)
-        if roundScale == true then
+
+        if size.X <= 0 or size.Y <= 0 then
+            scale = 1
+            return
+        end
+
+        if floorScale == true then
             scale = math.max(
-                1, math.round(scale)
+                minScale or 1, math.floor(scale)
             )
         end
+
+        if minScale then
+            scale = math.max(minScale, scale)
+        end
+
+        if maxScale then
+            scale = math.min(scale, maxScale)
+        end
+
         State.onScaleChanged()
     end
 
