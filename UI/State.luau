@@ -36,6 +36,7 @@ local registeredWidgets: {[number]: Widget.Interface} = {}
 local scaleFunction = function(px: number, getOriginal: boolean?)
     return px
 end
+local stopScale: () -> ()? = nil
 
 setmetatable(registeredWidgets, { __mode = "v" })
 
@@ -113,8 +114,31 @@ function State.scalePx(px: number, getOriginal: boolean?): number
     return scaleFunction(px, getOriginal)
 end
 
-function State.setScaleFunction(fn: (px: number, getOriginal: boolean?) -> number)
-    scaleFunction = fn
+type ScaleFn = (px: number, getOriginal: boolean?) -> number
+function State.setScaleFunction(
+    fn: ScaleFn | {
+        fn: ScaleFn,
+        stop: () -> ()
+    }
+)
+    if stopScale then
+        stopScale()
+        stopScale = nil
+    end
+
+    if typeof(fn) == "function" then
+        scaleFunction = fn
+    elseif typeof(fn) == "table" then
+        scaleFunction = fn.fn
+        stopScale = fn.stop
+    else
+        logger.error("Type for scale function was not table or number!")
+    end
+end
+
+function State.onScaleChanged()
+    -- TODO: Update only properties that depend on scale
+    State.redrawAll()
 end
 
 function State.redrawAll()
