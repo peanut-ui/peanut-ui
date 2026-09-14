@@ -235,6 +235,7 @@ function Ease.target(object: Instance, property: string, to: any, duration: numb
 
     if duration == 0 then
         (object :: any)[property] = to
+        return
     end
 
     local state = objectsState[object]
