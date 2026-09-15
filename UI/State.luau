@@ -1,7 +1,10 @@
 --!strict
 --!optimize 2
+const UserInputService = game:GetService("UserInputService")
+const Utils = require(script.Parent.Types.Utils)
 const Widget = require(script.Parent.Types.Widget)
 const Logging = require(script.Parent.Utils.Logging)
+const Ref = require(script.Parent.Utils.Ref)
 const Signals = require(script.Parent.Utils.Signals)
 
 local uiVersion = {
@@ -24,9 +27,31 @@ const logger = Logging.getLogger("PeanutUI.State")
 
 local State = {}
 
+local input = Ref.new("unknown") :: Utils.Ref<"gamepad" | "desktop" | "touch">
+
+do
+    local inputMap = {
+        [Enum.PreferredInput.Gamepad] = "gamepad",
+        [Enum.PreferredInput.KeyboardAndMouse] = "desktop",
+        [Enum.PreferredInput.MicroGamepad] = "gamepad",
+        [Enum.PreferredInput.Touch] = "touch",
+    }
+
+    local function updateInputType()
+        input.setValue(inputMap[UserInputService.PreferredInput])
+    end
+
+    UserInputService
+        :GetPropertyChangedSignal("PreferredInput")
+        :Connect(updateInputType)
+
+    updateInputType()
+end
+
 State.Version = uiVersion
 State.VersionString = buildVersion()
 
+State.preferredInput = input
 State.signals = Signals.new()
 
 local registeredWidgets: {[number]: Widget.BaseInterface} = {}
