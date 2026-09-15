@@ -283,7 +283,7 @@ export type Args<Props = DefaultProperties, Widget = Interface, Events = Default
     transitions: {[keyof<Props>]: Animations.Transition}?,
     modifiers: Modifier.Modifiers?,
     onSetup: (widget: Widget) -> ()?,
-    defaultSetupOverride: (widget: Widget, defaultFn: (widget: Widget) -> ()) -> ()?,
+    defaultSetupOverride: (Utils.Undefined | (widget: Widget, defaultFn: (widget: Widget) -> ()) -> ())?,
     widgetName: string?
 }
 

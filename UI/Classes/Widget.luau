@@ -1161,8 +1161,10 @@ function WidgetClass.new<C>(
     end
 
     local setupOverride = args and args.defaultSetupOverride
-    if setupOverride then
-        setupOverride(instance :: any, defaultSetup :: any)
+    if setupOverride == Undefined then
+        -- Nothing
+    elseif setupOverride then
+        (setupOverride :: any)(instance :: any, defaultSetup :: any)
     else
         defaultSetup(instance :: any)
     end

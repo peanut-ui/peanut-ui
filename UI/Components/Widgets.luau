@@ -4,6 +4,7 @@ const Widget = require(script.Parent.Parent.Classes.Widget)
 const WidgetClass = require(script.Parent.Parent.Types.Widget)
 const RobloxTypes = require(script.Parent.Parent.Types.RobloxTypes)
 const TypeFuncs = require(script.Parent.Parent.Types.TypeFuncs)
+const Helpers = require(script.Parent.Parent.Utils.Helpers)
 const Undefined = require(script.Parent.Parent.Utils.Undefined)
 
 export type Flatten<Table> = TypeFuncs.Flatten<Table>
@@ -215,10 +216,10 @@ local function createBasicObject<T>(
             end
         end
 
-        local originalOverride = argsCopy.defaultSetupOverride
+        local originalOverride = Helpers.removeUndefined(argsCopy.defaultSetupOverride)
         argsCopy.defaultSetupOverride = function(widget: any, defaultSetup)
             if originalOverride then
-                originalOverride(widget, setup)
+                (originalOverride :: any)(widget, setup)
                 return
             end
 
