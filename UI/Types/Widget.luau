@@ -174,39 +174,16 @@ type UnsupportedFn = (...never) -> ...never
 
 -- Similar to <template> in Vue.js
 export type Box = {
-    _typeName: "box",
     _boxName: string,
-    _widgetName: string,
-    _uniqueId: number,
-    _features: {[string]: boolean},
 
-    setModifier: UnsupportedFn,
-    getModifier: UnsupportedFn,
-
-    setProperty: UnsupportedFn,
-    setTransition: UnsupportedFn,
-    snapProperty: UnsupportedFn,
-    getProperty: UnsupportedFn,
-    observe: UnsupportedFn,
-    listen: UnsupportedFn,
-
-    setParent: (parent: WidgetLike) -> (),
-    getParent: () -> BaseInterface,
-
-    addChild: (child: WidgetLike) -> (),
-    removeChild: (child: WidgetLike, andDestroy: boolean?) -> (),
-    clearChildren: () -> (),
-    children: {BaseInterface},
-
-    isImplemented: (field: string) -> boolean,
-
-    _setParent: (parent: BaseInterface?) -> (),
     _createObject: () -> GuiObject?,
     _redraw: () -> (),
     _addCleanup: (RBXScriptConnection | () -> ()) -> (),
 
-    getGuiObject: () -> Object?,
-}
+    getGuiObject: () -> Instance?,
+} & WidgetLike
+    & ParentingFeature
+    & ChildrenFeature
 
 export type BaseInterface = {
     _setCreateObject: (() -> Instance?) -> (),
