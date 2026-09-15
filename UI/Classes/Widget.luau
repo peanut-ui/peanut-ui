@@ -172,6 +172,11 @@ end
 WidgetClass.isWidget = isWidget
 WidgetClass.widgetsAreSame = widgetsAreSame
 
+function WidgetClass.getNewId(): number
+    counter += 1
+    return counter
+end
+
 -- Inspired by Rust
 function WidgetClass.tryInto(obj: any): Widget.Interface?
     if isWidget(obj) then
@@ -228,13 +233,12 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
     -- So redraw doesn't start any transitions
     local inRedrawMode = false
 
-    local instance = {
-        _typeName = "widget",
-        _widgetName = args and args.widgetName or "widget",
-        _uniqueId = id,
-        _propertiesRefs = propertiesRefs,
-        children = readonly(children),
-    }
+    local instance = {}
+    instance._typeName = "widget"
+    instance._widgetName = args and args.widgetName or "widget"
+    instance._uniqueId = id
+    instance._propertiesRefs = propertiesRefs
+    instance.children = readonly(children)
 
     local function ensureNotDestroyed()
         if isDestroyed then
