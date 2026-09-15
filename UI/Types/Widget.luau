@@ -252,7 +252,7 @@ export type InternalFunctions<Props = DefaultProperties, Object = GuiObject, Eve
     ) -> (),
     _linkEvent: <K>(name: K & KeyOf<Events>, event: string?) -> (),
     _setParent: (parent: Interface?) -> (),
-    _createObject: () -> Object?,
+    _createObject: () -> (),
     _redraw: () -> (),
     _addCleanup: (RBXScriptConnection | () -> ()) -> (),
     _propertiesRefs: {[string]: Utils.Ref<any>},

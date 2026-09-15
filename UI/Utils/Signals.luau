@@ -5,6 +5,7 @@
 const ComponentContext = require(script.Parent.ComponentContext)
 const Logging = require(script.Parent.Logging)
 const Utils = require(script.Parent.Parent.Types.Utils)
+const Scheduler = require(script.Parent.Scheduler)
 
 local logger = Logging.getLogger("PeanutUI.Utils.Signals")
 
@@ -26,7 +27,7 @@ function SignalsClass.new(): Utils.Signals
         if scheduled then return end
         scheduled = true
 
-        task.defer(function()
+        Scheduler.schedule("signals", function()
             scheduled = false
 
             local scheduled = table.clone(scheduledSignals)

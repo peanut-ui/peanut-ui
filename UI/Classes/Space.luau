@@ -131,7 +131,7 @@ local function newSpace(
             widget._isSpaceLike = true
 
             widget._createObject = function()
-                return nil
+                return
             end
 
             local newObject = createObjectFn()

@@ -89,7 +89,6 @@ function Animation.start(object: Instance, step: Step, state: any?)
         end
 
         objectState[step] = state
-        print("START STATE", objectState[step])
     end
 
     animations[step] = true
@@ -127,7 +126,6 @@ function Animation.stop(object: Instance, step: Step?)
 
         local objectState = stepStates[object]
         if objectState then
-            print("STOP STATE", objectState[step])
             objectState[step] = nil
             if next(objectState) == nil then
                 stepStates[object] = nil

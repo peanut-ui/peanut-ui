@@ -12,6 +12,7 @@ const State = require(script.Parent.Parent.State)
 const Helpers = require(script.Parent.Parent.Utils.Helpers)
 const Units = require(script.Parent.Parent.Utils.Units)
 const Ref = require(script.Parent.Parent.Utils.Ref)
+const Scheduler = require(script.Parent.Parent.Utils.Scheduler)
 const Undefined = require(script.Parent.Parent.Utils.Undefined)
 
 const logger = Logging.getLogger("PeanutUI.Classes.Widget")
@@ -480,11 +481,10 @@ function WidgetClass.new<C>(
             if features.animations then
                 ref.watch(function()
                     local propertyAnimation = propertyToAnimation[key]
-                    print(propertyAnimation)
 
                     if object and propertyAnimation and propertyAnimation.isRunning(object) then
                         propertyAnimation.stop(object)
-                        task.defer(function()
+                        Scheduler.schedule("redraw", function()
                             if not object or propertyAnimation ~= propertyToAnimation[key] then
                                 return
                             end
@@ -792,7 +792,7 @@ function WidgetClass.new<C>(
         return object
     end
 
-    local function redraw()
+    local function redrawNow()
         ensureNotDestroyed()
 
         inRedrawMode = true
@@ -823,6 +823,16 @@ function WidgetClass.new<C>(
         inRedrawMode = false
     end
 
+    local redrawScheduled = false
+    local function redraw()
+        if redrawScheduled then return end
+        redrawScheduled = true
+
+        Scheduler.schedule("redraw", function(...)
+            redrawScheduled = false
+            redrawNow()
+        end)
+    end
     instance._redraw = redraw
 
     local createObjectFn = nil :: (() -> Instance)?
@@ -839,59 +849,65 @@ function WidgetClass.new<C>(
         createObjectFn = fn
     end
 
-    function instance._createObject(): Instance?
+    local objectCreationScheduled = false
+    function instance._createObject()
         ensureNotDestroyed()
         if object then
-            return object
+            return
         end
 
-        logger.debug("[%s %d] _createObject is called", instance._widgetName, id)
+        if objectCreationScheduled then return end
+        objectCreationScheduled = true
 
-        if not createObjectFn then
-            logger.debug("[%s %d] _createObject skipped (no create function)", instance._widgetName, id)
-            return nil
-        end
+        Scheduler.schedule("createObject", function(...)
+            logger.debug("[%s %d] _createObject is called", instance._widgetName, id)
 
-        if not getProperty("visible") or not parent or not parent.getGuiObject() then
-            logger.debug("[%s %d] _createObject skipped (not visible)", instance._widgetName, id)
-            -- Not creating object when it's not needed
-            return nil
-        end
+            if not createObjectFn then
+                logger.debug("[%s %d] _createObject skipped (no create function)", instance._widgetName, id)
+                return
+            end
 
-        logger.debug("[%s %d] _createObject is creating new object", instance._widgetName, id)
-        local newObject = createObjectFn()
-        object = newObject
+            if not getProperty("visible") or not parent or not parent.getGuiObject() then
+                logger.debug("[%s %d] _createObject skipped (not visible)", instance._widgetName, id)
+                -- Not creating object when it's not needed
+                return
+            end
 
-        if newObject and parent and parent.getGuiObject() then
-            newObject.Parent = parent.getGuiObject()
-            newObject:SetAttribute("_uniqueId", id)
-        end
-        redraw()
+            logger.debug("[%s %d] _createObject is creating new object", instance._widgetName, id)
+            local newObject = createObjectFn()
+            object = newObject
+            objectCreationScheduled = false
 
-        for name, _ in pairs(linkedEvents) do
-            checkLinkedEvent(name)
-        end
+            if newObject and parent and parent.getGuiObject() then
+                newObject.Parent = parent.getGuiObject()
+                newObject:SetAttribute("_uniqueId", id)
+            end
 
-        for key, _ in pairs(rbxPropertyWatching) do
-            checkRbxPropertyEvent(key)
-        end
+            for name, _ in pairs(linkedEvents) do
+                checkLinkedEvent(name)
+            end
+
+            for key, _ in pairs(rbxPropertyWatching) do
+                checkRbxPropertyEvent(key)
+            end
+
+            for _, modifier in pairs(modifierComponents) do
+                modifier.mountTo(newObject)
+            end
+
+            for _, animation in pairs(animations) do
+                animation.animate(newObject)
+            end
+
+            events.fire("GuiObjectCreated", newObject)
+            logger.debug("[%s %d] _createObject created object", instance._widgetName, id)
+
+            redrawNow()
+        end)
 
         for _, child in ipairs(children :: any) do
             child._createObject()
         end
-
-        for _, modifier in pairs(modifierComponents) do
-            modifier.mountTo(newObject)
-        end
-
-        for _, animation in pairs(animations) do
-            animation.animate(newObject)
-        end
-
-        events.fire("GuiObjectCreated", newObject)
-        logger.debug("[%s %d] _createObject created object", instance._widgetName, id)
-
-        return object
     end
     -- widget: object -- end --
 

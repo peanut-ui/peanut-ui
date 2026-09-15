@@ -3,6 +3,7 @@
 const ComponentContext = require(script.Parent.ComponentContext)
 const Logging = require(script.Parent.Logging)
 const Utils = require(script.Parent.Parent.Types.Utils)
+const Scheduler = require(script.Parent.Scheduler)
 const Undefined = require(script.Parent.Undefined)
 
 const logger = Logging.getLogger("PeanutUI.Utils.Ref")
@@ -161,7 +162,7 @@ function Ref.new<T>(value: T | Utils.Ref<T> | Utils.ProtectedRef<T>): Utils.Ref<
         if scheduled then return end
         scheduled = true
 
-        task.defer(function()
+        Scheduler.schedule("refs", function()
             scheduled = false
             notifyImmediate()
         end)

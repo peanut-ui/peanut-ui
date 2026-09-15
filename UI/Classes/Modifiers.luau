@@ -6,6 +6,7 @@ const Utils = require(script.Parent.Parent.Types.Utils)
 const Helpers = require(script.Parent.Parent.Utils.Helpers)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Utils.Ref)
+const Scheduler = require(script.Parent.Parent.Utils.Scheduler)
 const Undefined = require(script.Parent.Parent.Utils.Undefined)
 const Units = require(script.Parent.Parent.Utils.Units)
 
@@ -325,7 +326,7 @@ local function createModifier(
         if scheduled then return end
         scheduled = true
 
-        task.defer(function()
+        Scheduler.schedule("redraw", function()
             scheduled = false
             if destroyed then return end
 
