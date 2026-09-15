@@ -56,6 +56,7 @@ local defaultWidget = {
 
     setParent = unsupportedFn,
     getParent = unsupportedFn,
+    getSpace = unsupportedFn,
 
     addChild = unsupportedFn,
     removeChild = unsupportedFn,
@@ -71,6 +72,7 @@ local defaultWidget = {
     _addCleanup = unsupportedFn,
     _propertiesRefs = unsupportedList,
     _setObject = unsupportedFn,
+    _setSpace = unsupportedFn,
 
     getGuiObject = unsupportedFn,
     isImplemented = function(...)
