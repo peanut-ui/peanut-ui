@@ -20,16 +20,12 @@ function Transitions.Spring(
         Spring.target(obj, dampingRatio, frequency, { [property] = to })
     end
 
-    function transition.stop(obj: Instance, property: string)
+    function transition.stop(obj: Instance, property: string?)
         Spring.stop(obj, property)
     end
 
     function transition.isRunning(obj: Instance, property: string): boolean
         return Spring.isAnimating(obj, property)
-    end
-
-    function transition.stopAll(obj: Instance)
-        Spring.stop(obj)
     end
 
     return table.freeze(transition)
@@ -57,7 +53,7 @@ function Transitions.Ease(
         Ease.target(obj, property, to, duration, curveFn)
     end
 
-    function transition.stop(obj: Instance, property: string)
+    function transition.stop(obj: Instance, property: string?)
         Ease.stop(obj, property)
     end
 
@@ -65,9 +61,6 @@ function Transitions.Ease(
         return Ease.isAnimating(obj, property)
     end
 
-    function transition.stopAll(obj: Instance)
-        Ease.stop(obj)
-    end
 
     return table.freeze(transition)
 end
@@ -88,16 +81,12 @@ function Transitions.EaseCubicBezier(
         Ease.target(obj, property, to, duration, curveFn)
     end
 
-    function transition.stop(obj: Instance, property: string)
+    function transition.stop(obj: Instance, property: string?)
         Ease.stop(obj, property)
     end
 
     function transition.isRunning(obj: Instance, property: string): boolean
         return Ease.isAnimating(obj, property)
-    end
-
-    function transition.stopAll(obj: Instance)
-        Ease.stop(obj)
     end
 
     return table.freeze(transition)

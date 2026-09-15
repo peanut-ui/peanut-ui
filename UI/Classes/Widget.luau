@@ -435,7 +435,7 @@ function WidgetClass.new<C>(
 
         if object then
             for _, transition in pairs(transitions) do
-                transition.stopAll(object)
+                transition.stop(object)
             end
         end
         table.clear(transitions)
