@@ -20,7 +20,7 @@ local counter = 1
 local WidgetClass = {}
 
 local unsupportedList = table.freeze({})
-local function unsupportedFn()
+local function unsupportedFn(...: never): ...never
     logger.error("Looks like this class didn't implement this function")
 end
 
@@ -46,6 +46,7 @@ local defaultWidget = {
 
     setModifier = unsupportedFn,
     getModifier = unsupportedFn,
+    getRef = unsupportedFn,
 
     setProperty = unsupportedFn,
     snapProperty = unsupportedFn,
