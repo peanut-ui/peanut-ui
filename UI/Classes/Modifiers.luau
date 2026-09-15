@@ -3,7 +3,6 @@
 const Animations = require(script.Parent.Parent.Types.Animations)
 const Modifier = require(script.Parent.Parent.Types.Modifier)
 const Utils = require(script.Parent.Parent.Types.Utils)
-const State = require(script.Parent.Parent.State)
 const Helpers = require(script.Parent.Parent.Utils.Helpers)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Utils.Ref)
@@ -15,15 +14,21 @@ local logger = Logging.getLogger("PeanutUI.Classes.Modifiers")
 local counter = 0
 local Modifiers = {}
 
+local function defaultScaleFn<T>(obj: T, getOriginal: boolean?): T
+    return obj
+end
+
+type TransformFn = (component: Modifier.Component, getProp: (string) -> any) -> any
+type RbxTransformFn = (component: Modifier.Component, value: any) -> any
 local function createModifier(
     name: string,
     className: string,
     properties: {[string]: any},
     linkedProperties: {[string]: {string} | string},
-    propertyCalcFn: {[string]: (component: Modifier.Component, getProp: (string) -> any) -> any},
+    propertyCalcFn: {[string]: TransformFn},
     setupFn: (Modifier.Component) -> ()?,
     rbxLinkBack_: {[string]: string}?,
-    rbxLinkBackTransform_: {[string]: (any) -> any}?
+    rbxLinkBackTransform_: {[string]: RbxTransformFn}?
 ): Modifier.Component
     counter += 1
     local id = counter
@@ -31,7 +36,7 @@ local function createModifier(
     local rbxLinkBack = rbxLinkBack_ or {}
     local rbxPropertyEvent: {[string]: RBXScriptConnection} = {}
     local rbxPropertyWatching: {[string]: number} = {}
-    local rbxPropertyTransform: {[string]: (any) -> any} = {}
+    local rbxPropertyTransform: {[string]: RbxTransformFn} = rbxLinkBackTransform_ or {}
 
     local modifier = {}
     modifier._typeName = "modifier"
@@ -40,6 +45,8 @@ local function createModifier(
 
     local object: UIComponent? = nil
     local modifierComponents: {[string]: Modifier.Component} = {}
+
+    local scaleFn = defaultScaleFn
 
     local propertiesRefs: {[string]: Utils.Ref<any>} = {}
     local transitions: {[string]: Animations.Transition} = {}
@@ -144,7 +151,7 @@ local function createModifier(
 
         local transformFn = rbxPropertyTransform[key]
         if transformFn then
-            value = transformFn(value)
+            value = transformFn(modifier :: any, value)
         end
 
         ref.setValue(value, true)
@@ -197,7 +204,6 @@ local function createModifier(
 
     modifier.setProperty = setProperty
     modifier.getProperty = getProperty
-
 
     local function observe(key: string, callback: (newValue: any) -> ...boolean?): () -> ()
         ensureNotDestroyed()
@@ -476,6 +482,14 @@ local function createModifier(
         return modifierComponents[`{name}_{index or 1}`]
     end
 
+    function modifier.getScaleObjectFn()
+        return scaleFn
+    end
+
+    function modifier.setScaleObjectFn(fn)
+        fn = scaleFn or defaultScaleFn
+    end
+
     for key, value in pairs(properties) do
         if propertiesRefs[key] and propertiesRefs[key].getValue() ~= nil then
             continue
@@ -558,22 +572,20 @@ local function useUDim2(property: string)
     end
 end
 
-local function useUDim(property: string)
+local function _useUDim(property: string)
     return function(c: Modifier.Component)
         return Units.ToUDim(c.getProperty(property) :: any)
     end
 end
 
-local function scalePx(property: string)
+local function scale(property: string)
     return function(c: Modifier.Component)
-        return State.scalePx(c.getProperty(property) :: number)
+        return c.getScaleObjectFn()(c.getProperty(property) :: Vector2)
     end
 end
 
-local function scaleVector2(property: string)
-    return function(c: Modifier.Component)
-        return State.scaleVector2(c.getProperty(property) :: Vector2)
-    end
+local function rbxScale(c: Modifier.Component, value: any)
+    return c.getScaleObjectFn()(value)
 end
 
 Modifiers.createModifier = createModifier
@@ -613,28 +625,32 @@ Modifiers.components = {
             TopRightRadius = {"topRightScale", "topRightPx", "px", "scale"},
         },
         {
-            BottomLeftRadius = function(comp, getProp)
+            BottomLeftRadius = function(comp: Modifier.Component, getProp)
+                local scale = comp.getScaleObjectFn()
                 return UDim.new(
                     getProp("bottomLeftScale") or getProp("scale"),
-                    State.scalePx(getProp("bottomLeftPx") or getProp("px"))
+                    scale(getProp("bottomLeftPx") or getProp("px"))
                 )
             end,
-            BottomRightRadius = function(comp, getProp)
+            BottomRightRadius = function(comp: Modifier.Component, getProp)
+                local scale = comp.getScaleObjectFn()
                 return UDim.new(
                     getProp("bottomRightScale") or getProp("scale"),
-                    State.scalePx(getProp("bottomRightPx") or getProp("px"))
+                    scale(getProp("bottomRightPx") or getProp("px"))
                 )
             end,
-            TopLeftRadius = function(comp, getProp)
+            TopLeftRadius = function(comp: Modifier.Component, getProp)
+                local scale = comp.getScaleObjectFn()
                 return UDim.new(
                     getProp("topLeftScale") or getProp("scale"),
-                    State.scalePx(getProp("topLeftPx") or getProp("px"))
+                    scale(getProp("topLeftPx") or getProp("px"))
                 )
             end,
-            TopRightRadius = function(comp, getProp)
+            TopRightRadius = function(comp: Modifier.Component, getProp)
+                local scale = comp.getScaleObjectFn()
                 return UDim.new(
                     getProp("topRightScale") or getProp("scale"),
-                    State.scalePx(getProp("topRightPx") or getProp("px"))
+                    scale(getProp("topRightPx") or getProp("px"))
                 )
             end
         }
@@ -653,28 +669,32 @@ Modifiers.components = {
             PaddingBottom = {"bottomScale", "bottomPx", "px", "scale"},
         },
         {
-            PaddingLeft = function(comp, getProp)
+            PaddingLeft = function(comp: Modifier.Component, getProp)
+                local scale = comp.getScaleObjectFn()
                 return UDim.new(
                     getProp("leftScale") or getProp("scale"),
-                    State.scalePx(getProp("leftPx") or getProp("px"))
+                    scale(getProp("leftPx") or getProp("px"))
                 )
             end,
-            PaddingRight = function(comp, getProp)
+            PaddingRight = function(comp: Modifier.Component, getProp)
+                local scale = comp.getScaleObjectFn()
                 return UDim.new(
                     getProp("rightScale") or getProp("scale"),
-                    State.scalePx(getProp("rightPx") or getProp("px"))
+                    scale(getProp("rightPx") or getProp("px"))
                 )
             end,
-            PaddingTop = function(comp, getProp)
+            PaddingTop = function(comp: Modifier.Component, getProp)
+                local scale = comp.getScaleObjectFn()
                 return UDim.new(
                     getProp("topScale") or getProp("scale"),
-                    State.scalePx(getProp("topPx") or getProp("px"))
+                    scale(getProp("topPx") or getProp("px"))
                 )
             end,
-            PaddingBottom = function(comp, getProp)
+            PaddingBottom = function(comp: Modifier.Component, getProp)
+                local scale = comp.getScaleObjectFn()
                 return UDim.new(
                     getProp("bottomScale") or getProp("scale"),
-                    State.scalePx(getProp("bottomPx") or getProp("px"))
+                    scale(getProp("bottomPx") or getProp("px"))
                 )
             end
         }
@@ -706,13 +726,14 @@ Modifiers.components = {
             LineJoinMode = "lineJoinMode"
         },
         {
-            BorderOffset = function(_, getProp)
+            BorderOffset = function(c: Modifier.Component, getProp)
+                local scale = c.getScaleObjectFn()
                 return UDim.new(
                     getProp("borderOffsetScale"),
-                    State.scalePx(getProp("borderOffsetPx"))
+                    scale(getProp("borderOffsetPx"))
                 )
             end,
-            Thickness = scalePx("thicknessPx"),
+            Thickness = scale("thicknessPx"),
             ApplyStrokeMode = useEnum(Enum.ApplyStrokeMode, "strokeMode"),
             BorderStrokePosition = useEnum(Enum.BorderStrokePosition, "borderPosition"),
             LineJoinMode = useEnum(Enum.LineJoinMode, "lineJoinMode"),
@@ -767,10 +788,10 @@ Modifiers.components = {
             ZIndex = "zIndex"
         },
         {
-            BlurRadius = function(_, getProp)
+            BlurRadius = function(comp: Modifier.Component, getProp)
                 return UDim.new(
                     getProp("blurRadiusScale"),
-                    State.scalePx(getProp("blurRadiusPx"))
+                    comp.getScaleObjectFn()(getProp("blurRadiusPx"))
                 )
             end,
             Offset = useUDim2("offset"),
@@ -804,10 +825,10 @@ Modifiers.components = {
             ItemLineAlignment = "lineAlignment"
         },
         {
-            Padding = function(_, getProp)
+            Padding = function(comp: Modifier.Component, getProp)
                 return UDim.new(
                     getProp("gapScale"),
-                    State.scalePx(getProp("gapPx"))
+                    comp.getScaleObjectFn()(getProp("gapPx"))
                 )
             end,
             HorizontalAlignment = useEnum(Enum.HorizontalAlignment, "horizontalAlign"),
@@ -826,7 +847,7 @@ Modifiers.components = {
             absoluteContentSize = "AbsoluteContentSize"
         },
         {
-            absoluteContentSize = State.scaleVector2
+            absoluteContentSize = rbxScale
         }
     ),
     grid = createConstructor(
@@ -856,20 +877,22 @@ Modifiers.components = {
             StartCorner = "startCorner"
         },
         {
-            CellPadding = function(_, getProp)
+            CellPadding = function(comp: Modifier.Component, getProp)
+                local scale = comp.getScaleObjectFn()
                 return UDim2.new(
                     getProp("cellGapScale").X,
-                    State.scalePx(getProp("cellGapPx").X),
+                    scale(getProp("cellGapPx").X),
                     getProp("cellGapScale").Y,
-                    State.scalePx(getProp("cellGapPx").Y)
+                    scale(getProp("cellGapPx").Y)
                 )
             end,
-            CellSize = function(_, getProp)
+            CellSize = function(comp: Modifier.Component, getProp)
+                local scale = comp.getScaleObjectFn()
                 return UDim2.new(
                     getProp("cellSizeScale").X,
-                    State.scalePx(getProp("cellSizePx").X),
+                    scale(getProp("cellSizePx").X),
                     getProp("cellSizeScale").Y,
-                    State.scalePx(getProp("cellSizePx").Y)
+                    scale(getProp("cellSizePx").Y)
                 )
             end,
             HorizontalAlignment = useEnum(Enum.HorizontalAlignment, "horizontalAlign"),
@@ -887,7 +910,7 @@ Modifiers.components = {
             absoluteContentSize = "AbsoluteContentSize"
         },
         {
-            absoluteContentSize = State.scaleVector2
+            absoluteContentSize = rbxScale
         }
     ),
     table = createConstructor(
@@ -915,12 +938,13 @@ Modifiers.components = {
             HorizontalAlignment = useEnum(Enum.HorizontalAlignment, "horizontalAlign"),
             VerticalAlignment = useEnum(Enum.VerticalAlignment, "verticalAlign"),
             MajorAxis = useEnum(Enum.TableMajorAxis, "majorAxis"),
-            CellPadding = function(_, getProp)
+            CellPadding = function(comp: Modifier.Component, getProp)
+                local scale = comp.getScaleObjectFn()
                 return UDim2.new(
                     getProp("gapScale").X,
-                    State.scalePx(getProp("gapPx").X),
+                    scale(getProp("gapPx").X),
                     getProp("gapScale").Y,
-                    State.scalePx(getProp("gapPx").Y)
+                    scale(getProp("gapPx").Y)
                 )
             end,
             FillDirection = function(c)
@@ -935,7 +959,7 @@ Modifiers.components = {
             absoluteContentSize = "AbsoluteContentSize"
         },
         {
-            absoluteContentSize = State.scaleVector2
+            absoluteContentSize = rbxScale
         }
     ),
     aspectRatio = createConstructor(
@@ -968,8 +992,8 @@ Modifiers.components = {
             MinSize = "min"
         },
         {
-            MaxSize = scaleVector2("max"),
-            MinSize = scaleVector2("min")
+            MaxSize = scale("max"),
+            MinSize = scale("min")
         }
     ),
     textSizeConstraint = createConstructor(
@@ -984,8 +1008,8 @@ Modifiers.components = {
             MinTextSize = "min"
         },
         {
-            MaxTextSize = scalePx("max"),
-            MinTextSize = scalePx("min")
+            MaxTextSize = scale("max"),
+            MinTextSize = scale("min")
         }
     ),
     scale = createConstructor(

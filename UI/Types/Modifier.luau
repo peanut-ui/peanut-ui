@@ -161,6 +161,10 @@ export type Component<Props = JustList> = {
     read getProperty: <K>(key: K & KeyOf<Props>) -> Resolve<Props, K>,
     read observe: <K>(key: K & KeyOf<Props>, callback: (newValue: Resolve<Props, K>) -> ()) -> (() -> ()),
 
+    -- Modifiers don't know anything about Space nor Widget
+    read getScaleObjectFn: () -> (<T>(value: T, getOriginal: boolean?) -> T),
+    read setScaleObjectFn: ((<T>(value: T, getOriginal: boolean?) -> T)?) -> (),
+
     read _redraw: () -> (),
     read _addCleanup: (RBXScriptConnection | () -> ()) -> (),
 

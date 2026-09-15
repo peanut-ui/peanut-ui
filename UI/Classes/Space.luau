@@ -1,31 +1,18 @@
 --!strict
 --!optimize 2
 const Players = game:GetService("Players")
-const State = require(script.Parent.Parent.State)
 const SpaceType = require(script.Parent.Parent.Types.Space)
+const Utils = require(script.Parent.Parent.Types.Utils)
+const WidgetType = require(script.Parent.Parent.Types.Widget)
 const Logging = require(script.Parent.Parent.Utils.Logging)
+const Signals = require(script.Parent.Parent.Utils.Signals)
+const Units = require(script.Parent.Parent.Utils.Units)
 const Widget = require(script.Parent.Widget)
 
 local logger = Logging.getLogger("PeanutUI.Classes.Space")
 
 local registeredScreenSpaces: {[string]: SpaceType.ScreenSpace} = {}
 local Space = {}
-
-local function unsupported(...: never): never
-    logger.error("Space does not support this function!")
-    return nil :: never
-end
-
--- Error on _setParent makes parent of widget that did addChild inconsistent
-local function unsupportedInternal(...: never): never
-    logger.critical("Space does not support this function! (internal function errored, state might be inconsistent)")
-    return nil :: never
-end
-
--- To ignore internal calls, like _createObject
-local function unsupportedIgnore(...: never): never
-    return nil :: never
-end
 
 local function linkProperties(
     widget: SpaceType.InternalInterface,
@@ -41,6 +28,61 @@ local function linkProperties(
     end
 end
 
+local scaleFunctions: {
+    [string]: (scaleFunction: WidgetType.ScaleCallback, obj: any, getOriginal: boolean?) -> any
+} = {
+    -- Roblox types
+    Vector2 = function(scaleFunction: WidgetType.ScaleCallback, obj: Vector2, getOriginal: boolean?): Vector2
+        return Vector2.new(
+            scaleFunction(obj.X, getOriginal),
+            scaleFunction(obj.Y, getOriginal)
+        )
+    end,
+    UDim2 = function(scaleFunction: WidgetType.ScaleCallback, obj: UDim2, getOriginal: boolean?): UDim2
+        return UDim2.new(
+            obj.X.Scale,
+            scaleFunction(obj.X.Offset, getOriginal),
+            obj.Y.Scale,
+            scaleFunction(obj.Y.Offset, getOriginal)
+        )
+    end,
+    UDim = function(scaleFunction: WidgetType.ScaleCallback, obj: UDim, getOriginal: boolean?): UDim
+        return UDim.new(
+            obj.Scale,
+            scaleFunction(obj.Offset, getOriginal)
+        )
+    end,
+
+    -- PeanutUI types
+    size = function(scaleFunction: WidgetType.ScaleCallback, size: Utils.Size, getOriginal: boolean?): Utils.Size
+        return Units.Size(
+            scaleFunction(size.width, getOriginal),
+            scaleFunction(size.height, getOriginal),
+            size.widthScale,
+            size.heightScale
+        )
+    end,
+    position = function(scaleFunction: WidgetType.ScaleCallback, pos: Utils.Position, getOriginal: boolean?): Utils.Position
+        return Units.Position(
+            scaleFunction(pos.x, getOriginal),
+            scaleFunction(pos.y, getOriginal),
+            pos.xScale,
+            pos.yScale
+        )
+    end,
+    unit = function(scaleFunction: WidgetType.ScaleCallback, unit: Utils.Unit, getOriginal: boolean?): Utils.Unit
+        return Units.Unit(
+            scaleFunction(unit.px, getOriginal),
+            unit.scale
+        )
+    end,
+
+    number = function(scaleFunction: WidgetType.ScaleCallback, px: number, getOriginal: boolean?): number
+        return scaleFunction(px, getOriginal)
+    end
+
+}
+
 local function newSpace(
     name: string,
     registry: {[string]: any},
@@ -52,6 +94,33 @@ local function newSpace(
         logger.error(`Cannot create name with existing name: {name}`)
     end
 
+    local signals = Signals.new()
+
+    local scaleFunction = function(px: number, getOriginal: boolean?)
+        return px
+    end
+    local stopScale: () -> ()? = nil
+
+    local function scaleObject<T>(obj: T, getOriginal: boolean?): T
+        if typeof(obj) == "table" then
+            local fn = scaleFunctions[(obj :: any)._typeName or ""]
+
+            if not fn then
+                return obj
+            else
+                return fn(scaleFunction, obj, getOriginal)
+            end
+        else
+            local fn = scaleFunctions[typeof(obj)]
+
+            if not fn then
+                return obj
+            else
+                return fn(scaleFunction, obj, getOriginal)
+            end
+        end
+    end
+
     local widget = Widget.new({
         properties = properties,
         defaultSetupOverride = function(widget: SpaceType.InternalInterface)
@@ -59,16 +128,14 @@ local function newSpace(
             widget._widgetLike = true
             widget._widgetName = name
             widget._spaceName = name
+            widget._isSpaceLike = true
 
-            widget.setTransition = unsupported
-            widget.snapProperty = unsupported
-            widget.setParent = unsupported
-            widget.getParent = unsupported
-            widget.createObject = unsupported
-            widget._setParent = unsupportedInternal :: any
-            widget._createObject = unsupportedIgnore :: any
+            widget._createObject = function()
+                return nil
+            end
 
             local newObject = createObjectFn()
+            newObject:SetAttribute("_uniqueId", widget._uniqueId)
             widget._setObject(newObject)
 
             local player = Players.LocalPlayer
@@ -100,18 +167,41 @@ local function newSpace(
 
             link("name", "Name")
             link("absoluteSize", "AbsoluteSize", nil, function(v)
-                return State.scaleVector2(v, true)
+                return scaleObject(v, true)
             end, true)
             link("absolutePosition", "AbsolutePosition", nil, function(v)
-                return State.scaleVector2(v, true)
+                return scaleObject(v, true)
             end, true)
             link("absoluteRotation" :: "absoluteRotation", "AbsoluteRotation", nil, nil, true)
 
             widget._redraw()
         end
-    } :: any)  -- Idk why but linter says it's { [string]: any } and not args which is weird
-
+    -- Idk why but linter says it's { [string]: any } and not args which is weird
+    } :: any, {
+        parenting = true,
+        transitions = true
+    })
     local widgetInternal = (widget :: any) :: SpaceType.InternalInterface
+
+    widgetInternal.signals = signals
+    widgetInternal.scaleObject = scaleObject
+
+    function widgetInternal.changeScaleFn(fn: WidgetType.ScaleFn)
+        if stopScale then
+            stopScale()
+            stopScale = nil
+        end
+
+        if typeof(fn) == "function" then
+            scaleFunction = fn
+        elseif typeof(fn) == "table" then
+            scaleFunction = fn.fn
+            stopScale = fn.stop
+        else
+            logger.error("Type for scale function was not table or number!")
+        end
+    end
+
     widgetInternal._addCleanup(function()
         if registry[name] == widgetInternal then
             registry[name] = nil

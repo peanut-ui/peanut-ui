@@ -79,37 +79,25 @@ export type DefaultProperties = {
     name: string
 }
 
-export type WidgetLike = {
-    _typeName: "widget"
-} | {
-    _widgetLike: true
+export type ScaleCallback = (number, getOriginal: boolean?) -> number
+export type ScaleFn = ScaleCallback | {
+    fn: ScaleCallback,
+    stop: () -> ()
 }
 
-export type BaseInterface = {
-    _typeName: "widget",
-    _widgetName: string,
-    _uniqueId: number,
+export type SpaceLike = WidgetLike & {
+    _isSpaceLike: true,
+    signals: Utils.Signals,
 
-    createObject: (() -> GuiObject)?,
-    destroy: () -> (),
-    isDestroyed: () -> boolean,
+    scaleObject: <T>(value: T, getOriginal: boolean?) -> T,
+    changeScaleFn: (ScaleFn) -> ()
+}
 
-    setModifier: <K>(name: K & keyof<Modifier.Modifiers>, params: any?) -> (),
-    getModifier: <K>(name: K & keyof<Modifier.Components>, index: number?) -> any,
-
+-- feature: properties
+export type PropertiesFeature = {
     setProperty: (key: string, value: any | Utils.Ref<any>) -> (),
-    setTransition: (key: string, transition: Animations.Transition?) -> (),
-    snapProperty: (key: string, value: any | Utils.Ref<any>) -> (),
     getProperty: (key: string) -> any,
     observe: (key: string, callback: (newValue: any) -> boolean?) -> (() -> ()),
-    listen: (name: string, callback: any) -> (() -> ()),
-
-    setParent: (parent: WidgetLike) -> (),
-    getParent: () -> BaseInterface,
-    addChild: (child: WidgetLike) -> (),
-    removeChild: (child: WidgetLike, andDestroy: boolean?) -> (),
-    clearChildren: () -> (),
-    children: {BaseInterface},
 
     _linkProperty: (
         name: string, object: string,
@@ -117,25 +105,128 @@ export type BaseInterface = {
         syncWithObject: (boolean | (any) -> any)?,
         readonly: boolean?
     ) -> (),
+    _propertiesRefs: {[string]: Utils.Ref<any>},
+
+    getRef: (key: string) -> Utils.ProtectedRef<any>,
+}
+
+-- feature: transitions
+export type TransitionsFeature = {
+    setTransition: (key: string, transition: Animations.Transition?) -> (),
+    snapProperty: (key: string, value: any | Utils.Ref<any>) -> (),
+}
+
+-- feature: events
+export type EventsFeature = {
+    listen: (name: string, callback: any) -> (() -> ()),
     _linkEvent: (name: any, event: string?) -> (),
+}
+
+-- feature: parenting
+export type ParentingFeature = {
+    setParent: (parent: WidgetLike) -> (),
+    getParent: () -> BaseInterface,
+
     _setParent: (parent: BaseInterface?) -> (),
-    _createObject: () -> Object?,
+    _setSpace: (space: SpaceLike?) -> (),
+
+    getSpace: () -> SpaceLike?
+}
+
+-- feature: children
+export type ChildrenFeature = {
+    addChild: (child: WidgetLike) -> (),
+    removeChild: (child: WidgetLike, andDestroy: boolean?) -> (),
+    clearChildren: () -> (),
+    children: {BaseInterface},
+}
+
+-- feature: modifiers
+export type ModifiersFeature = {
+    setModifier: <K>(name: K & keyof<Modifier.Modifiers>, params: any?) -> (),
+    getModifier: <K>(name: K & keyof<Modifier.Components>, index: number?) -> any,
+}
+
+export type Features = {
+    events: EventsFeature,
+    properties: PropertiesFeature,
+
+    transitions: TransitionsFeature,
+    parenting: ParentingFeature,
+    children: ChildrenFeature,
+    modifiers: ModifiersFeature
+}
+
+export type WidgetLike = {
+    _typeName: string,
+    _widgetLike: true,
+    _widgetName: string,
+    _uniqueId: number,
+    _features: {[keyof<Features>]: boolean},
+
+    destroy: () -> (),
+    isDestroyed: () -> boolean,
+
+    isImplemented: (field: string, isFeature: boolean?) -> boolean
+}
+
+type UnsupportedFn = (...never) -> ...never
+
+-- Similar to <template> in Vue.js
+export type Box = {
+    _typeName: "box",
+    _boxName: string,
+    _widgetName: string,
+    _uniqueId: number,
+    _features: {[string]: boolean},
+
+    setModifier: UnsupportedFn,
+    getModifier: UnsupportedFn,
+
+    setProperty: UnsupportedFn,
+    setTransition: UnsupportedFn,
+    snapProperty: UnsupportedFn,
+    getProperty: UnsupportedFn,
+    observe: UnsupportedFn,
+    listen: UnsupportedFn,
+
+    setParent: (parent: WidgetLike) -> (),
+    getParent: () -> BaseInterface,
+
+    addChild: (child: WidgetLike) -> (),
+    removeChild: (child: WidgetLike, andDestroy: boolean?) -> (),
+    clearChildren: () -> (),
+    children: {BaseInterface},
+
+    isImplemented: (field: string) -> boolean,
+
+    _setParent: (parent: BaseInterface?) -> (),
+    _createObject: () -> GuiObject?,
     _redraw: () -> (),
     _addCleanup: (RBXScriptConnection | () -> ()) -> (),
-    _propertiesRefs: {[string]: Utils.Ref<any>},
 
     getGuiObject: () -> Object?,
 }
 
-export type Interface<Props = DefaultProperties, Object = GuiObject, Events = DefaultEvents> = {
-    _typeName: "widget",
-    _widgetName: string,
-    _uniqueId: number,
+export type BaseInterface = {
+    _setCreateObject: (() -> Instance?) -> (),
 
-    createObject: (() -> Object)?,
-    destroy: () -> (),
-    isDestroyed: () -> boolean,
+    _createObject: () -> Instance?,
+    _redraw: () -> (),
+    _addCleanup: (RBXScriptConnection | () -> ()) -> (),
+    _setObject: (object: Instance) -> (),
 
+    getGuiObject: () -> Instance?,
+} & WidgetLike
+    & ChildrenFeature
+    & ParentingFeature
+    & EventsFeature
+    & TransitionsFeature
+    & PropertiesFeature
+    & ModifiersFeature
+
+--- Typed interface!
+export type Interface<Props = DefaultProperties, Object = GuiObject, Events = DefaultEvents> = WidgetLike & {
     setModifier: <K>(
         name: K & KeyOf<Modifier.Modifiers>,
         params: Resolve<Modifier.Modifiers, K> | Utils.Undefined | {Resolve<Modifier.Modifiers, K> | Utils.Undefined}?
@@ -158,10 +249,13 @@ export type Interface<Props = DefaultProperties, Object = GuiObject, Events = De
     clearChildren: () -> (),
     children: {Interface},
 
+    getSpace: () -> SpaceLike?,
+
     getGuiObject: () -> (Object?),
 }
 
 export type InternalFunctions<Props = DefaultProperties, Object = GuiObject, Events = DefaultEvents> = {
+    _setCreateObject: (() -> Object?) -> (),
     _linkProperty: <K>(
         name: K & KeyOf<Props>, object: string,
         transformFn: ((value: Resolve<Props, K>) -> any)?,
@@ -174,6 +268,7 @@ export type InternalFunctions<Props = DefaultProperties, Object = GuiObject, Eve
     _redraw: () -> (),
     _addCleanup: (RBXScriptConnection | () -> ()) -> (),
     _propertiesRefs: {[string]: Utils.Ref<any>},
+    _setSpace: (space: SpaceLike?) -> (),
     _setObject: (object: Object) -> ()
 }
 

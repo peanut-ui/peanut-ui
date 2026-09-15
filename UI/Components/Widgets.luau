@@ -2,7 +2,6 @@
 --!optimize 2
 const Widget = require(script.Parent.Parent.Classes.Widget)
 const WidgetClass = require(script.Parent.Parent.Types.Widget)
-const State = require(script.Parent.Parent.State)
 const RobloxTypes = require(script.Parent.Parent.Types.RobloxTypes)
 const TypeFuncs = require(script.Parent.Parent.Types.TypeFuncs)
 const Undefined = require(script.Parent.Parent.Utils.Undefined)
@@ -144,17 +143,41 @@ export type VideoFrameArgs = WidgetClass.Args<VideoFrameProps, VideoFrame>
 local function linkProperties(
     widget: WidgetClass.Interface,
     properties: {[string]: string},
-    transformFn: {[string]: (any) -> any}?,
-    syncWithObject: {[string]: (boolean | (any) -> any)?}?,
+    transformFn: {[string]: ((any) -> any) | "scale"}?,
+    syncWithObject: {[string]: (boolean | "scale" | (any) -> any)?}?,
     readonly: {[string]: boolean?}?
 )
     local link = (widget :: WidgetClass.InternalInterface)._linkProperty
     for name, property in properties do
+        local transform = transformFn and transformFn[name]
+        local sync = syncWithObject and syncWithObject[name]
+        if transform == "scale" then
+            transform = function(value: any): any
+                local space = widget.getSpace()
+                if not space then
+                    return value
+                end
+
+                return space.scaleObject(value)
+            end
+        end
+
+        if sync == "scale" then
+            sync = function(value: any): any
+                local space = widget.getSpace()
+                if not space then
+                    return value
+                end
+
+                return space.scaleObject(value, true)
+            end
+        end
+
         link(
             name :: any,
             property,
-            transformFn and transformFn[name],
-            syncWithObject and syncWithObject[name],
+            transform :: (any) -> any,
+            sync :: boolean | (any) -> any,
             readonly and readonly[name]
         )
     end
@@ -166,8 +189,8 @@ local function createBasicObject<T>(
     createFn: () -> any,
     linkedProperties: {[string]: string}?,
     linkEvents: {string}?,
-    transformFn: {[string]: (any) -> any}?,
-    syncWithObject: {[string]: (boolean | (any) -> any)?}?,
+    transformFn: {[string]: ((any) -> any) | "scale"}?,
+    syncWithObject: {[string]: (boolean | "scale" | (any) -> any)?}?,
     readonly: {[string]: boolean?}?,
     setupFn: (any) -> ()?
 ): (WidgetClass.Args) -> WidgetClass.Interface
@@ -176,7 +199,7 @@ local function createBasicObject<T>(
 
         local function setup(widget: any, defaultSetup)
             defaultSetup(widget)
-            widget.createObject = createFn
+            widget._setCreateObject(createFn)
 
             if linkedProperties then
                 linkProperties(widget, linkedProperties, transformFn, syncWithObject, readonly)
@@ -277,7 +300,7 @@ return {
             isLoaded = "IsLoaded",
         },
         nil,
-        { tileSize = State.scaleUDim2 },
+        { tileSize = "scale"},
         { isLoaded = true },
         { isLoaded = true }
     ) :: (ImageLabelArgs) -> ImageProps,
@@ -325,7 +348,7 @@ return {
         },
         {"Activated", "SecondaryActivated"},
         {
-            tileSize = State.scaleUDim2
+            tileSize = "scale"
         },
         { selected = true, isLoaded = true },
         { selected = true, isLoaded = true }
@@ -365,9 +388,7 @@ return {
         nil,
         nil,
         {
-            canvasPosition = function(value: Vector2)
-                return State.scaleVector2(value, true)
-            end
+            canvasPosition = "scale"
         }
     ) :: (ScrollingFrameArgs) -> ScrollingFrame,
     TextLabel = createBasicObject(
@@ -412,7 +433,7 @@ return {
         },
         nil,
         {
-            textSize = State.scalePx,
+            textSize = "scale",
         }
     ) :: (TextLabelArgs) -> TextLabel,
     TextButton = createBasicObject(
@@ -465,7 +486,7 @@ return {
         },
         {"Activated", "SecondaryActivated"},
         {
-            textSize = State.scalePx,
+            textSize = "scale",
         }
     ) :: (TextButtonArgs) -> TextButton,
     TextBox = createBasicObject(
@@ -522,7 +543,7 @@ return {
         },
         nil,
         {
-            textSize = State.scalePx,
+            textSize = "scale",
         },
         {
             cursorPosition = true,

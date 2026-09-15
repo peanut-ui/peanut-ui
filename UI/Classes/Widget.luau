@@ -19,6 +19,66 @@ const logger = Logging.getLogger("PeanutUI.Classes.Widget")
 local counter = 1
 local WidgetClass = {}
 
+local unsupportedList = table.freeze({})
+local function unsupportedFn()
+    logger.error("Looks like this class didn't implement this function")
+end
+
+WidgetClass.unsupportedFn = unsupportedFn :: (...never) -> ...never
+WidgetClass.unsupportedList = unsupportedList
+
+local defaultWidget = {
+    _typeName = "unknownWidget",
+    _widgetLike = true,
+    _widgetName = "widget",
+    _uniqueId = -1,
+    _features = {
+        properties = false,
+        transitions = false,
+        events = false,
+        parenting = false,
+        children = false,
+        modifiers = false
+    },
+
+    destroy = unsupportedFn,
+    isDestroyed = unsupportedFn,
+
+    setModifier = unsupportedFn,
+    getModifier = unsupportedFn,
+
+    setProperty = unsupportedFn,
+    snapProperty = unsupportedFn,
+    setTransition = unsupportedFn,
+    getProperty = unsupportedFn,
+    observe = unsupportedFn,
+    listen = unsupportedFn,
+
+    setParent = unsupportedFn,
+    getParent = unsupportedFn,
+
+    addChild = unsupportedFn,
+    removeChild = unsupportedFn,
+    clearChildren = unsupportedFn,
+    children = unsupportedList,
+
+    _setCreateObject = unsupportedFn,
+    _linkProperty = unsupportedFn,
+    _linkEvent = unsupportedFn,
+    _setParent = unsupportedFn,
+    _createObject = unsupportedFn,
+    _redraw = unsupportedFn,
+    _addCleanup = unsupportedFn,
+    _propertiesRefs = unsupportedList,
+    _setObject = unsupportedFn,
+
+    getGuiObject = unsupportedFn,
+    isImplemented = function(...)
+        return false
+    end
+}
+table.freeze(defaultWidget)
+
 local defaultProperties: Widget.DefaultProperties = {
     visible = true,
     zIndex = 0,
@@ -70,10 +130,20 @@ local function defaultSetup(widget: Widget.BaseInterface)
     link("clipsDescendants", "ClipsDescendants")
     link("rotation", "Rotation")
     link("size", "Size", function(value)
-        return State.scaleUDim2(Units.ToUDim2(value))
+        local space = widget.getSpace()
+        if not space then
+            return value
+        end
+
+        return space.scaleObject(Units.ToUDim2(value))
     end)
     link("position", "Position", function(value)
-        return State.scaleUDim2(Units.ToUDim2(value))
+        local space = widget.getSpace()
+        if not space then
+            return value
+        end
+
+        return space.scaleObject(Units.ToUDim2(value))
     end)
     link("anchorPoint", "AnchorPoint")
     link("backgroundColor", "BackgroundColor3")
@@ -87,10 +157,20 @@ local function defaultSetup(widget: Widget.BaseInterface)
     link("active", "Active")
 
     link("absoluteSize", "AbsoluteSize", nil, function(v)
-        return State.scaleVector2(v, true)
+        local space = widget.getSpace()
+        if not space then
+            return v
+        end
+
+        return space.scaleObject(v, true)
     end, true)
     link("absolutePosition", "AbsolutePosition", nil, function(v)
-        return State.scaleVector2(v, true)
+        local space = widget.getSpace()
+        if not space then
+            return v
+        end
+
+        return space.scaleObject(v, true)
     end, true)
     link("absoluteRotation", "AbsoluteRotation", nil, nil, true)
 
@@ -125,12 +205,41 @@ local function defaultSetup(widget: Widget.BaseInterface)
     linkEvent("TouchTap")
 end
 
+local function createEmptyWidget(): Widget.BaseInterface
+    counter += 1
+    local id = counter
+
+    local newWidget = table.clone(defaultWidget) :: any
+    newWidget._uniqueId = id
+
+    function newWidget.isImplemented(field: string, isFeature: boolean?): boolean
+        if isFeature == true then
+            if not newWidget._features then
+                return false
+            end
+
+            return newWidget._features[field]
+        end
+        return (
+            newWidget[field] ~= nil
+            and newWidget[field] ~= unsupportedFn
+            and newWidget[field] ~= unsupportedList
+        )
+    end
+
+    State.addWidget(newWidget :: any)
+
+    return newWidget
+end
+
+WidgetClass.createEmptyWidget = createEmptyWidget
+
 local function isWidget(obj: any)
     if typeof(obj) ~= "table" then
         return false
     end
 
-    if obj._widgetLike then
+    if obj._widgetLike == true then
         return true
     end
 
@@ -195,14 +304,19 @@ function WidgetClass.into(obj: any): Widget.Interface
     error("")
 end
 
-function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
-    counter += 1
+function WidgetClass.new<C>(
+    args: Widget.Args?,
+    disableFeatures: {[string]: boolean}?
+): Widget.Interface
+    local instance = createEmptyWidget() :: typeof({})
+    local id = instance._uniqueId
 
-    local id = counter
     local isDestroyed = false
     logger.debug("New widget with id %d created", id)
 
     local nextLayoutOrder = 1
+
+    local space: Widget.SpaceLike? = nil
 
     local propertiesRefs: {[string]: Utils.Ref<any>} = {}
     local object: Instance? = nil
@@ -233,13 +347,37 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
     -- So redraw doesn't start any transitions
     local inRedrawMode = false
 
-    local instance = {}
     instance._typeName = "widget"
     instance._widgetName = args and args.widgetName or "widget"
     instance._uniqueId = id
     instance._propertiesRefs = propertiesRefs
     instance.children = readonly(children)
 
+    local features = {
+        properties = true,
+        transitions = true,
+        events = true,
+        parenting = true,
+        children = true,
+        modifiers = true
+    }
+
+    if disableFeatures then
+        for key, value in disableFeatures do
+            if value == true then
+                if key == "properties" or key == "events" then
+                    logger.warn("Feature %s cannot be disabled, make your own widget-like class", key)
+                    continue
+                end
+
+                features[key] = false
+            end
+        end
+    end
+
+    instance._features = features
+
+    -- widget: main -- start --
     local function ensureNotDestroyed()
         if isDestroyed then
             logger.error("Tried to access widget after it was destroyed")
@@ -314,6 +452,12 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
         return isDestroyed
     end
 
+    function instance._addCleanup(obj: RBXScriptConnection | () -> ())
+        table.insert(cleanups, obj)
+    end
+    -- widget: main -- end --
+
+    -- feature: property -- start --
     local function setProperty(key: string, value: any | Utils.Ref<any>)
         local ref = propertiesRefs[key]
 
@@ -341,44 +485,6 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
         ensureNotDestroyed()
 
         setProperty(key, value)
-    end
-
-    function instance.snapProperty(key: string, value: any | Utils.Ref<any>)
-        ensureNotDestroyed()
-
-        local cachedTransition = transitions[key]
-        if not cachedTransition then
-            setProperty(key, value)
-            return
-        end
-
-        transitions[key] = nil
-
-        if cachedTransition and object and linkedProperties[key] then
-            cachedTransition.stop(object, linkedProperties[key])
-        end
-
-        setProperty(key, value)
-
-        transitions[key] = cachedTransition
-    end
-
-    function instance.setTransition(key: string, transition: Animations.Transition?)
-        ensureNotDestroyed()
-
-        if not linkedProperties[key] then
-            logger.warn("Transition was set on property that is not linked to object (key: %s)", key)
-        end
-
-        if transitions[key] and object then
-            transitions[key].stop(object, key)
-        end
-
-        transitions[key] = transition
-    end
-
-    function instance.getGuiObject(): Instance?
-        return object
     end
 
     local function link(
@@ -462,34 +568,7 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
 
         table.insert(cleanups, (ref.watch(update)))
     end
-
-    local function checkLinkedEvent(name: string)
-        local event = linkedEvents[name]
-
-        if not event then
-            return
-        end
-
-        if object and events.listeners[name] and not linkedEventListener[name] then
-            local instanceEvent = (object :: any)[event]
-            if typeof(instanceEvent) == "RBXScriptSignal" then
-                local conn = (instanceEvent :: RBXScriptSignal):Connect(function(...)
-                    events.fire(name, ...)
-                end)
-                linkedEventListener[name] = conn
-            end
-        end
-    end
-
-    local function linkEvent(name: string, event: string?)
-        event = Helpers.removeUndefined(event) or name
-
-        linkedEvents[name] = event
-        checkLinkedEvent(name)
-    end
-
     instance._linkProperty = link
-    instance._linkEvent = linkEvent
 
     local function syncRbxProperty(key: string)
         local rbxKey = rbxLinkedProperties[key]
@@ -538,7 +617,6 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
             return value
         end
     end
-
     instance.getProperty = getProperty
 
     local function checkRbxPropertyEvent(key: string)
@@ -644,6 +722,26 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
 
         return Ref.makeProtected(ref, onWatch, onUnwatch)
     end
+    -- feature: property -- end --
+
+    -- feature: events -- start --
+    local function checkLinkedEvent(name: string)
+        local event = linkedEvents[name]
+
+        if not event then
+            return
+        end
+
+        if object and events.listeners[name] and not linkedEventListener[name] then
+            local instanceEvent = (object :: any)[event]
+            if typeof(instanceEvent) == "RBXScriptSignal" then
+                local conn = (instanceEvent :: RBXScriptSignal):Connect(function(...)
+                    events.fire(name, ...)
+                end)
+                linkedEventListener[name] = conn
+            end
+        end
+    end
 
     local function listen(name: string, callback: (...any) -> ...boolean?): () -> ()
         ensureNotDestroyed()
@@ -653,136 +751,18 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
     end
     instance.listen = listen
 
-    function instance.setParent(newParent: Widget.Interface?)
-        ensureNotDestroyed()
+    local function linkEvent(name: string, event: string?)
+        event = Helpers.removeUndefined(event) or name
 
-        if newParent and not isWidget(newParent) then
-            logger.error("Argument must be widget!")
-        end
-
-        if widgetsAreSame(newParent, instance) then
-            logger.error("I can't be parent of myself!")
-        end
-
-        if newParent and parent and widgetsAreSame(parent, newParent) then
-            return
-        end
-
-        if parent then
-            parent.removeChild(instance :: any)
-        end
-
-        if newParent then
-            newParent.addChild(instance :: any)
-        end
+        linkedEvents[name] = event
+        checkLinkedEvent(name)
     end
+    instance._linkEvent = linkEvent
+    -- feature: events -- end --
 
-    function instance._setParent(newParent: Widget.Interface?)
-        ensureNotDestroyed()
-
-        parent = newParent
-
-        if parent and parent.getGuiObject() and object then
-            object.Parent = parent.getGuiObject()
-        elseif not parent and object then
-            object.Parent = nil
-        end
-
-        events.fire("ParentChanged", newParent)
-    end
-
-    function instance.getParent()
-        return parent
-    end
-
-    function instance.addChild(child: Widget.InternalInterface)
-        ensureNotDestroyed()
-
-        if not isWidget(child) then
-            logger.error("Cannot add child that is not Widget!")
-        end
-
-        if child.getParent() then
-            logger.error("Child already had parent!")
-        end
-
-        if widgetsAreSame(child, instance) then
-            logger.error("I can't be parent of myself!")
-        end
-        logger.debug("[%s %d] Adding child: %s %d", instance._widgetName, id, child._widgetName, child._uniqueId)
-
-        -- Yummy auto order
-        local currentOrder = child.getProperty("layoutOrder")
-        if not currentOrder or currentOrder == 0 then
-            child.setProperty("layoutOrder", nextLayoutOrder)
-            nextLayoutOrder += 1
-        end
-
-        child._setParent(instance :: any)
-
-        table.insert(children, child)
-        childrenIndex[child] = #children
-
-        if object then
-            child._createObject()
-        end
-
-        events.fire("ChildAdded", child)
-    end
-
-    function instance.removeChild(child: Widget.InternalInterface, andDestroy: boolean?)
-        if isDestroyed then
-            logger.error("Tried to access widget after it was destroyed")
-        end
-
-        if not isWidget(child) then
-            logger.error("Cannot remove child that is not Widget!")
-        end
-
-        local childParent = child.getParent()
-        if childParent and childParent._uniqueId ~= instance._uniqueId then
-            logger.error("Child had different parent!")
-        end
-
-        logger.debug("[%s %d] Removing child: %s %d", instance._widgetName, id, child._widgetName, child._uniqueId)
-        -- Swap and pop!!!
-        local index = childrenIndex[child]
-        if index ~= nil then
-            local lastIndex = #children
-
-            if index ~= lastIndex then
-                local newOccupier = children[lastIndex]
-
-                children[index] = newOccupier
-                childrenIndex[newOccupier] = index
-            end
-
-            children[lastIndex] = nil
-            childrenIndex[child] = nil
-        end
-
-        if andDestroy == true then
-            child.destroy()
-        else
-            child._setParent(nil)
-        end
-        events.fire("ChildRemoved", child)
-    end
-
-    function instance.clearChildren()
-        ensureNotDestroyed()
-        local toDestroy = table.clone(children)
-        table.clear(children)
-        table.clear(childrenIndex)
-
-        for _, child in pairs(toDestroy) do
-            child._setParent(nil)
-            child.destroy()
-        end
-    end
-
-    function instance._addCleanup(obj: RBXScriptConnection | () -> ())
-        table.insert(cleanups, obj)
+    -- widget: object -- start --
+    function instance.getGuiObject(): Instance?
+        return object
     end
 
     local function redraw()
@@ -803,21 +783,34 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
             for key, _ in pairs(rbxLinkedProperties) do
                 syncRbxProperty(key)
             end
-        end
 
-        for _, ref in pairs(propertiesRefs) do
-            ref.notifyImmediate()
-        end
+            for _, ref in pairs(propertiesRefs) do
+                ref.notifyImmediate()
+            end
 
-        for _, modifier in pairs(modifierComponents) do
-            modifier._redraw()
+            for _, modifier in pairs(modifierComponents) do
+                modifier._redraw()
+            end
         end
 
         inRedrawMode = false
     end
 
     instance._redraw = redraw
-    instance.createObject = nil :: (() -> Instance)?
+
+    local createObjectFn = nil :: (() -> Instance)?
+
+    function instance._setObject(new: any)
+        if instance._typeName == "widget" then
+            logger.error("Function _setObject can be called only on custom widget-like type!")
+        end
+
+        object = new
+    end
+
+    function instance._setCreateObject(fn: () -> Object?)
+        createObjectFn = fn
+    end
 
     function instance._createObject(): Instance?
         ensureNotDestroyed()
@@ -827,7 +820,6 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
 
         logger.debug("[%s %d] _createObject is called", instance._widgetName, id)
 
-        local createObjectFn = instance.createObject
         if not createObjectFn then
             logger.debug("[%s %d] _createObject skipped (no create function)", instance._widgetName, id)
             return nil
@@ -870,32 +862,227 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
 
         return object
     end
+    -- widget: object -- end --
 
-    local function setModifier(name: string, params: {[string]: any} | { {[string]: any} })
-        ensureNotDestroyed()
+    -- feature: all -- start --
+    if features.parenting then
+        function instance.setParent(newParent: Widget.Interface?)
+            ensureNotDestroyed()
 
-        local modifierFactory: (props: {[string]: any}) -> Modifier.Component
+            if newParent and not isWidget(newParent) then
+                logger.error("Argument must be widget!")
+            end
 
-        do
-            local component = Modifiers.components[name]
-            if not component then return end
+            if widgetsAreSame(newParent, instance) then
+                logger.error("I can't be parent of myself!")
+            end
 
-            if typeof(component) == "string" then
-                component = Modifiers.components[component]
-                if not component or typeof(component) == "string" then
-                    return
-                end
-                modifierFactory = component
-            else
-                modifierFactory = component
+            if newParent and parent and widgetsAreSame(parent, newParent) then
+                return
+            end
+
+            if parent then
+                parent.removeChild(instance :: any)
+            end
+
+            if newParent then
+                newParent.addChild(instance :: any)
             end
         end
 
-        if typeof(params) == "table" and typeof(params[1]) == "table" then
-            for i, config in ipairs(params :: { {[string]: any} }) do
-                local stackKey = `{name}_{i}`
+        function instance.getSpace()
+            return space
+        end
 
-                if Helpers.removeUndefined(config) == nil then
+        function instance._setSpace(newSpace: Widget.SpaceLike?)
+            space = newSpace
+
+            for _, child in children do
+                if child.isImplemented("_setSpace") then
+                    child._setSpace(newSpace)
+                end
+            end
+
+            for _, modifier in modifierComponents do
+                modifier.setScaleObjectFn(newSpace and newSpace.scaleObject)
+            end
+
+            redraw()
+        end
+
+        function instance._setParent(newParent: Widget.Interface?)
+            ensureNotDestroyed()
+
+            parent = newParent
+
+            if parent and parent._typeName == "space" then
+                instance._setSpace(parent :: any)
+            elseif parent and parent.isImplemented("getSpace") then
+                local parentSpace = parent.getSpace()
+                instance._setSpace(parentSpace)
+            elseif space ~= nil then
+                instance._setSpace(nil)
+            end
+
+            if parent and parent.getGuiObject() and object then
+                object.Parent = parent.getGuiObject()
+            elseif not parent and object then
+                object.Parent = nil
+            end
+
+            events.fire("ParentChanged", newParent)
+        end
+
+        function instance.getParent()
+            return parent
+        end
+    end
+
+    if features.children then
+        function instance.addChild(child: Widget.InternalInterface)
+            ensureNotDestroyed()
+
+            if not isWidget(child) then
+                logger.error("Cannot add child that is not Widget!")
+            end
+
+            if child.getParent() then
+                logger.error("Child already had parent!")
+            end
+
+            if not child.isImplemented("parenting", true) then
+                logger.error("Child doesn't support parenting")
+            end
+
+            if widgetsAreSame(child, instance) then
+                logger.error("I can't be parent of myself!")
+            end
+            logger.debug("[%s %d] Adding child: %s %d", instance._widgetName, id, child._widgetName, child._uniqueId)
+
+            if child.isImplemented("properties", true) then
+                -- Yummy auto order
+                local currentOrder = child.getProperty("layoutOrder")
+                if not currentOrder or currentOrder == 0 then
+                    child.setProperty("layoutOrder", nextLayoutOrder)
+                    nextLayoutOrder += 1
+                end
+            end
+
+            child._setParent(instance :: any)
+
+            table.insert(children, child)
+            childrenIndex[child] = #children
+
+            if object and child.isImplemented("_createObject") then
+                child._createObject()
+            end
+
+            events.fire("ChildAdded", child)
+        end
+
+        function instance.removeChild(child: Widget.InternalInterface, andDestroy: boolean?)
+            if isDestroyed then
+                logger.error("Tried to access widget after it was destroyed")
+            end
+
+            if not isWidget(child) then
+                logger.error("Cannot remove child that is not Widget!")
+            end
+
+            local childParent = child.getParent()
+            if childParent and childParent._uniqueId ~= instance._uniqueId then
+                logger.error("Child had different parent!")
+            end
+
+            logger.debug("[%s %d] Removing child: %s %d", instance._widgetName, id, child._widgetName, child._uniqueId)
+            -- Swap and pop!!!
+            local index = childrenIndex[child]
+            if index ~= nil then
+                local lastIndex = #children
+
+                if index ~= lastIndex then
+                    local newOccupier = children[lastIndex]
+
+                    children[index] = newOccupier
+                    childrenIndex[newOccupier] = index
+                end
+
+                children[lastIndex] = nil
+                childrenIndex[child] = nil
+            end
+
+            if andDestroy == true then
+                child.destroy()
+            else
+                child._setParent(nil)
+            end
+            events.fire("ChildRemoved", child)
+        end
+
+        function instance.clearChildren()
+            ensureNotDestroyed()
+            local toDestroy = table.clone(children)
+            table.clear(children)
+            table.clear(childrenIndex)
+
+            for _, child in pairs(toDestroy) do
+                child._setParent(nil)
+                child.destroy()
+            end
+        end
+    end
+
+    if features.modifiers then
+        local function setModifier(name: string, params: {[string]: any} | { {[string]: any} })
+            ensureNotDestroyed()
+
+            local modifierFactory: (props: {[string]: any}) -> Modifier.Component
+
+            do
+                local component = Modifiers.components[name]
+                if not component then return end
+
+                if typeof(component) == "string" then
+                    component = Modifiers.components[component]
+                    if not component or typeof(component) == "string" then
+                        return
+                    end
+                    modifierFactory = component
+                else
+                    modifierFactory = component
+                end
+            end
+
+            if typeof(params) == "table" and typeof(params[1]) == "table" then
+                for i, config in ipairs(params :: { {[string]: any} }) do
+                    local stackKey = `{name}_{i}`
+
+                    if Helpers.removeUndefined(config) == nil then
+                        local component = modifierComponents[stackKey]
+                        if component then
+                            component.destroy()
+                            modifierComponents[stackKey] = nil
+                        end
+                        return
+                    end
+
+                    if not modifierComponents[stackKey] then
+                        local newMod = modifierFactory(config) :: any
+                        modifierComponents[stackKey] = newMod
+                        if object then
+                            -- Linter was screaming at me ;-;
+                            newMod.mountTo(object :: GuiObject)
+                        end
+                    else
+                        for k, v in pairs(config) do
+                            modifierComponents[stackKey].setProperty(k, v)
+                        end
+                    end
+                end
+            else
+                local stackKey = `{name}_1`
+
+                if Helpers.removeUndefined(params) == nil then
                     local component = modifierComponents[stackKey]
                     if component then
                         component.destroy()
@@ -905,55 +1092,67 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
                 end
 
                 if not modifierComponents[stackKey] then
-                    local newMod = modifierFactory(config) :: any
+                    local newMod = modifierFactory(params :: {[string]: any}) :: any
                     modifierComponents[stackKey] = newMod
-                    if object then
-                        -- Linter was screaming at me ;-;
-                        newMod.mountTo(object :: GuiObject)
-                    end
+                    if object then newMod.mountTo(object) end
                 else
-                    for k, v in pairs(config) do
+                    for k, v in pairs(params :: {[string]: any}) do
                         modifierComponents[stackKey].setProperty(k, v)
                     end
                 end
             end
-        else
-            local stackKey = `{name}_1`
+        end
+        instance.setModifier = setModifier
 
-            if Helpers.removeUndefined(params) == nil then
-                local component = modifierComponents[stackKey]
-                if component then
-                    component.destroy()
-                    modifierComponents[stackKey] = nil
-                end
+        function instance.getModifier(name: string, index: number?)
+            return modifierComponents[`{name}_{index or 1}`]
+        end
+
+        if args and args.modifiers then
+            for key, modifierProps in pairs(args.modifiers) do
+                -- modifierProps can't be nil... Impossible! MAYBE
+                -- (And yea, linter was screaming at me AGAIN)
+                setModifier(key, modifierProps :: any)
+            end
+        end
+    end
+
+    if features.transitions then
+        function instance.setTransition(key: string, transition: Animations.Transition?)
+            ensureNotDestroyed()
+
+            if not linkedProperties[key] then
+                logger.warn("Transition was set on property that is not linked to object (key: %s)", key)
+            end
+
+            if transitions[key] and object then
+                transitions[key].stop(object, key)
+            end
+
+            transitions[key] = transition
+        end
+
+        function instance.snapProperty(key: string, value: any | Utils.Ref<any>)
+            ensureNotDestroyed()
+
+            local cachedTransition = transitions[key]
+            if not cachedTransition then
+                setProperty(key, value)
                 return
             end
 
-            if not modifierComponents[stackKey] then
-                local newMod = modifierFactory(params :: {[string]: any}) :: any
-                modifierComponents[stackKey] = newMod
-                if object then newMod.mountTo(object) end
-            else
-                for k, v in pairs(params :: {[string]: any}) do
-                    modifierComponents[stackKey].setProperty(k, v)
-                end
+            transitions[key] = nil
+
+            if cachedTransition and object and linkedProperties[key] then
+                cachedTransition.stop(object, linkedProperties[key])
             end
+
+            setProperty(key, value)
+
+            transitions[key] = cachedTransition
         end
     end
-
-    instance.setModifier = setModifier
-
-    function instance.getModifier(name: string, index: number?)
-        return modifierComponents[`{name}_{index or 1}`]
-    end
-
-    function instance._setObject(new: any)
-        if instance._typeName == "widget" then
-            logger.error("Function _setObject can be called only on custom widget-like type!")
-        end
-
-        object = new
-    end
+    -- feature: all -- ebd --
 
     if args and args.properties then
         for key, value in pairs(args.properties :: {[string]: any}) do
@@ -975,27 +1174,19 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
             end
         end
 
-        if args.transitions then
+        if features.children and args.children then
+            for _, child in ipairs(args.children) do
+                instance.addChild(child :: Widget.InternalInterface)
+            end
+        end
+
+        if features.transitions and args.transitions then
             for key, transition in pairs(args.transitions) do
                 if not linkedProperties[key] then
                     logger.warn("Transition was set on property that is not linked to object (key: %s)", key)
                 end
 
                 transitions[key] = transition
-            end
-        end
-
-        if args.modifiers then
-            for key, modifierProps in pairs(args.modifiers) do
-                -- modifierProps can't be nil... Impossible! MAYBE
-                -- (And yea, linter was screaming at me AGAIN)
-                setModifier(key, modifierProps :: any)
-            end
-        end
-
-        if args.children then
-            for _, child in ipairs(args.children) do
-                instance.addChild(child :: Widget.InternalInterface)
             end
         end
 
@@ -1007,8 +1198,6 @@ function WidgetClass.new<C>(args: Widget.Args?): Widget.Interface
     if isDestroyed then
         logger.critical("Widget was destroyed on setup")
     end
-
-    State.addWidget(instance :: any)
 
     -- Dropping reference
     args = nil

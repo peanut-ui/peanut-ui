@@ -39,22 +39,11 @@ export type SpaceEvents<Object = LayerCollector> = {
     -- While GuiObjectDestroying is part of Widget.destroy, so it still exists
 }
 
-type Unsupported = (...never) -> never
+type Unsupported = (...never) -> ...never
 
-export type Interface<Props = SpaceProps, Object = LayerCollector, Events = SpaceEvents> = {
+export type Interface<Props = SpaceProps, Object = LayerCollector, Events = SpaceEvents> = Widget.SpaceLike & {
     _typeName: "space",
-    _widgetLike: true,
-
-    _widgetName: string,
     _spaceName: string,
-    _uniqueId: number,
-
-    -- Keep API widget-like
-    setTransition: Unsupported,
-    snapProperty: Unsupported,
-    setParent: Unsupported,
-    getParent: Unsupported,
-    createObject: Unsupported,
 
     destroy: () -> (),
     isDestroyed: () -> boolean,
