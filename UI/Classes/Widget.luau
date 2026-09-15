@@ -44,6 +44,9 @@ local defaultWidget = {
     destroy = unsupportedFn,
     isDestroyed = unsupportedFn,
 
+    setAnimation = unsupportedFn,
+    getAnimation = unsupportedFn,
+
     setModifier = unsupportedFn,
     getModifier = unsupportedFn,
     getRef = unsupportedFn,
@@ -329,7 +332,14 @@ function WidgetClass.new<C>(
     -- Key is property
     local transitions: {[string]: Animations.Transition} = {}
 
+    local animatedProperty: {[string]: string} = {}
+
     local linkedProperties: {[string]: string} = {}
+    local linkedPropertiesMap: {[string]: string} = {}
+
+    local animations: {[string]: Animations.Animation} = {}
+    local propertyToAnimation: {[string]: Animations.Animation} = {}
+
     local readonlyProperties: {[string]: boolean} = {}
 
     local rbxLinkedProperties: {[string]: string} = {}
@@ -362,7 +372,8 @@ function WidgetClass.new<C>(
         events = true,
         parenting = true,
         children = true,
-        modifiers = true
+        modifiers = true,
+        animations = true
     }
 
     if disableFeatures then
@@ -458,11 +469,40 @@ function WidgetClass.new<C>(
     function instance._addCleanup(obj: RBXScriptConnection | () -> ())
         table.insert(cleanups, obj)
     end
+
+    local function ensureRef(key: string)
+        local ref = propertiesRefs[key]
+
+        if not ref then
+            propertiesRefs[key] = Ref.new(nil)
+            ref = propertiesRefs[key]
+
+            if features.animations then
+                ref.watch(function()
+                    local propertyAnimation = propertyToAnimation[key]
+                    print(propertyAnimation)
+
+                    if object and propertyAnimation and propertyAnimation.isRunning(object) then
+                        propertyAnimation.stop(object)
+                        task.defer(function()
+                            if not object or propertyAnimation ~= propertyToAnimation[key] then
+                                return
+                            end
+
+                            propertyAnimation.animate(object)
+                        end)
+                    end
+                end)
+            end
+        end
+
+        return ref
+    end
     -- widget: main -- end --
 
     -- feature: property -- start --
     local function setProperty(key: string, value: any | Utils.Ref<any>)
-        local ref = propertiesRefs[key]
+        local ref = ensureRef(key)
 
         value = Helpers.removeUndefined(value)
 
@@ -474,13 +514,7 @@ function WidgetClass.new<C>(
             value = Ref.reactive(value)
         end
 
-        if not ref then
-            propertiesRefs[key] = Ref.new(value)
-            ref = propertiesRefs[key]
-        else
-            ref.setValue(value, true)
-        end
-
+        ref.setValue(value)
         events.fire("PropertyChanged", key, ref.getValue())
     end
 
@@ -522,11 +556,9 @@ function WidgetClass.new<C>(
         end
 
         linkedProperties[name] = property
-        local ref = propertiesRefs[name]
-        if not ref then
-            propertiesRefs[name] = Ref.new(nil)
-            ref = propertiesRefs[name]
-        end
+        linkedPropertiesMap[property] = name
+
+        local ref = ensureRef(name)
 
         if syncWithObject then
             rbxLinkedProperties[name] = property
@@ -574,16 +606,16 @@ function WidgetClass.new<C>(
     instance._linkProperty = link
 
     local function syncRbxProperty(key: string)
+        if not object then
+            return
+        end
+
         local rbxKey = rbxLinkedProperties[key]
         if not rbxKey then
             return
         end
 
-        local ref = propertiesRefs[key]
-        if not ref then
-            propertiesRefs[key] = Ref.new(nil)
-            ref = propertiesRefs[key]
-        end
+        local ref = ensureRef(key)
 
         rbxPropertyLocked[key] = true
         local value = (object :: any)[rbxKey]
@@ -593,7 +625,7 @@ function WidgetClass.new<C>(
             value = transformFn(value)
         end
 
-        ref.setValue(value, true)
+        ref.setValue(value)
         events.fire("PropertyChanged", key, value)
 
         rbxPropertyLocked[key] = nil
@@ -659,11 +691,7 @@ function WidgetClass.new<C>(
     local function observe(key: string, callback: (newValue: any) -> ...boolean?): () -> ()
         ensureNotDestroyed()
 
-        local ref = propertiesRefs[key]
-        if not ref then
-            ref = Ref.new(nil)
-            propertiesRefs[key] = ref
-        end
+        local ref = ensureRef(key)
 
         if rbxLinkedProperties[key] then
             local counter = rbxPropertyWatching[key] or 0
@@ -700,11 +728,7 @@ function WidgetClass.new<C>(
     function instance.getRef(key: string): Utils.ProtectedRef<any>
         ensureNotDestroyed()
 
-        local ref = propertiesRefs[key]
-        if not ref then
-            ref = Ref.new(nil) :: Utils.Ref<any>
-            propertiesRefs[key] = ref
-        end
+        local ref = ensureRef(key)
 
         local onWatch: () -> ()? = nil
         local onUnwatch: () -> ()? = nil
@@ -858,6 +882,10 @@ function WidgetClass.new<C>(
 
         for _, modifier in pairs(modifierComponents) do
             modifier.mountTo(newObject)
+        end
+
+        for _, animation in pairs(animations) do
+            animation.animate(newObject)
         end
 
         events.fire("GuiObjectCreated", newObject)
@@ -1124,12 +1152,22 @@ function WidgetClass.new<C>(
         function instance.setTransition(key: string, transition: Animations.Transition?)
             ensureNotDestroyed()
 
-            if not linkedProperties[key] then
+            if transition and not linkedProperties[key] then
                 logger.warn("Transition was set on property that is not linked to object (key: %s)", key)
             end
 
             if transitions[key] and object then
                 transitions[key].stop(object, key)
+            end
+
+            if transition then
+                if animatedProperty[key] and animatedProperty[key] ~= "transition" then
+                    logger.error("Property is already occupied by another animator: %s", transition)
+                    return
+                end
+                animatedProperty[key] = "transition"
+            else
+                animatedProperty[key] = nil
             end
 
             transitions[key] = transition
@@ -1155,7 +1193,66 @@ function WidgetClass.new<C>(
             transitions[key] = cachedTransition
         end
     end
-    -- feature: all -- ebd --
+
+    if features.animations then
+        function instance.setAnimation(name: string, animation: Animations.Animation?)
+            ensureNotDestroyed()
+
+            if animation then
+                for _, key in animation.properties do
+                    local originalKey = linkedPropertiesMap[key]
+                    if not originalKey then
+                        continue
+                    end
+
+                    local animator = animatedProperty[originalKey]
+                    if animator then
+                        logger.error("Animation animates one of the properties that is already occupied by another animator: %s", animator)
+                        return
+                    end
+                end
+            end
+
+            local oldAnimation = animations[name]
+            if oldAnimation then
+                if object and oldAnimation.isRunning(object) then
+                    oldAnimation.stop(object)
+                end
+
+                for _, key in oldAnimation.properties do
+                    local originalKey = linkedPropertiesMap[key]
+                    if not originalKey then
+                        continue
+                    end
+
+                    animatedProperty[originalKey] = nil
+                    propertyToAnimation[originalKey] = nil
+                end
+
+                animations[name] = nil
+            end
+
+            if not animation then
+                return
+            end
+
+            animations[name] = animation
+            if object then
+                animation.animate(object)
+            end
+
+            for _, key in animation.properties do
+                local originalKey = linkedPropertiesMap[key]
+                if not originalKey then
+                    continue
+                end
+
+                animatedProperty[originalKey] = `animation_{name}`
+                propertyToAnimation[originalKey] = animation
+            end
+        end
+    end
+    -- feature: all -- end --
 
     if args and args.properties then
         for key, value in pairs(args.properties :: {[string]: any}) do
@@ -1191,7 +1288,13 @@ function WidgetClass.new<C>(
                     logger.warn("Transition was set on property that is not linked to object (key: %s)", key)
                 end
 
-                transitions[key] = transition
+                instance.setTransition(key, transition)
+            end
+        end
+
+        if features.animations and args.animations then
+            for name, animation in pairs(args.animations) do
+                instance.setAnimation(name, animation)
             end
         end
 

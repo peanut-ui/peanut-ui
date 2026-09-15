@@ -147,6 +147,12 @@ export type ModifiersFeature = {
     getModifier: <K>(name: K & keyof<Modifier.Components>, index: number?) -> any,
 }
 
+-- feature: animations
+export type AnimationsFeature = {
+    setAnimation: (name: string, animation: Animations.Animation?) -> (),
+    getAnimation: (name: string) -> Animations.AnimationControl
+}
+
 export type Features = {
     events: EventsFeature,
     properties: PropertiesFeature,
@@ -154,7 +160,8 @@ export type Features = {
     transitions: TransitionsFeature,
     parenting: ParentingFeature,
     children: ChildrenFeature,
-    modifiers: ModifiersFeature
+    modifiers: ModifiersFeature,
+    animations: AnimationsFeature
 }
 
 export type WidgetLike = {
@@ -184,6 +191,7 @@ export type Box = {
 } & WidgetLike
     & ParentingFeature
     & ChildrenFeature
+    & AnimationsFeature
 
 export type BaseInterface = {
     _setCreateObject: (() -> Instance?) -> (),
@@ -226,6 +234,9 @@ export type Interface<Props = DefaultProperties, Object = GuiObject, Events = De
     clearChildren: () -> (),
     children: {Interface},
 
+    setAnimation: (name: string, animation: Animations.Animation) -> (),
+    getAnimation: (name: string) -> Animations.AnimationControl,
+
     getSpace: () -> SpaceLike?,
 
     getGuiObject: () -> (Object?),
@@ -259,6 +270,7 @@ export type Args<Props = DefaultProperties, Widget = Interface, Events = Default
     events: Partial<UnionProperties<Events, Utils.Ref<any>>>?,
     transitions: {[keyof<Props>]: Animations.Transition}?,
     modifiers: Modifier.Modifiers?,
+    animations: {[string]: Animations.Animation}?,
     onSetup: (widget: Widget) -> ()?,
     defaultSetupOverride: (Utils.Undefined | (widget: Widget, defaultFn: (widget: Widget) -> ()) -> ())?,
     widgetName: string?

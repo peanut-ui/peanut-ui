@@ -1,5 +1,7 @@
 --!strict
 
+export type AnimationStep = (obj: any, deltaTime: number, state: any) -> ...boolean?
+
 export type Transition = {
     read _typeName: "transition",
     read animate: (obj: Instance, property: string, to: any) -> (),
@@ -14,7 +16,18 @@ export type Animation = {
     read stop: (obj: Instance) -> (),
     read isRunning: (obj: Instance) -> boolean,
     read pause: (obj: Instance) -> (),
-    read continue: (obj: Instance) -> ()
+    read continue: (obj: Instance) -> (),
+    read properties: {string}
+}
+
+export type AnimationControl = {
+    read _typeName: "animationControl",
+
+    read animate: () -> (),
+    read stop: () -> (),
+    read isRunning: () -> boolean,
+    read pause: () -> (),
+    read continue: () -> ()
 }
 
 return {}
