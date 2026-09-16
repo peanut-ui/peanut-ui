@@ -1,6 +1,9 @@
 --!strict
 --!optimize 2
+const Logging = require(script.Parent.Logging)
 const TypeFuncs = require(script.Parent.Parent.Types.TypeFuncs)
+
+local logger = Logging.getLogger("PeanutUI.Utils.Scheduler")
 
 type Elements = {
     [string]: {() -> ()},
@@ -58,7 +61,7 @@ local function step()
 end
 
 local ticksRanBeforeStop = 0
-local isRunning = false
+local isRunning = true
 local isScheduled = false
 local function scheduleNextStep()
     if not isRunning then return end
@@ -67,6 +70,12 @@ local function scheduleNextStep()
 
     task.defer(function()
         isScheduled = false
+
+        if ticksRanBeforeStop >= 70 then
+            logger.warn("Scheduler stopped after 70 consecutive ticks without becoming idle; a callback may be continuously scheduling more work")
+            ticksRanBeforeStop = 0
+            return
+        end
         step()
 
         if not isScheduled then
@@ -76,7 +85,7 @@ local function scheduleNextStep()
         if isScheduled then
             ticksRanBeforeStop += 1
         else
-            print("Tick ran before stop", ticksRanBeforeStop)
+            logger.debug("Ticks ran before stop: %s", ticksRanBeforeStop)
             ticksRanBeforeStop = 0
         end
     end)
