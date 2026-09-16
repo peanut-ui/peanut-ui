@@ -4,11 +4,12 @@ const TypeFuncs = require(script.Parent.Parent.Types.TypeFuncs)
 
 type Elements = {
     [string]: {() -> ()},
+    defer: {() -> ()},
     refs: {() -> ()},
     createObject: {() -> ()},
     signals: {() -> ()},
     redraw: {() -> ()},
-    defer: {() -> ()},
+    settled: {() -> ()},
 
     -- Ran when scheduler stops
     idle: {() -> ()}
@@ -21,7 +22,8 @@ local scheduled: Elements = {
     refs = {},
     redraw = {},
     defer = {},
-    idle = {}
+    idle = {},
+    settled = {}
 }
 
 local function execute(name: TypeFuncs.KeyOf<Elements>)
@@ -47,15 +49,16 @@ local function drain(name: TypeFuncs.KeyOf<Elements>)
 end
 
 local function step()
+    execute("defer")
     drain("refs")
     execute("createObject")
     execute("signals")
     execute("redraw")
-    execute("defer")
+    execute("settled")
 end
 
 local ticksRanBeforeStop = 0
-local isRunning = true
+local isRunning = false
 local isScheduled = false
 local function scheduleNextStep()
     if not isRunning then return end
