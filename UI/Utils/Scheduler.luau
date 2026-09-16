@@ -8,37 +8,50 @@ type Elements = {
     createObject: {() -> ()},
     signals: {() -> ()},
     redraw: {() -> ()},
-    defer: {() -> ()}
+    defer: {() -> ()},
+
+    -- Ran when scheduler stops
+    idle: {() -> ()}
 }
 
-local function makeNew(): Elements
-    return {
-        createObject = {},
-        signals = {},
-        events = {},
-        refs = {},
-        redraw = {},
-        defer = {},
-    }
-end
+local scheduled: Elements = {
+    createObject = {},
+    signals = {},
+    events = {},
+    refs = {},
+    redraw = {},
+    defer = {},
+    idle = {}
+}
 
-local scheduled = makeNew()
+local function execute(name: TypeFuncs.KeyOf<Elements>)
+    local snapshot = scheduled[name]
+    scheduled[name] = {}
 
-local function execute(from: Elements, name: TypeFuncs.KeyOf<Elements>)
-    for _, fn in from[name] do
+    for _, fn in snapshot do
         fn()
     end
 end
 
-local function step()
-    local executes = scheduled
-    scheduled = makeNew()
+local function drain(name: TypeFuncs.KeyOf<Elements>)
+    local budget = 15
+    while budget > 0 and #scheduled[name] > 0 do
+        budget -= 1
+        local snapshot = scheduled[name]
+        scheduled[name] = {}
 
-    execute(executes, "refs")
-    execute(executes, "createObject")
-    execute(executes, "signals")
-    execute(executes, "redraw")
-    execute(executes, "defer")
+        for _, fn in snapshot do
+            fn()
+        end
+    end
+end
+
+local function step()
+    drain("refs")
+    execute("createObject")
+    execute("signals")
+    execute("redraw")
+    execute("defer")
 end
 
 local ticksRanBeforeStop = 0
@@ -52,6 +65,10 @@ local function scheduleNextStep()
     task.defer(function()
         isScheduled = false
         step()
+
+        if not isScheduled then
+            execute("idle")
+        end
 
         if isScheduled then
             ticksRanBeforeStop += 1
@@ -77,20 +94,15 @@ local function schedule<A...>(name: TypeFuncs.KeyOf<Elements>, fn: (A...) -> (),
 end
 
 local function defer<A...>(fn: (A...) -> (), ...: A...): thread
-    local co = coroutine.create(fn)
+    return schedule("defer", fn, ...)
+end
 
-    local args = table.pack(... :: any)
-    local function execute()
-        task.spawn(co, table.unpack(args))
-    end
-
-    table.insert(scheduled.defer, execute)
-
-    scheduleNextStep()
-    return co
+local function idle<A...>(fn: (A...) -> (), ...: A...): thread
+    return schedule("idle", fn, ...)
 end
 
 return {
+    idle = idle,
     defer = defer,
     step = step,
     schedule = schedule
