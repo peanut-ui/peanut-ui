@@ -179,7 +179,8 @@ local function newSpace(
     -- Idk why but linter says it's { [string]: any } and not args which is weird
     } :: any, {
         parenting = true,
-        transitions = true
+        transitions = true,
+        animations = true
     })
     local widgetInternal = (widget :: any) :: SpaceType.InternalInterface
 
