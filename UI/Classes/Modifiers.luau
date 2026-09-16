@@ -290,8 +290,8 @@ local function createModifier(
             return
         end
 
-        local keysToFlush = table.clone(dirtyKeys)
-        table.clear(dirtyKeys)
+        local keysToFlush = dirtyKeys
+        dirtyKeys = {}
 
         for rbxKey, _ in pairs(keysToFlush) do
             local newValue
@@ -338,7 +338,9 @@ local function createModifier(
         ensureNotDestroyed()
 
         for _, ref in pairs(propertiesRefs) do
-            ref.notifyImmediate()
+            for rbxKey, _ in pairs(linkedProperties) do
+                dirtyKeys[rbxKey] = true
+            end
         end
 
         for _, modifier in pairs(modifierComponents) do

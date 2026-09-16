@@ -336,6 +336,7 @@ function WidgetClass.new<C>(
     local animatedProperty: {[string]: string} = {}
 
     local linkedProperties: {[string]: string} = {}
+    local linkedPropertiesUpdate: {[string]: (value: any) -> ()} = {}
     local linkedPropertiesMap: {[string]: string} = {}
 
     local animations: {[string]: Animations.Animation} = {}
@@ -477,23 +478,6 @@ function WidgetClass.new<C>(
         if not ref then
             propertiesRefs[key] = Ref.new(nil)
             ref = propertiesRefs[key]
-
-            if features.animations then
-                ref.watch(function()
-                    local propertyAnimation = propertyToAnimation[key]
-
-                    if object and propertyAnimation and propertyAnimation.isRunning(object) then
-                        propertyAnimation.stop(object)
-                        Scheduler.schedule("redraw", function()
-                            if not object or propertyAnimation ~= propertyToAnimation[key] then
-                                return
-                            end
-
-                            propertyAnimation.animate(object)
-                        end)
-                    end
-                end)
-            end
         end
 
         return ref
@@ -601,6 +585,7 @@ function WidgetClass.new<C>(
             end
         end
 
+        linkedPropertiesUpdate[name] = update
         table.insert(cleanups, (ref.watch(update)))
     end
     instance._linkProperty = link
@@ -811,8 +796,9 @@ function WidgetClass.new<C>(
                 syncRbxProperty(key)
             end
 
-            for _, ref in pairs(propertiesRefs) do
-                ref.notifyImmediate()
+            for key, update in pairs(linkedPropertiesUpdate) do
+                local ref = ensureRef(key)
+                update(ref.getValue())
             end
 
             for _, modifier in pairs(modifierComponents) do
@@ -856,12 +842,18 @@ function WidgetClass.new<C>(
             return
         end
 
+        logger.debug("[%s %d] _createObject is called", instance._widgetName, id)
+
+        if not getProperty("visible") or not parent then
+            logger.debug("[%s %d] _createObject skipped (not visible)", instance._widgetName, id)
+            -- Not creating object when it's not needed
+            return
+        end
+
         if objectCreationScheduled then return end
         objectCreationScheduled = true
 
         Scheduler.schedule("createObject", function(...)
-            logger.debug("[%s %d] _createObject is called", instance._widgetName, id)
-
             if not createObjectFn then
                 logger.debug("[%s %d] _createObject skipped (no create function)", instance._widgetName, id)
                 return
@@ -902,7 +894,7 @@ function WidgetClass.new<C>(
             events.fire("GuiObjectCreated", newObject)
             logger.debug("[%s %d] _createObject created object", instance._widgetName, id)
 
-            redrawNow()
+            redraw()
         end)
 
         for _, child in ipairs(children :: any) do
@@ -1149,6 +1141,7 @@ function WidgetClass.new<C>(
                 end
             end
         end
+
         instance.setModifier = setModifier
 
         function instance.getModifier(name: string, index: number?)
@@ -1211,6 +1204,7 @@ function WidgetClass.new<C>(
     end
 
     if features.animations then
+        local unwatchKeys: {[string]: () -> ()} = {}
         function instance.setAnimation(name: string, animation: Animations.Animation?)
             ensureNotDestroyed()
 
@@ -1243,6 +1237,12 @@ function WidgetClass.new<C>(
 
                     animatedProperty[originalKey] = nil
                     propertyToAnimation[originalKey] = nil
+
+                    local unwatchFn = unwatchKeys[originalKey]
+                    if unwatchFn then
+                        unwatchFn()
+                        unwatchKeys[originalKey] = nil
+                    end
                 end
 
                 animations[name] = nil
@@ -1265,6 +1265,16 @@ function WidgetClass.new<C>(
 
                 animatedProperty[originalKey] = `animation_{name}`
                 propertyToAnimation[originalKey] = animation
+
+                local ref = ensureRef(originalKey)
+                unwatchKeys[originalKey] = ref.watch(function()
+                    local propertyAnimation = propertyToAnimation[originalKey]
+
+                    if object and propertyAnimation and propertyAnimation.isRunning(object) then
+                        propertyAnimation.stop(object)
+                        propertyAnimation.animate(object)
+                    end
+                end)
             end
         end
     end
