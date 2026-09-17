@@ -400,6 +400,15 @@ function WidgetClass.new<C>(
         end
     end
 
+    local function freezeAndClear(tbl: {[any]: any}?)
+        if type(tbl) ~= "table" then
+            return
+        end
+
+        table.clear(tbl)
+        table.freeze(tbl)
+    end
+
     local isDestroying = false
     function instance.destroy()
         if isDestroyed then return end
@@ -429,17 +438,12 @@ function WidgetClass.new<C>(
         for key, signal in pairs(rbxPropertyEvent) do
             signal:Disconnect()
         end
-        table.clear(rbxPropertyEvent)
-        table.clear(linkedEventListener)
-        table.clear(cleanups)
 
         for _, ref in pairs(propertiesRefs) do
             ref.destroy()
         end
 
         local currentChildren = table.clone(children)
-        table.clear(childrenIndex)
-        table.clear(children)
 
         for _, child in ipairs(currentChildren :: any) do
             child._setParent(nil)
@@ -451,7 +455,6 @@ function WidgetClass.new<C>(
                 transition.stop(object)
             end
         end
-        table.clear(transitions)
 
         if object then
             events.fire("GuiObjectDestroying", object)
@@ -459,9 +462,31 @@ function WidgetClass.new<C>(
             object = nil
         end
 
+        freezeAndClear(propertiesRefs)
+        freezeAndClear(transitions)
+        freezeAndClear(animatedProperty)
+        freezeAndClear(linkedProperties)
+        freezeAndClear(linkedPropertiesUpdate)
+        freezeAndClear(linkedPropertiesMap)
+        freezeAndClear(animations)
+        freezeAndClear(propertyToAnimation)
+        freezeAndClear(readonlyProperties)
+        freezeAndClear(rbxLinkedProperties)
+        freezeAndClear(rbxPropertyEvent)
+        freezeAndClear(rbxPropertyLocked)
+        freezeAndClear(rbxPropertyWatching)
+        freezeAndClear(rbxPropertyTransform)
+        freezeAndClear(modifierComponents)
+        freezeAndClear(linkedEvents)
+        freezeAndClear(linkedEventListener)
+        freezeAndClear(children)
+        freezeAndClear(childrenIndex)
+        freezeAndClear(cleanups)
+
         events.fire("Destroyed", object)
         events.destroy()
         State.removeWidget(instance :: any)
+        table.freeze(instance)
     end
 
     function instance.isDestroyed()

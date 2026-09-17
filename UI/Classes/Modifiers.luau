@@ -76,6 +76,15 @@ local function createModifier(
         end
     end
 
+    local function freezeAndClear(tbl: {[any]: any}?)
+        if type(tbl) ~= "table" then
+            return
+        end
+
+        table.clear(tbl)
+        table.freeze(tbl)
+    end
+
     function modifier.destroy()
         if destroyed then return end
         destroyed = true
@@ -87,10 +96,13 @@ local function createModifier(
                 cleanup()
             end
         end
-        table.clear(cleanups)
 
         for _, ref in pairs(propertiesRefs) do
             ref.destroy()
+        end
+
+        for _, modifier in pairs(modifierComponents) do
+            modifier.destroy()
         end
 
         if object then
@@ -101,7 +113,12 @@ local function createModifier(
             object:Destroy()
             object = nil
         end
-        table.clear(transitions)
+
+        freezeAndClear(cleanups)
+        freezeAndClear(transitions)
+        freezeAndClear(rbxKeysMap)
+        freezeAndClear(propertiesRefs)
+        freezeAndClear(modifierComponents)
     end
 
     function modifier.isDestroyed()
