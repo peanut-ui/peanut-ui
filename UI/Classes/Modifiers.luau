@@ -433,7 +433,10 @@ local function createModifier(
 
         do
             local component = Modifiers.components[name]
-            if not component then return end
+            if not component then
+                logger.warn("Modifier with name %s doesn't exist", name)
+                return
+            end
 
             if typeof(component) == "string" then
                 component = Modifiers.components[component]
@@ -507,7 +510,7 @@ local function createModifier(
     end
 
     function modifier.setScaleObjectFn(fn)
-        fn = scaleFn or defaultScaleFn
+        scaleFn = fn or defaultScaleFn
     end
 
     for key, value in pairs(properties) do

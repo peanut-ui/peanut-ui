@@ -1142,7 +1142,10 @@ function WidgetClass.new<C>(
 
             do
                 local component = Modifiers.components[name]
-                if not component then return end
+                if not component then
+                    logger.warn("Modifier with name %s doesn't exist", name)
+                    return
+                end
 
                 if typeof(component) == "string" then
                     component = Modifiers.components[component]
@@ -1329,6 +1332,7 @@ function WidgetClass.new<C>(
                 for _, key in animation.properties do
                     local originalKey = linkedPropertiesMap[key]
                     if not originalKey then
+                        logger.warn("Animation expected key %s but it's not linked, this might be a bug", key)
                         continue
                     end
 
@@ -1349,6 +1353,7 @@ function WidgetClass.new<C>(
                 for _, key in oldAnimation.properties do
                     local originalKey = linkedPropertiesMap[key]
                     if not originalKey then
+                        logger.warn("Animation expected key %s but it's not linked, this might be a bug", key)
                         continue
                     end
 
