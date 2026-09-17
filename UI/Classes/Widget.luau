@@ -829,6 +829,10 @@ function WidgetClass.new<C>(
             for _, modifier in pairs(modifierComponents) do
                 modifier._redraw()
             end
+
+            for _, animation in pairs(animations) do
+                animation.animate(object)
+            end
         end
 
         inRedrawMode = false
@@ -910,10 +914,6 @@ function WidgetClass.new<C>(
 
             for _, modifier in pairs(modifierComponents) do
                 modifier.mountTo(newObject)
-            end
-
-            for _, animation in pairs(animations) do
-                animation.animate(newObject)
             end
 
             events.fire("GuiObjectCreated", newObject)
