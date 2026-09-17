@@ -1205,6 +1205,60 @@ function WidgetClass.new<C>(
 
     if features.animations then
         local unwatchKeys: {[string]: () -> ()} = {}
+        local animationControlCache: {[string]: Animations.AnimationControl} = {}
+
+        function instance.getAnimation(name: string): Animations.AnimationControl?
+            do
+                local cached = animationControlCache[name]
+                if cached then
+                    return cached
+                end
+            end
+
+            local animation = animations[name]
+            if not animation then
+                return nil
+            end
+
+            local animationControl = {}
+            animationControl._typeName = "animationControl"
+
+            function animationControl.animate()
+                if object then
+                    animation.animate(object)
+                end
+            end
+
+            function animationControl.stop()
+                if object then
+                    animation.stop(object)
+                end
+            end
+
+            function animationControl.isRunning()
+                if object then
+                    return animation.isRunning(object)
+                end
+                return false
+            end
+
+            function animationControl.pause()
+                if object then
+                    animation.pause(object)
+                end
+            end
+
+            function animationControl.continue()
+                if object then
+                    animation.continue(object)
+                end
+            end
+
+            table.freeze(animationControl)
+            animationControlCache[name] = animationControl
+            return animationControl
+        end
+
         function instance.setAnimation(name: string, animation: Animations.Animation?)
             ensureNotDestroyed()
 
