@@ -16,7 +16,7 @@ end
 function Scaling.simpleScale(
     onScreenSpace: {
         read _isSpaceLike: true,
-        read getGuiObject: () -> ScreenGui,
+        read getObject: () -> ScreenGui,
         read changeScaleFn: (Widget.ScaleFn) -> ()
     },
     referenceResolution: Vector2,
@@ -79,7 +79,7 @@ function Scaling.simpleScale(
     end
 
     if typeof(onScreenSpace) == "table" and onScreenSpace._isSpaceLike == true then
-        local newObject = onScreenSpace.getGuiObject()
+        local newObject = onScreenSpace.getObject()
 
         if newObject:IsA("ScreenGui") then
             object = Instance.new("Frame")

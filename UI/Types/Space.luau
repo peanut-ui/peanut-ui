@@ -31,12 +31,12 @@ export type SpaceEvents<Object = LayerCollector> = {
     ChildAdded: (child: Widget.BaseInterface) -> ...boolean?,
     ChildRemoved: (child: Widget.BaseInterface) -> ...boolean?,
     PropertyChanged: (key: string, value: any) -> ...boolean?,
-    GuiObjectDestroying: (object: Object) -> ...boolean?,
+    ObjectDestroying: (object: Object) -> ...boolean?,
     Destroying: () -> ...boolean?,
     Destroyed: () -> ...boolean?,
 
-    -- GuiObjectCreated doesn't exist on SpaceEvents because it uses custom object creation
-    -- While GuiObjectDestroying is part of Widget.destroy, so it still exists
+    -- ObjectCreated doesn't exist on SpaceEvents because it uses custom object creation
+    -- While ObjectDestroying is part of Widget.destroy, so it still exists
 }
 
 type Unsupported = (...never) -> ...never
@@ -66,7 +66,8 @@ export type Interface<Props = SpaceProps, Object = LayerCollector, Events = Spac
     children: {Widget.Interface},
 
     -- LayerCollector object is ALWAYS created in this type
-    getGuiObject: () -> Object,
+    getObjectRef: () -> Utils.Ref<Object>,
+    getObject: () -> Object,
 }
 
 export type InternalInterface<Props = SpaceProps, Object = LayerCollector, Events = SpaceEvents> =

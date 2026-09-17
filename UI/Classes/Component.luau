@@ -65,14 +65,14 @@ function Component.defineComponent<T>(
             fn(widget)
         end
 
-        local guiObject = (widget :: WidgetType.Interface).getGuiObject()
+        local guiObject = (widget :: WidgetType.Interface).getObject()
         if guiObject then
             for _, fn in bucket.onCreatedHooks do
                 fn(guiObject)
             end
         else
             for _, fn in bucket.onCreatedHooks do
-                widget.listen("GuiObjectCreated", fn)
+                widget.listen("ObjectCreated", fn)
             end
         end
 

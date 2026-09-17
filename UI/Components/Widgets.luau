@@ -325,6 +325,7 @@ return {
             modal = false,
             selected = false,
             isLoaded = false,
+            inputSink = Enum.InputSink.Activate
         },
         function()
             return Instance.new("ImageButton")
@@ -459,7 +460,8 @@ return {
             autoButtonColor = true,
             modal = false,
             selected = false,
-            style = Enum.ButtonStyle.Custom
+            style = Enum.ButtonStyle.Custom,
+            inputSink = Enum.InputSink.Activate
         },
         function()
             return Instance.new("TextButton")

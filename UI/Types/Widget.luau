@@ -42,8 +42,8 @@ export type DefaultEvents = {
     ChildRemoved: (child: BaseInterface) -> ...boolean?,
     ParentChanged: (newParent: BaseInterface?) -> ...boolean?,
     PropertyChanged: (key: string, value: any) -> ...boolean?,
-    GuiObjectCreated: (object: GuiObject) -> ...boolean?,
-    GuiObjectDestroying: (object: GuiObject) -> ...boolean?,
+    ObjectCreated: (object: GuiObject) -> ...boolean?,
+    ObjectDestroying: (object: GuiObject) -> ...boolean?,
     Destroying: () -> ...boolean?,
     Destroyed: () -> ...boolean?,
 }
@@ -66,6 +66,14 @@ export type DefaultProperties = {
     automaticSize: Enum.AutomaticSize,
 
     selectable: boolean,
+    selectionOrder: number,
+
+    selectionImageObject: Utils.Ref<GuiObject?>?,
+    nextSelectionDown: Utils.Ref<GuiObject?>?,
+    nextSelectionUp: Utils.Ref<GuiObject?>?,
+    nextSelectionRight: Utils.Ref<GuiObject?>?,
+    nextSelectionLeft: Utils.Ref<GuiObject?>?,
+
     interactable: boolean,
     active: boolean,
 
@@ -75,6 +83,12 @@ export type DefaultProperties = {
     absoluteSize: Vector2,
     absolutePosition: Vector2,
     absoluteRotation: number,
+
+    inputSink: Enum.InputSink,
+
+    borderColor: Color3,
+    borderMode: Enum.BorderMode,
+    borderSizePx: number,
 
     name: string
 }
@@ -187,7 +201,8 @@ export type Box = {
     _redraw: () -> (),
     _addCleanup: (RBXScriptConnection | () -> ()) -> (),
 
-    getGuiObject: () -> Instance?,
+    getObjectRef: () -> Utils.Ref<Object?>,
+    getObject: () -> Instance?,
 } & WidgetLike
     & ParentingFeature
     & ChildrenFeature
@@ -201,7 +216,8 @@ export type BaseInterface = {
     _addCleanup: (RBXScriptConnection | () -> ()) -> (),
     _setObject: (object: Instance) -> (),
 
-    getGuiObject: () -> Instance?,
+    getObjectRef: () -> Utils.Ref<Object?>,
+    getObject: () -> Instance?,
 } & WidgetLike
     & ChildrenFeature
     & ParentingFeature
@@ -239,7 +255,8 @@ export type Interface<Props = DefaultProperties, Object = GuiObject, Events = De
 
     getSpace: () -> SpaceLike?,
 
-    getGuiObject: () -> (Object?),
+    getObject: () -> (Object?),
+    getObjectRef: () -> Utils.Ref<Object?>,
 }
 
 export type InternalFunctions<Props = DefaultProperties, Object = GuiObject, Events = DefaultEvents> = {

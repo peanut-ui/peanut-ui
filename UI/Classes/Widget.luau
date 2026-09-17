@@ -79,7 +79,8 @@ local defaultWidget = {
     _setObject = unsupportedFn,
     _setSpace = unsupportedFn,
 
-    getGuiObject = unsupportedFn,
+    getObject = unsupportedFn,
+    getObjectRef = unsupportedFn,
     isImplemented = function(...)
         return false
     end
@@ -103,12 +104,20 @@ local defaultProperties: Widget.DefaultProperties = {
     automaticSize = Enum.AutomaticSize.None,
 
     selectable = true,
+    selectionOrder = 0,
+
     interactable = true,
     active = true,
 
     absolutePosition = Vector2.zero,
     absoluteSize = Vector2.zero,
     absoluteRotation = 0,
+
+    inputSink = Enum.InputSink.None,
+
+    borderColor = Color3.new(0, 0, 0),
+    borderMode = Enum.BorderMode.Outline,
+    borderSizePx = 0,
 
     name = "Widget"
 }
@@ -160,6 +169,25 @@ local function defaultSetup(widget: Widget.BaseInterface)
     link("sizeConstraint", "SizeConstraint")
 
     link("selectable", "Selectable")
+    link("selectionOrder", "SelectionOrder")
+    link("selectionImageObject", "SelectionImageObject")
+    link("nextSelectionDown", "NextSelectionDown")
+    link("nextSelectionUp", "NextSelectionUp")
+    link("nextSelectionRight", "NextSelectionRight")
+    link("nextSelectionLeft", "NextSelectionLeft")
+
+    link("inputSink", "InputSink")
+    link("borderColor", "BorderColor3")
+    link("borderMode", "BorderMode")
+    link("borderSizePx", "BorderSizePixel", function(v)
+        local space = widget.getSpace()
+        if not space then
+            return v
+        end
+
+        return space.scaleObject(v, true)
+    end)
+
     link("interactable", "Interactable")
     link("active", "Active")
 
@@ -184,7 +212,7 @@ local function defaultSetup(widget: Widget.BaseInterface)
     setProperty("layoutOrder", widget._propertiesRefs.autoLayoutOrder)
 
     observe("visible", function(newValue: boolean)
-        if not widget.getGuiObject() and newValue then
+        if not widget.getObject() and newValue then
             widget._createObject()
         end
 
@@ -327,6 +355,7 @@ function WidgetClass.new<C>(
 
     local propertiesRefs: {[string]: Utils.Ref<any>} = {}
     local object: Instance? = nil
+    local objectRef: Utils.Ref<Instance?> = Ref.new(nil) :: any
     local cleanups: { RBXScriptConnection | () -> () } = {}
     local parent: Widget.Interface? = nil
 
@@ -393,6 +422,11 @@ function WidgetClass.new<C>(
 
     instance._features = features
 
+    local function setObject(newObject: Instance?)
+        object = newObject
+        objectRef.setValue(newObject)
+    end
+
     -- widget: main -- start --
     local function ensureNotDestroyed()
         if isDestroyed then
@@ -457,9 +491,9 @@ function WidgetClass.new<C>(
         end
 
         if object then
-            events.fire("GuiObjectDestroying", object)
+            events.fire("ObjectDestroying", object)
             object:Destroy()
-            object = nil
+            setObject(nil)
         end
 
         freezeAndClear(propertiesRefs)
@@ -798,7 +832,11 @@ function WidgetClass.new<C>(
     -- feature: events -- end --
 
     -- widget: object -- start --
-    function instance.getGuiObject(): Instance?
+    function instance.getObject(): Instance?
+        return object
+    end
+
+    function instance.getObjectRef(): Instance?
         return object
     end
 
@@ -808,9 +846,9 @@ function WidgetClass.new<C>(
         inRedrawMode = true
         logger.debug("[%s %d] redraw was called", instance._widgetName, id)
     
-        if parent and parent.getGuiObject() then
+        if parent and parent.getObject() then
             if object then
-                object.Parent = parent.getGuiObject()
+                object.Parent = parent.getObject()
             else
                 instance._createObject()
             end
@@ -857,7 +895,7 @@ function WidgetClass.new<C>(
             logger.error("Function _setObject can be called only on custom widget-like type!")
         end
 
-        object = new
+        setObject(new)
     end
 
     function instance._setCreateObject(fn: () -> Object?)
@@ -888,7 +926,7 @@ function WidgetClass.new<C>(
                 return
             end
 
-            if not getProperty("visible") or not parent or not parent.getGuiObject() then
+            if not getProperty("visible") or not parent or not parent.getObject() then
                 logger.debug("[%s %d] _createObject skipped (not visible)", instance._widgetName, id)
                 -- Not creating object when it's not needed
                 return
@@ -896,11 +934,11 @@ function WidgetClass.new<C>(
 
             logger.debug("[%s %d] _createObject is creating new object", instance._widgetName, id)
             local newObject = createObjectFn()
-            object = newObject
+            setObject(newObject)
             objectCreationScheduled = false
 
-            if newObject and parent and parent.getGuiObject() then
-                newObject.Parent = parent.getGuiObject()
+            if newObject and parent and parent.getObject() then
+                newObject.Parent = parent.getObject()
                 newObject:SetAttribute("_uniqueId", id)
             end
 
@@ -916,7 +954,7 @@ function WidgetClass.new<C>(
                 modifier.mountTo(newObject)
             end
 
-            events.fire("GuiObjectCreated", newObject)
+            events.fire("ObjectCreated", newObject)
             logger.debug("[%s %d] _createObject created object", instance._widgetName, id)
 
             redraw()
@@ -988,8 +1026,8 @@ function WidgetClass.new<C>(
                 instance._setSpace(nil)
             end
 
-            if parent and parent.getGuiObject() and object then
-                object.Parent = parent.getGuiObject()
+            if parent and parent.getObject() and object then
+                object.Parent = parent.getObject()
             elseif not parent and object then
                 object.Parent = nil
             end
