@@ -39,6 +39,7 @@ return function(
     local animationControlCache: {[string]: Animations.AnimationControl} = {}
 
     function instance.getAnimation(name: string): Animations.AnimationControl?
+        ensureNotDestroyed()
         do
             local cached = animationControlCache[name]
             if cached then
