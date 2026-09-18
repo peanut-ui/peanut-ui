@@ -39,12 +39,10 @@ function Box.new(): WidgetType.Box
 
     local objectRef = Ref.new(nil) :: Utils.Ref<Instance?>
 
-    local parent: WidgetType.BaseInterface? = nil
-
     -- box: main -- start --
     local function ensureNotDestroyed()
         if isDestroyed then
-            logger.error("Tried to access widget after it was destroyed")
+            logger.error("[%s %d] Tried to access widget after it was destroyed", box._boxName, box._uniqueId)
         end
     end
 
@@ -100,6 +98,7 @@ function Box.new(): WidgetType.Box
 
     -- widget: object -- start --
     function box.getObject(): Instance?
+        local parent = box.getParent()
         return parent and parent.getObject()
     end
 
@@ -147,41 +146,6 @@ function Box.new(): WidgetType.Box
         hooks
     )
     -- features: all -- end --
-
-    -- hooks -- start --
-    hooks.add("ChildAdded", function(child: WidgetType.WidgetLike)
-        local parent = box.getParent()
-
-        if parent then
-            parent.addChild(child)
-        end
-    end)
-
-    hooks.add("ChildRemoved", function(child: WidgetType.WidgetLike)
-        local parent = box.getParent()
-
-        if parent then
-            parent.removeChild(child)
-        end
-    end)
-
-    local oldParent = box.getParent()
-    hooks.add("ParentChanged", function(parent: WidgetType.BaseInterface)
-        if oldParent then
-            for _, child in box.children do 
-                oldParent.removeChild(child)
-            end
-        end
-
-        if parent then
-            for _, child in box.children do 
-                oldParent.addChild(child)
-            end
-        end
-
-        oldParent = parent
-    end)
-    -- hooks -- end --
 
     return box
 end
