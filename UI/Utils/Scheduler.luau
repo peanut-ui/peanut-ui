@@ -33,6 +33,7 @@ local function execute(name: TypeFuncs.KeyOf<Elements>)
     local snapshot = scheduled[name]
     scheduled[name] = {}
 
+    logger.debug("Running stage %s, snapshot size %d", name, #snapshot)
     for _, fn in snapshot do
         fn()
     end
@@ -45,6 +46,7 @@ local function drain(name: TypeFuncs.KeyOf<Elements>)
         local snapshot = scheduled[name]
         scheduled[name] = {}
 
+        logger.debug("Draining stage %s, snapshot size %d, budget left %d", name, #snapshot, budget)
         for _, fn in snapshot do
             fn()
         end
