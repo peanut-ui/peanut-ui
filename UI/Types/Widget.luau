@@ -207,7 +207,6 @@ export type Box = {
 } & WidgetLike
     & ParentingFeature
     & ChildrenFeature
-    & AnimationsFeature
     & EventsFeature
 
 export type BaseInterface = {

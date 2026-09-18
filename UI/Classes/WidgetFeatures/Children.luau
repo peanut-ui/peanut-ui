@@ -20,6 +20,7 @@ return function(
     events: Utils.Events
 ): {WidgetType.InternalInterface}
     local fire = events.fire
+    local hooksFire = hooks.fire
 
     local nextLayoutOrder = 0
     local instance = widget :: WidgetType.BaseInterface
@@ -70,6 +71,7 @@ return function(
         end
 
         fire("ChildAdded", child)
+        hooksFire("ChildAdded", child)
     end
 
     function instance.removeChild(child_: WidgetType.WidgetLike, andDestroy: boolean?)
@@ -109,6 +111,7 @@ return function(
             child._setParent(nil)
         end
         fire("ChildRemoved", child)
+        hooksFire("ChildRemoved", child)
     end
 
     function instance.clearChildren()

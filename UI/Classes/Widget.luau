@@ -401,6 +401,7 @@ function WidgetClass.new<C>(
             fire("ObjectDestroying", object)
             object:Destroy()
             setObject(nil)
+            objectRef.destroy()
         end
 
         freezeAndClear(linkedEvents)
@@ -644,7 +645,8 @@ function WidgetClass.new<C>(
             ensureNotDestroyed,
             children,
             modifierComponents,
-            events
+            events,
+            hooks
         )
     end
     -- feature: parenting -- end --

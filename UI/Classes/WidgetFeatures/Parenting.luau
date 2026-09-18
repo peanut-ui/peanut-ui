@@ -16,9 +16,11 @@ return function(
     ensureNotDestroyed: () -> (),
     children: {any}?,
     modifierComponents: {[string]: Modifier.Component}?,
-    events: Utils.Events
+    events: Utils.Events,
+    hooks: Utils.Hooks
 )
     local fire = events.fire
+    local hooksFire = hooks.fire
     local instance = widget :: WidgetType.BaseInterface
 
     local space: WidgetType.SpaceLike? = nil
@@ -72,6 +74,8 @@ return function(
         if instance.isImplemented("_redraw") then
             instance._redraw()
         end
+
+        hooksFire("SpaceChanged", space)
     end
 
     function instance._setParent(newParent: WidgetType.WidgetLike?)
@@ -98,6 +102,7 @@ return function(
         end
 
         fire("ParentChanged", newParent)
+        hooksFire("ParentChanged", newParent)
     end
 
     function instance.getParent()
