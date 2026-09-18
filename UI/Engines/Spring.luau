@@ -240,7 +240,7 @@ do
 	end
 end
 
-local RotationSpring = {} 
+local RotationSpring = {}
 
 type RotationSpring = typeof(setmetatable({} :: {
 	d: number,

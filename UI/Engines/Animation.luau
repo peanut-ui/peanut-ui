@@ -36,7 +36,7 @@ local function process(dt: number)
                 end
             end
 
-            local onCompletedObject = onCompletedAnimations[object] 
+            local onCompletedObject = onCompletedAnimations[object]
 
             if onCompletedObject then
                 local onCompletedStep = onCompletedObject[fn]

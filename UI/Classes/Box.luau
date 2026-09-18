@@ -55,7 +55,7 @@ function Box.new(): WidgetType.Box
         isDestroying = true
         fire("Destroying")
         isDestroyed = true
-    
+
         for _, cleanup in ipairs(cleanups) do
             if typeof(cleanup) == "RBXScriptConnection" then
                 cleanup:Disconnect()

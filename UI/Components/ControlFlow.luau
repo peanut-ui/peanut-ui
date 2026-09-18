@@ -67,7 +67,7 @@ function ControlFlow.If<Props...>(
             else
                 condition = conditionOrRef :: boolean
             end
-            
+
             if condition then
                 return branch :: Branch?
             end
