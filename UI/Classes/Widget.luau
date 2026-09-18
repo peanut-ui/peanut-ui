@@ -836,8 +836,8 @@ function WidgetClass.new<C>(
         return object
     end
 
-    function instance.getObjectRef(): Instance?
-        return object
+    function instance.getObjectRef(): Utils.ProtectedRef<Instance?>
+        return Ref.makeProtected(objectRef :: any)
     end
 
     local function redrawNow()
