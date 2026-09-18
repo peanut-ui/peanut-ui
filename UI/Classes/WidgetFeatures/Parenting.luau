@@ -71,8 +71,10 @@ return function(
             end
         end
 
-        if instance.isImplemented("_redraw") then
-            instance._redraw()
+        if newSpace ~= nil then
+            if instance.isImplemented("_redraw") then
+                instance._redraw()
+            end
         end
 
         hooksFire("SpaceChanged", space)
