@@ -256,7 +256,7 @@ export type Interface<Props = DefaultProperties, Object = GuiObject, Events = De
     getSpace: () -> SpaceLike?,
 
     getObject: () -> (Object?),
-    getObjectRef: () -> Utils.Ref<Object?>,
+    getObjectRef: () -> Utils.ProtectedRef<Object?>,
 }
 
 export type InternalFunctions<Props = DefaultProperties, Object = GuiObject, Events = DefaultEvents> = {
