@@ -155,7 +155,7 @@ local function defaultSetup(widget: Widget.BaseInterface)
         link("size", "Size", function(value)
             local space = widget.getSpace()
             if not space then
-                return value
+                return Units.ToUDim2(value)
             end
 
             return space.scaleObject(Units.ToUDim2(value))
@@ -163,7 +163,7 @@ local function defaultSetup(widget: Widget.BaseInterface)
         link("position", "Position", function(value)
             local space = widget.getSpace()
             if not space then
-                return value
+                return Units.ToUDim2(value)
             end
 
             return space.scaleObject(Units.ToUDim2(value))
@@ -371,7 +371,7 @@ function WidgetClass.new<C>(
     -- widget: main -- start --
     local function ensureNotDestroyed()
         if isDestroyed then
-            logger.error("Tried to access widget after it was destroyed")
+            logger.error("[%s %d] Tried to access widget after it was destroyed", instance._widgetName, instance._uniqueId)
         end
     end
 
@@ -382,9 +382,11 @@ function WidgetClass.new<C>(
 
         -- So if event calls .destroy() again
         isDestroying = true
+        logger.debug("[%s %d] destroying", instance._widgetName, id)
         fire("Destroying")
         isDestroyed = true
 
+        logger.debug("[%s %d] cleaning up", instance._widgetName, id)
         for _, cleanup in ipairs(cleanups) do
             if typeof(cleanup) == "RBXScriptConnection" then
                 cleanup:Disconnect()
@@ -393,11 +395,13 @@ function WidgetClass.new<C>(
             end
         end
 
+        logger.debug("[%s %d] disconnecting linked events", instance._widgetName, id)
         for key, signal in pairs(linkedEventListener) do
             signal:Disconnect()
         end
 
         if object then
+            logger.debug("[%s %d] destroying object", instance._widgetName, id)
             fire("ObjectDestroying", object)
             object:Destroy()
             setObject(nil)
@@ -408,6 +412,7 @@ function WidgetClass.new<C>(
         freezeAndClear(linkedEventListener)
         freezeAndClear(cleanups)
 
+        logger.debug("[%s %d] destroyed", instance._widgetName, id)
         fire("Destroyed", object)
         hooks.clear()
         events.destroy()
@@ -480,7 +485,6 @@ function WidgetClass.new<C>(
             fireHook("OnRedraw", object)
             fireHook("AfterRedraw", object)
         end
-
     end
 
     local redrawScheduled = false
@@ -490,6 +494,8 @@ function WidgetClass.new<C>(
 
         Scheduler.schedule("redraw", function(...)
             redrawScheduled = false
+            if isDestroyed then return end
+
             redrawNow()
         end)
     end
@@ -530,6 +536,7 @@ function WidgetClass.new<C>(
         objectCreationScheduled = true
 
         Scheduler.schedule("createObject", function(...)
+            if isDestroyed then return end
             if not createObjectFn then
                 logger.debug("[%s %d] _createObject skipped (no create function)", instance._widgetName, id)
                 return
