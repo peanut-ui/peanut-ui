@@ -34,7 +34,7 @@ function EventsClass.new(): Utils.Events
         return function()
             if listeners[event] then
                 listeners[event][callback] = nil
-                if #listeners[event] == 0 then
+                if next(listeners[event]) == nil then
                     listeners[event] = nil
                 end
             end

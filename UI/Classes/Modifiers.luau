@@ -19,6 +19,8 @@ local function defaultScaleFn<T>(obj: T, getOriginal: boolean?): T
     return obj
 end
 
+local freezeAndClear = Helpers.freezeAndClear
+
 type TransformFn = (component: Modifier.Component, getProp: (string) -> any) -> any
 type RbxTransformFn = (component: Modifier.Component, value: any) -> any
 local function createModifier(
@@ -74,15 +76,6 @@ local function createModifier(
         if destroyed then
             logger.critical("Tried to access modifier after it was destroyed")
         end
-    end
-
-    local function freezeAndClear(tbl: {[any]: any}?)
-        if type(tbl) ~= "table" then
-            return
-        end
-
-        table.clear(tbl)
-        table.freeze(tbl)
     end
 
     function modifier.destroy()

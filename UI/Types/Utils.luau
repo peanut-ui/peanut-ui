@@ -44,6 +44,14 @@ export type Signals = {
     read destroy: () -> ()
 }
 
+export type HooksCallback = (...any) -> ()
+export type Hooks = {
+    read _typeName: "hooks",
+    read add: (key: string, callback: HooksCallback) -> (),
+    read fire: (key: string, ...any) -> (),
+    read clear: () -> ()
+}
+
 export type EventsCallback = (...any) -> ...boolean?
 export type EventsListeners = {[string]: {[EventsCallback]: boolean}}
 export type Events = {

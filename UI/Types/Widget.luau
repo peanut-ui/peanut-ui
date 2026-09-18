@@ -13,6 +13,19 @@ export type ReadOnlyArray<T> = {
 	read [number]: T,
 }
 
+export type WidgetEvents = {
+    ChildAdded: (child: BaseInterface) -> ...boolean?,
+    ChildRemoved: (child: BaseInterface) -> ...boolean?,
+    ParentChanged: (newParent: BaseInterface?) -> ...boolean?,
+    PropertyChanged: (key: string, value: any) -> ...boolean?,
+    ObjectCreated: (object: GuiObject) -> ...boolean?,
+    ObjectDestroying: (object: GuiObject) -> ...boolean?,
+    Destroying: () -> ...boolean?,
+    Destroyed: () -> ...boolean?,
+
+    BeforeObjectCreated: () -> ...boolean?,
+}
+
 export type DefaultEvents = {
     [string]: (...any) -> ...boolean?,
 
@@ -36,17 +49,7 @@ export type DefaultEvents = {
     TouchPan: (touchPositions: {Vector2}, totalTranslation: Vector2, velocity: Vector2, state: Enum.UserInputState) -> ...boolean?,
     TouchPinch: (touchPositions: {Vector2}, scale: number, velocity: number, state: Enum.UserInputState) -> ...boolean?,
     TouchTap: (touchPositions: {Vector2}) -> ...boolean?,
-
-    -- Widget
-    ChildAdded: (child: BaseInterface) -> ...boolean?,
-    ChildRemoved: (child: BaseInterface) -> ...boolean?,
-    ParentChanged: (newParent: BaseInterface?) -> ...boolean?,
-    PropertyChanged: (key: string, value: any) -> ...boolean?,
-    ObjectCreated: (object: GuiObject) -> ...boolean?,
-    ObjectDestroying: (object: GuiObject) -> ...boolean?,
-    Destroying: () -> ...boolean?,
-    Destroyed: () -> ...boolean?,
-}
+} & WidgetEvents
 
 export type DefaultProperties = {
     [string]: any,
@@ -164,7 +167,7 @@ export type ModifiersFeature = {
 -- feature: animations
 export type AnimationsFeature = {
     setAnimation: (name: string, animation: Animations.Animation?) -> (),
-    getAnimation: (name: string) -> Animations.AnimationControl
+    getAnimation: (name: string) -> Animations.AnimationControl?
 }
 
 export type Features = {
@@ -191,8 +194,6 @@ export type WidgetLike = {
     isImplemented: (field: string, isFeature: boolean?) -> boolean
 }
 
-type UnsupportedFn = (...never) -> ...never
-
 -- Similar to <template> in Vue.js
 export type Box = {
     _boxName: string,
@@ -201,12 +202,13 @@ export type Box = {
     _redraw: () -> (),
     _addCleanup: (RBXScriptConnection | () -> ()) -> (),
 
-    getObjectRef: () -> Utils.Ref<Object?>,
+    getObjectRef: () -> Utils.ProtectedRef<Instance?>,
     getObject: () -> Instance?,
 } & WidgetLike
     & ParentingFeature
     & ChildrenFeature
     & AnimationsFeature
+    & EventsFeature
 
 export type BaseInterface = {
     _setCreateObject: (() -> Instance?) -> (),
@@ -216,7 +218,7 @@ export type BaseInterface = {
     _addCleanup: (RBXScriptConnection | () -> ()) -> (),
     _setObject: (object: Instance) -> (),
 
-    getObjectRef: () -> Utils.Ref<Object?>,
+    getObjectRef: () -> Utils.ProtectedRef<Instance?>,
     getObject: () -> Instance?,
 } & WidgetLike
     & ChildrenFeature
@@ -225,6 +227,7 @@ export type BaseInterface = {
     & TransitionsFeature
     & PropertiesFeature
     & ModifiersFeature
+    & AnimationsFeature
 
 --- Typed interface!
 export type Interface<Props = DefaultProperties, Object = GuiObject, Events = DefaultEvents> = WidgetLike & {
