@@ -6,7 +6,6 @@ const Widget = require(script.Parent.Parent.Types.Widget)
 const ComponentContext = require(script.Parent.Parent.Utils.ComponentContext)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Utils.Ref)
-const Scheduler = require(script.Parent.Parent.Utils.Scheduler)
 
 local logger = Logging.getLogger("PeanutUI.Components.ControlFlow")
 
