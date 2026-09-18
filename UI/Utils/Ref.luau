@@ -139,6 +139,7 @@ function Ref.new<T>(value: T | Utils.Ref<T> | Utils.ProtectedRef<T>, registerTo:
     local scheduled = false
     local function notifyImmediate()
         if isDestroyed then return end
+        if next(watchers) == nil then return end
 
         local watcherClone = table.clone(watchers)
         if next(watchers) == nil then
@@ -164,6 +165,7 @@ function Ref.new<T>(value: T | Utils.Ref<T> | Utils.ProtectedRef<T>, registerTo:
 
     local function notifyWatchers()
         if isDestroyed then return end
+        if next(watchers) == nil then return end
         if scheduled then return end
         scheduled = true
 
@@ -338,6 +340,18 @@ function Ref.computed<R>(computeFn: () -> R, dependsOn: {Utils.Watchable<any>}):
     end)
 
     return newRef
+end
+
+function Ref.isRef(obj: any): boolean
+    if typeof(obj) ~= "table" then
+        return false
+    end
+
+    if obj._typeName == "ref" then
+        return true
+    end
+
+    return false
 end
 
 function Ref.autoComputed<R>(computeFn: (use: <T>(Utils.Watchable<T> & Utils.Gettable<T>) -> T) -> R): Utils.Ref<R>
