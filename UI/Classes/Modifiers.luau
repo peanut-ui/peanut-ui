@@ -466,7 +466,6 @@ local function createModifier(
                     local newMod = modifierFactory(config) :: any
                     modifierComponents[stackKey] = newMod
                     if object then
-                        -- Linter was screaming at me ;-;
                         newMod.mountTo(object)
                     end
                 else
