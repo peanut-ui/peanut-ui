@@ -19,7 +19,7 @@ local protectedRefCache: {[Utils.Ref<any>]: Utils.ProtectedRef<any>} = setmetata
 local Ref = {}
 Ref.Undefined = Undefined
 
-local function createReactiveProxy(rawTarget: {[any]: any}, isShallow: boolean?): any
+local function createReactiveProxy(rawTarget: {[any]: any}, isShallow: boolean?, createdRefs: {Utils.Ref<any>}?): any
     if rawCache[rawTarget] then
         return rawTarget
     end
@@ -28,8 +28,13 @@ local function createReactiveProxy(rawTarget: {[any]: any}, isShallow: boolean?)
         return proxyCache[rawTarget]
     end
 
+    if not createdRefs then
+        local bucket = ComponentContext.getCurrentBucket()
+        createdRefs = bucket and bucket.createdRefs
+    end
+
     local proxy = {}
-    local myRef = Ref.new(proxy)
+    local myRef = Ref.new(proxy, createdRefs)
     proxyToRefMap[proxy] = myRef
 
     local childWatchers: {[any]: () -> ()} = {}
@@ -37,7 +42,7 @@ local function createReactiveProxy(rawTarget: {[any]: any}, isShallow: boolean?)
 
     local function watchChild(key: any, childRaw: any)
         if type(childRaw) == "table" then
-            local childProxy = createReactiveProxy(childRaw)
+            local childProxy = createReactiveProxy(childRaw, nil, createdRefs)
             local childRef = proxyToRefMap[childProxy]
 
             childWatchers[key] = childRef.watch(function()
@@ -78,7 +83,7 @@ local function createReactiveProxy(rawTarget: {[any]: any}, isShallow: boolean?)
         __index = function(_, key)
             local val = rawTarget[key]
             if isShallow ~= true and type(val) == "table" then
-                return createReactiveProxy(val)
+                return createReactiveProxy(val, nil, createdRefs)
             end
             return val
         end,
@@ -117,7 +122,7 @@ local function assertType(a: any, b: any)
     end
 end
 
-function Ref.new<T>(value: T | Utils.Ref<T> | Utils.ProtectedRef<T>): Utils.Ref<T>
+function Ref.new<T>(value: T | Utils.Ref<T> | Utils.ProtectedRef<T>, registerTo: {Utils.Ref<any>}?): Utils.Ref<T>
     local ref = {}
     ref._typeName = "ref" :: "ref"
 
@@ -290,9 +295,13 @@ function Ref.new<T>(value: T | Utils.Ref<T> | Utils.ProtectedRef<T>): Utils.Ref<
 
     table.freeze(ref)
 
-    local bucket = ComponentContext.getCurrentBucket()
-    if bucket then
-        table.insert(bucket.createdRefs, ref)
+    if not registerTo then
+        local bucket = ComponentContext.getCurrentBucket()
+        registerTo = bucket and bucket.createdRefs
+    end
+
+    if registerTo then
+        table.insert(registerTo, ref)
     end
 
     return ref
