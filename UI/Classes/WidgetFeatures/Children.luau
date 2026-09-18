@@ -106,6 +106,7 @@ return function(
         end
 
         if andDestroy == true then
+            child._setParent(nil)
             child.destroy()
         else
             child._setParent(nil)
