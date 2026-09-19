@@ -57,25 +57,6 @@ function ControlFlow.If<Props...>(
 
     addBranch(branches, conditionOrRef, widgetFn, ...)
 
-    local branch = Ref.autoComputed(function(use)
-        for _, branch in use(branchesRef) do
-            local conditionOrRef = branch.conditionOrRef
-            local condition: boolean
-
-            if Ref.isRef(conditionOrRef) then
-                condition = use(conditionOrRef :: Utils.Ref<boolean>)
-            else
-                condition = conditionOrRef :: boolean
-            end
-
-            if condition then
-                return branch :: Branch?
-            end
-        end
-
-        return nil
-    end) :: Utils.Ref<Branch?>
-
     local flow: IfFlow & Materialize
     flow = {
         ElseIf = function(conditionOrRef, widgetFn, ...)
@@ -97,7 +78,27 @@ function ControlFlow.If<Props...>(
             box._boxName = "if"
 
             local oldWidget: Widget.WidgetLike? = nil
-            local unwatch = branch.watch(function(newBranch)
+
+            local branch = Ref.autoComputed(function(use)
+                for _, branch in use(branchesRef) do
+                    local conditionOrRef = branch.conditionOrRef
+                    local condition: boolean
+
+                    if Ref.isRef(conditionOrRef) then
+                        condition = use(conditionOrRef :: Utils.Ref<boolean>)
+                    else
+                        condition = conditionOrRef :: boolean
+                    end
+
+                    if condition then
+                        return branch :: Branch?
+                    end
+                end
+
+                return nil
+            end) :: Utils.Ref<Branch?>
+
+            local function update(newBranch: Branch?)
                 if oldWidget then
                     box.removeChild(oldWidget)
                     oldWidget.destroy()
@@ -119,7 +120,10 @@ function ControlFlow.If<Props...>(
                     box.addChild(result)
                     oldWidget = result
                 end
-            end)
+            end
+
+            local unwatch = branch.watch(update)
+            update(branch.getValue())
 
             box._addCleanup(function()
                 unwatch()
