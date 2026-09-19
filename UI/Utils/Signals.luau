@@ -2,7 +2,7 @@
 --!optimize 2
 -- Simple defer signal
 
-const ComponentContext = require(script.Parent.ComponentContext)
+const Context = require(script.Parent.Context)
 const Logging = require(script.Parent.Logging)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const Scheduler = require(script.Parent.Scheduler)
@@ -46,7 +46,7 @@ function SignalsClass.new(): Utils.Signals
                     end
 
                     -- Context manager already got pcall :PP
-                    local ok, result = ComponentContext.withNoContext(callback :: any)
+                    local ok, result = Context.withNoContext(callback :: any)
 
                     if not ok or result == true then
                         listeners[signal][callback] = nil

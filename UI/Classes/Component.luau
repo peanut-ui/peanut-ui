@@ -2,7 +2,7 @@
 --!optimize 2
 const Utils = require(script.Parent.Parent.Types.Utils)
 const WidgetType = require(script.Parent.Parent.Types.Widget)
-const ComponentContext = require(script.Parent.Parent.Utils.ComponentContext)
+const Context = require(script.Parent.Parent.Utils.Context)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 const Widget = require(script.Parent.Widget)
 
@@ -11,7 +11,7 @@ local logger = Logging.getLogger("PeanutUI.Classes.Component")
 local Component = {}
 
 local function getBucketOrError(): Utils.Bucket
-    local currentBucket = ComponentContext.getCurrentBucket()
+    local currentBucket = Context.getCurrentBucket()
     if not currentBucket then
         logger.error("There's no component context available. Is it running in defineComponent?")
         error("")
@@ -44,7 +44,7 @@ function Component.defineComponent<T>(
     fn: (props: T & {[string]: any}) -> any
 ): (props: T) -> WidgetType.Interface
     return function(props)
-        local ok, widget, bucket = ComponentContext.withContext(fn, props)
+        local ok, widget, bucket = Context.withContext(fn, props)
         if not ok then
             logger.error("Couldn't create component because it errored")
         end

@@ -1,6 +1,6 @@
 --!strict
 --!optimize 2
-const ComponentContext = require(script.Parent.ComponentContext)
+const Context = require(script.Parent.Context)
 const Logging = require(script.Parent.Logging)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const Scheduler = require(script.Parent.Scheduler)
@@ -29,7 +29,7 @@ local function createReactiveProxy(rawTarget: {[any]: any}, isShallow: boolean?,
     end
 
     if not createdRefs then
-        local bucket = ComponentContext.getCurrentBucket()
+        local bucket = Context.getCurrentBucket()
         createdRefs = bucket and bucket.createdRefs
     end
 
@@ -151,7 +151,7 @@ function Ref.new<T>(value: T | Utils.Ref<T> | Utils.ProtectedRef<T>, registerTo:
                 return
             end
 
-            local ok, result = ComponentContext.withNoContext(watcher :: any, currentValue)
+            local ok, result = Context.withNoContext(watcher :: any, currentValue)
             if not ok or result == true then
                 watchers[id] = nil
                 local onUnwatch = watchersOnUnwatch[id]
@@ -298,7 +298,7 @@ function Ref.new<T>(value: T | Utils.Ref<T> | Utils.ProtectedRef<T>, registerTo:
     table.freeze(ref)
 
     if not registerTo then
-        local bucket = ComponentContext.getCurrentBucket()
+        local bucket = Context.getCurrentBucket()
         registerTo = bucket and bucket.createdRefs
     end
 

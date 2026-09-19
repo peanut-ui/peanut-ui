@@ -3,7 +3,7 @@
 const Box = require(script.Parent.Parent.Classes.Box)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const Widget = require(script.Parent.Parent.Types.Widget)
-const ComponentContext = require(script.Parent.Parent.Utils.ComponentContext)
+const Context = require(script.Parent.Parent.Utils.Context)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Utils.Ref)
 
@@ -106,7 +106,7 @@ function ControlFlow.If<Props...>(
                 end
 
                 if newBranch then
-                    local ok, result = ComponentContext.withNoContext(function(...)
+                    local ok, result = Context.withNoContext(function(...)
                         assert(newBranch)
                         local props = newBranch.props
                         return newBranch.createFn(table.unpack(props, 1, props.n))

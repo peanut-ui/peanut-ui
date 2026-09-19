@@ -1,6 +1,6 @@
 --!strict
 --!optimize 2
-const ComponentContext = require(script.Parent.ComponentContext)
+const Context = require(script.Parent.Context)
 const Logging = require(script.Parent.Logging)
 const Utils = require(script.Parent.Parent.Types.Utils)
 
@@ -56,7 +56,7 @@ function EventsClass.new(): Utils.Events
             end
 
             -- Context manager already got pcall >_<
-            local ok, result = ComponentContext.withNoContext(callback :: any, ...)
+            local ok, result = Context.withNoContext(callback :: any, ...)
 
             if not ok or result == true then
                 listeners[event][callback] = nil
