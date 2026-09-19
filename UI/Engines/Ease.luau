@@ -6,9 +6,9 @@
 -- Made by koeqaife!!
 
 const RunService = game:GetService("RunService")
-const Curves = require(script.Parent.Parent.Utils.Curves)
+const Curves = require(script.Parent.Parent.Math.Curves)
 const Logging = require(script.Parent.Parent.Utils.Logging)
-const Oklab = require(script.Parent.Parent.Utils.Oklab)
+const Oklab = require(script.Parent.Parent.Math.Oklab)
 
 local logger = Logging.getLogger("PeanutUI.Engines.Ease")
 

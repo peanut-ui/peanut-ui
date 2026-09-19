@@ -2,7 +2,7 @@
 --!optimize 2
 const Ease = require(script.Parent.Parent.Engines.Ease)
 const Animations = require(script.Parent.Parent.Types.Animations)
-const Curves = require(script.Parent.Parent.Utils.Curves)
+const Curves = require(script.Parent.Parent.Math.Curves)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 const Spring = require(script.Parent.Parent.Engines.Spring)
 

@@ -43,7 +43,7 @@ local SLEEP_ROTATION_VELOCITY = math.rad(0.1) -- rad/s
 local EPS = 1e-5 -- epsilon for stability checks around pathological frequency/damping values
 
 local RunService: RunService = game:GetService("RunService")
-const Oklab = require(script.Parent.Parent.Utils.Oklab)
+const Oklab = require(script.Parent.Parent.Math.Oklab)
 
 local rgbToOklab = Oklab.rgbToOklab
 local oklabToRgb = Oklab.oklabToRgb
