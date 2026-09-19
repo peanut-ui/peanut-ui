@@ -1,5 +1,6 @@
 --!strict
 --!optimize 2
+const Hooks = require(script.Parent.Hooks)
 const Logging = require(script.Parent.Logging)
 const Utils = require(script.Parent.Parent.Types.Utils)
 
@@ -30,13 +31,11 @@ local function disableYielding<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R
     return true, result
 end
 
-local function createBucket(): Utils.Bucket
+local function createBucket(name: string?): Utils.Bucket
     return {
         createdRefs = {},
-        onCreatedHooks = {},
-        onSetupHooks = {},
-        onBeforeDestroyedHooks = {},
-        onDestroyedHooks = {}
+        hooks = Hooks.new(),
+        contextName = name or "unknown"
     }
 end
 
@@ -55,8 +54,8 @@ end
 
 Module.getCurrentBucket = getCurrentBucket
 
-function Module.push()
-    table.insert(stack, createBucket())
+function Module.push(name: string?)
+    table.insert(stack, createBucket(name))
 end
 
 function Module.pushNoContext()
@@ -73,8 +72,8 @@ function Module.pop(): Utils.Bucket?
     return last
 end
 
-function Module.withContext<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R, Utils.Bucket?)
-    Module.push()
+function Module.withContext<R, A...>(name: string?, fn: (A...) -> R, ...: A...): (boolean, R, Utils.Bucket?)
+    Module.push(name)
 
     local ok, result = disableYielding(fn, ...)
     if not ok then

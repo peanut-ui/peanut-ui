@@ -22,29 +22,29 @@ end
 
 function Component.onSetup(fn: (widget: WidgetType.Interface) -> ())
     local bucket = getBucketOrError()
-    table.insert(bucket.onSetupHooks, fn)
+    bucket.hooks.add("OnSetup", fn)
 end
 
 function Component.onCreated(fn: (object: GuiObject) -> ...boolean)
     local bucket = getBucketOrError()
-    table.insert(bucket.onCreatedHooks, fn)
+    bucket.hooks.add("OnCreated", fn :: any)
 end
 
 function Component.onBeforeDestroyed(fn: () -> ...boolean)
     local bucket = getBucketOrError()
-    table.insert(bucket.onBeforeDestroyedHooks, fn)
+    bucket.hooks.add("OnBeforeDestroyed", fn :: any)
 end
 
 function Component.onDestroyed(fn: () -> ...boolean)
     local bucket = getBucketOrError()
-    table.insert(bucket.onDestroyedHooks, fn)
+    bucket.hooks.add("OnDestroyed", fn :: any)
 end
 
 function Component.defineComponent<T>(
     fn: (props: T & {[string]: any}) -> any
 ): (props: T) -> WidgetType.Interface
     return function(props)
-        local ok, widget, bucket = Context.withContext(fn, props)
+        local ok, widget, bucket = Context.withContext("component", fn, props)
         if not ok then
             logger.error("Couldn't create component because it errored")
         end
@@ -61,28 +61,29 @@ function Component.defineComponent<T>(
             end
         end)
 
-        for _, fn in bucket.onSetupHooks do
-            fn(widget)
-        end
+        local fireHook = bucket.hooks.fire
+
+        fireHook("OnSetup", widget)
 
         local guiObject = (widget :: WidgetType.Interface).getObject()
         if guiObject then
-            for _, fn in bucket.onCreatedHooks do
-                fn(guiObject)
-            end
+            fireHook("OnCreated", guiObject)
         else
-            for _, fn in bucket.onCreatedHooks do
-                widget.listen("ObjectCreated", fn)
-            end
+            widget.listen("ObjectCreated", function()
+                fireHook("OnCreated", guiObject)
+                return true
+            end)
         end
 
-        for _, fn in bucket.onBeforeDestroyedHooks do
-            widget.listen("Destroying", fn)
-        end
+        widget.listen("Destroying", function()
+            fireHook("OnBeforeDestroyed")
+            return true
+        end)
 
-        for _, fn in bucket.onDestroyedHooks do
-            widget.listen("Destroyed", fn)
-        end
+        widget.listen("Destroyed", function()
+            fireHook("OnDestroyed")
+            return true
+        end)
 
         return widget
     end

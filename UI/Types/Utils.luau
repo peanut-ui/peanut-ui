@@ -86,10 +86,8 @@ export type Unit = {
 
 export type Bucket = {
     createdRefs: {Ref<any>},
-    onSetupHooks: {(any) -> ()},
-    onCreatedHooks: {(any) -> ...boolean?},
-    onBeforeDestroyedHooks: {() -> ...boolean?},
-    onDestroyedHooks: {() -> ...boolean?},
+    hooks: Hooks,
+    contextName: string
 }
 
 return {}
