@@ -139,7 +139,6 @@ return function(
     end)
 
     hooks.add("ObjectCreateScheduled", function()
-        print(Scheduler.getCurrentStage())
         for _, child in ipairs(children) do
             child._createObject()
         end
