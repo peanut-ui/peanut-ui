@@ -9,7 +9,8 @@ type Elements = {
     [string]: {() -> ()},
     defer: {() -> ()},
     refs: {() -> ()},
-    createObject: {() -> ()},
+    beforeCreate: {() -> ()},
+    create: {() -> ()},
     signals: {() -> ()},
     redraw: {() -> ()},
     afterRedraw: {() -> ()},
@@ -20,7 +21,8 @@ type Elements = {
 }
 
 local scheduled: Elements = {
-    createObject = {},
+    beforeCreate = {},
+    create = {},
     signals = {},
     refs = {},
     redraw = {},
@@ -30,7 +32,14 @@ local scheduled: Elements = {
     settled = {}
 }
 
+local currentStage = "sync"
+local stepRan: {[string]: boolean} = {}
+local isFlushing = false
+
 local function execute(name: TypeFuncs.KeyOf<Elements>)
+    currentStage = name
+    stepRan[name] = true
+
     local snapshot = scheduled[name]
     scheduled[name] = {}
 
@@ -41,6 +50,8 @@ local function execute(name: TypeFuncs.KeyOf<Elements>)
 end
 
 local function drain(name: TypeFuncs.KeyOf<Elements>)
+    currentStage = name
+
     local budget = 15
     while budget > 0 and #scheduled[name] > 0 do
         budget -= 1
@@ -51,17 +62,27 @@ local function drain(name: TypeFuncs.KeyOf<Elements>)
         for _, fn in snapshot do
             fn()
         end
+
+        if budget <= 0 then
+            stepRan[name] = true
+        end
     end
+
+    stepRan[name] = true
 end
 
 local function step()
     execute("defer")
     drain("refs")
-    execute("createObject")
+    execute("beforeCreate")
+    execute("create")
     execute("signals")
     execute("redraw")
     execute("afterRedraw")
     execute("settled")
+
+    stepRan = {}
+    currentStage = "sync"
 end
 
 local ticksRanBeforeStop = 0
@@ -74,24 +95,28 @@ local function scheduleNextStep()
 
     task.defer(function()
         isScheduled = false
+        isFlushing = true
 
         if ticksRanBeforeStop >= 70 then
             logger.warn("Scheduler stopped after 70 consecutive ticks without becoming idle; a callback may be continuously scheduling more work")
             ticksRanBeforeStop = 0
+            isFlushing = false
             return
         end
+
+        ticksRanBeforeStop += 1
         step()
 
         if not isScheduled then
             execute("idle")
         end
 
-        if isScheduled then
-            ticksRanBeforeStop += 1
-        else
+        if not isScheduled then
             logger.debug("Ticks ran before stop: %s", ticksRanBeforeStop)
             ticksRanBeforeStop = 0
         end
+
+        isFlushing = false
     end)
 end
 
@@ -105,7 +130,9 @@ local function schedule<A...>(name: TypeFuncs.KeyOf<Elements>, fn: (A...) -> (),
 
     table.insert(scheduled[name], execute)
 
-    scheduleNextStep()
+    if not isFlushing or stepRan[name] then
+        scheduleNextStep()
+    end
     return co
 end
 
@@ -117,9 +144,14 @@ local function idle<A...>(fn: (A...) -> (), ...: A...): thread
     return schedule("idle", fn, ...)
 end
 
+local function getCurrentStage(): TypeFuncs.KeyOf<Elements> | "sync"
+    return currentStage
+end
+
 return {
     idle = idle,
     defer = defer,
     step = step,
-    schedule = schedule
+    schedule = schedule,
+    getCurrentStage = getCurrentStage
 }

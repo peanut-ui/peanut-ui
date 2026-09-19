@@ -535,10 +535,11 @@ function WidgetClass.new<C>(
         if objectCreationScheduled then return end
         objectCreationScheduled = true
 
-        Scheduler.schedule("createObject", function(...)
+        Scheduler.schedule("create", function(...)
             if isDestroyed then return end
             if not createObjectFn then
                 logger.debug("[%s %d] _createObject skipped (no create function)", instance._widgetName, id)
+                objectCreationScheduled = false
                 return
             end
 
@@ -546,6 +547,7 @@ function WidgetClass.new<C>(
                 local parent = (instance :: Widget.BaseInterface).getParent()
                 if not parent or not parent.getObject() then
                     logger.debug("[%s %d] Skipped creating cause there's nothing to attach", instance._widgetName, id)
+                    objectCreationScheduled = false
                     return
                 end
             end
