@@ -659,11 +659,11 @@ function WidgetClass.new<C>(
     -- feature: parenting -- end --
 
     -- feature: transitions -- start --
-    local transitionsSetup: () -> ()? = nil
     if features.transitions then
-        transitionsSetup = Transitions(
+        Transitions(
             instance,
             ensureNotDestroyed,
+            hooks,
             transitions,
             animatedProperty,
             linkedProperties,
@@ -673,9 +673,8 @@ function WidgetClass.new<C>(
     -- feature: transitions -- end --
 
     -- feature: animations -- start --
-    local animationsSetup: () -> ()? = nil
     if features.animations then
-        animationsSetup = Animations(
+        Animations(
             instance,
             ensureNotDestroyed,
             hooks,
@@ -697,12 +696,7 @@ function WidgetClass.new<C>(
         defaultSetup(instance :: any)
     end
 
-    if animationsSetup then
-        animationsSetup()
-    end
-    if transitionsSetup then
-        transitionsSetup()
-    end
+    fireHook("OnSetup")
 
     if args then
         if args.events then

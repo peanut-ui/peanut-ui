@@ -192,11 +192,11 @@ return function(
         end
     end)
 
-    return function()
+    hooks.add("OnSetup", function()
         if setAnimations then
             for name, animation in pairs(setAnimations) do
                 instance.setAnimation(name, animation)
             end
         end
-    end
+    end)
 end

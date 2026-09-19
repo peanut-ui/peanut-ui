@@ -11,6 +11,7 @@ local logger = Logging.getLogger("PeanutUI.Classes.WidgetFeatures.Transitions")
 return function(
     widget: any,
     ensureNotDestroyed: () -> (),
+    hooks: Utils.Hooks,
     transitions: {[string]: Animations.Transition}?,
     animatedProperty: {[string]: string}?,
     linkedProperties: {[string]: string}?,
@@ -82,7 +83,7 @@ return function(
         end
     end)
 
-    return function()
+    hooks.add("OnSetup", function()
         if setTransitions then
             for key, transition in pairs(setTransitions) do
                 if not linkedProperties[key] then
@@ -92,5 +93,5 @@ return function(
                 instance.setTransition(key, transition)
             end
         end
-    end
+    end)
 end
