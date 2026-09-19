@@ -147,6 +147,14 @@ function Box.new(): WidgetType.Box
     )
     -- features: all -- end --
 
+    hooks.add("ParentChanged", function(newParent: WidgetType.BaseInterface?)
+        if newParent and newParent.isImplemented("getObjectRef") then
+            objectRef.setValue(newParent.getObjectRef())
+        else
+            objectRef.setValue(nil)
+        end
+    end)
+
     return box
 end
 

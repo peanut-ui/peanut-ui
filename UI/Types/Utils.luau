@@ -5,7 +5,7 @@ export type Ref<T> = {
     read _typeName: "ref",
     read _isProtected: nil,
     read getValue: () -> T,
-    read setValue: (value: T | Ref<T>, immediate: boolean?) -> (),
+    read setValue: (value: T | Ref<T> | ProtectedRef<T>, immediate: boolean?) -> (),
     read increaseValue: (number) -> (),
     read notifyChanged: () -> (),
     read notifyImmediate: () -> (),
