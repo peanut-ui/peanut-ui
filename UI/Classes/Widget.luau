@@ -110,11 +110,11 @@ local defaultProperties: Widget.DefaultProperties = {
     sizeConstraint = Enum.SizeConstraint.RelativeXY,
     automaticSize = Enum.AutomaticSize.None,
 
-    selectable = true,
+    selectable = false,
     selectionOrder = 0,
 
     interactable = true,
-    active = true,
+    active = false,
 
     absolutePosition = Vector2.zero,
     absoluteSize = Vector2.zero,

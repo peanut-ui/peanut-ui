@@ -325,7 +325,9 @@ return {
             modal = false,
             selected = false,
             isLoaded = false,
-            inputSink = Enum.InputSink.Activate
+            inputSink = Enum.InputSink.Activate,
+            active = true,
+            selectable = true
         },
         function()
             return Instance.new("ImageButton")
@@ -461,7 +463,9 @@ return {
             modal = false,
             selected = false,
             style = Enum.ButtonStyle.Custom,
-            inputSink = Enum.InputSink.Activate
+            inputSink = Enum.InputSink.Activate,
+            active = true,
+            selectable = true
         },
         function()
             return Instance.new("TextButton")
@@ -517,6 +521,8 @@ return {
             placeholderColor = Color3.new(0.5, 0.5, 0.5),
             cursorPosition = 0,
             selectionStart = 0,
+            active = true,
+            selectable = true
         },
         function()
             return Instance.new("TextBox")
