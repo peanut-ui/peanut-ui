@@ -12,31 +12,31 @@ local logger = Logging.getLogger("PeanutUI.Components.ControlFlow")
 local ControlFlow = {}
 
 export type ConditionOrRef = boolean | Utils.Ref<boolean>
-export type WidgetFn<Props...> = (Props...) -> Widget.WidgetLike
 export type Materialize = {
     build: () -> Widget.Box
 }
 export type IfFlow = {
     ElseIf: <Props...>(
         conditionOrRef: ConditionOrRef,
-        widgetFn: WidgetFn<Props...>, Props...
+        widgetFn: (Props...) -> Widget.WidgetLike,
+        Props...
     ) -> IfFlow & Materialize,
     Else: <Props...>(
-        widgetFn: WidgetFn<Props...>,
+        widgetFn: (Props...) -> Widget.WidgetLike,
         Props...
     ) -> Materialize,
 }
 
 type Branch = {
     conditionOrRef: ConditionOrRef,
-    createFn: WidgetFn<any>,
+    createFn:(any) -> Widget.WidgetLike,
     props: {[number]: any, n: number}
 }
 
 local function addBranch(
     branches: {Branch},
     conditionOrRef: ConditionOrRef,
-    createFn: WidgetFn<any>,
+    createFn: (any) -> Widget.WidgetLike,
     ...: any
 )
     local branch: Branch = {
@@ -49,7 +49,7 @@ end
 
 function ControlFlow.If<Props...>(
     conditionOrRef: ConditionOrRef,
-    widgetFn: WidgetFn<Props...>,
+    widgetFn: (Props...) -> Widget.WidgetLike,
     ...: Props...
 ): IfFlow & Materialize
     local branches = Ref.reactive({}) :: {Branch}
@@ -79,7 +79,7 @@ function ControlFlow.If<Props...>(
 
             local oldWidget: Widget.WidgetLike? = nil
 
-            local branch = Ref.autoComputed(function(use)
+            local branch = Ref.computed(function(use)
                 for _, branch in use(branchesRef) do
                     local conditionOrRef = branch.conditionOrRef
                     local condition: boolean

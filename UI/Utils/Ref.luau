@@ -321,7 +321,7 @@ function Ref.transform<T, R>(originalRef: Utils.Watchable<T> & Utils.Gettable<T>
     return newRef
 end
 
-function Ref.computed<R>(computeFn: () -> R, dependsOn: {Utils.Watchable<any>}): Utils.Ref<R>
+function Ref.computed2<R>(computeFn: () -> R, dependsOn: {Utils.Watchable<any>}): Utils.Ref<R>
     local newRef = Ref.new(computeFn())
 
     local unwatchers: {() -> ()} = {}
@@ -354,7 +354,7 @@ function Ref.isRef(obj: any): boolean
     return false
 end
 
-function Ref.autoComputed<R>(computeFn: (use: <T>(Utils.Watchable<T> & Utils.Gettable<T>) -> T) -> R): Utils.Ref<R>
+function Ref.computed<R>(computeFn: (use: <T>(Utils.Watchable<T> & Utils.Gettable<T>) -> T) -> R): Utils.Ref<R>
     local newRef = Ref.new(nil)
     local lastComputeRefs: {[Utils.Ref<any>]: () -> ()} = {}
     local newComputeRefs: {[Utils.Ref<any>]: boolean} = {}
