@@ -96,8 +96,12 @@ return function(
 
         if instance.isImplemented("getObject") then
             local object = instance.getObject()
-            if parent and parent.getObject() and object then
-                object.Parent = parent.getObject()
+            local parentObject = parent and parent.getObject()
+            if parentObject and object then
+                -- Skipping setting parent for obvious reasons
+                if parentObject ~= object then
+                    object.Parent = parentObject
+                end
             elseif not parent and object then
                 object.Parent = nil
             end
