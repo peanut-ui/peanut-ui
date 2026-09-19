@@ -14,7 +14,7 @@ local function gammaCorrect(c)
         or 1.055 * c ^ (1 / 2.4) - 0.055
 end
 
-function rgbToOklab(value: Color3): {number}
+local function rgbToOklab(value: Color3): {number}
     local r = inverseGammaCorrect(value.R)
     local g = inverseGammaCorrect(value.G)
     local b = inverseGammaCorrect(value.B)
@@ -34,7 +34,7 @@ function rgbToOklab(value: Color3): {number}
     }
 end
 
-function oklabToRgb(value: {number}): Color3
+local function oklabToRgb(value: {number}): Color3
     local l = value[1]
     local a = value[2]
     local b = value[3]
@@ -58,7 +58,43 @@ function oklabToRgb(value: {number}): Color3
     return Color3.new(r, g, blue)
 end
 
+local function oklabToOklch(value: {number}): {number}
+    local lightness = value[1]
+    local a = value[2]
+    local b = value[3]
+
+    return {
+        lightness,
+        math.sqrt(a * a + b * b),
+        math.atan2(b, a),
+    }
+end
+
+local function oklchToOklab(value: {number}): {number}
+    local lightness = value[1]
+    local chroma = value[2]
+    local hue = value[3]
+
+    return {
+        lightness,
+        math.cos(hue) * chroma,
+        math.sin(hue) * chroma,
+    }
+end
+
+local function rgbToOklch(value: Color3): {number}
+    return oklabToOklch(rgbToOklab(value))
+end
+
+local function oklchToRgb(value: {number}): Color3
+    return oklabToRgb(oklchToOklab(value))
+end
+
 return {
     oklabToRgb = oklabToRgb,
-    rgbToOklab = rgbToOklab
+    rgbToOklab = rgbToOklab,
+    oklabToOklch = oklabToOklch,
+    oklchToOklab = oklchToOklab,
+    rgbToOklch = rgbToOklch,
+    oklchToRgb = oklchToRgb,
 }

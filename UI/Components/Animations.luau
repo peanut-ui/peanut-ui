@@ -1,6 +1,7 @@
 --!strict
 --!optimize 2
 const Animation = require(script.Parent.Parent.Engines.Animation)
+const Oklab = require(script.Parent.Parent.Math.Oklab)
 const AnimationsType = require(script.Parent.Parent.Types.Animations)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 
@@ -185,7 +186,7 @@ function Animations.ColorCycle(
     type State = { hue: number, saturation: number, value: number }
 
     return makeUnresolved({property}, function(properties: {string}): AnimationsType.Animation
-        local property = properties[1]
+        local property = properties[0]
 
         local function step(object: GuiObject, dt: number, state: State)
             state.hue = (state.hue + cyclesPerSecond * dt) % 1
@@ -202,6 +203,46 @@ function Animations.ColorCycle(
                 hue = hue,
                 saturation = saturation,
                 value = value,
+            }
+        end
+
+        return makeAnimation(step, {property}, createState, "GuiObject")
+    end)
+end
+
+function Animations.ColorCycleOklch(
+    property: string,
+    cyclesPerSecond: number
+): AnimationsType.UnresolvedAnimation
+    type State = { lightness: number, chroma: number, hue: number }
+
+    return makeUnresolved({property}, function(properties: {string}): AnimationsType.Animation
+        local property = properties[1]
+
+        local function step(object: GuiObject, dt: number, state: State)
+            state.hue += cyclesPerSecond * math.pi * 2 * dt
+
+            local color = Oklab.oklchToRgb({
+                state.lightness,
+                state.chroma,
+                state.hue,
+            })
+            local target = object :: any
+            target[property] = color
+        end
+
+        local function createState(object: GuiObject): State
+            local value = (object :: any)[property]
+            if typeof(value) ~= "Color3" then
+                logger.error("Property %s is not a Color3, can't start animation", property)
+            end
+
+            local oklch = Oklab.rgbToOklch(value)
+
+            return {
+                lightness = oklch[1],
+                chroma = oklch[2],
+                hue = oklch[3],
             }
         end
 
