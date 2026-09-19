@@ -358,6 +358,7 @@ function Ref.autoComputed<R>(computeFn: (use: <T>(Utils.Watchable<T> & Utils.Get
     local newRef = Ref.new(nil)
     local lastComputeRefs: {[Utils.Ref<any>]: () -> ()} = {}
     local newComputeRefs: {[Utils.Ref<any>]: boolean} = {}
+    local isInit = true
 
     local function use(ref: Utils.Ref<any>): any
         newComputeRefs[ref] = true
@@ -366,7 +367,7 @@ function Ref.autoComputed<R>(computeFn: (use: <T>(Utils.Watchable<T> & Utils.Get
 
     local function computeNewValue()
         table.clear(newComputeRefs)
-        newRef.setValue(computeFn(use))
+        newRef.setValue(computeFn(use), isInit)
 
         for ref, _ in newComputeRefs do
             if lastComputeRefs[ref] == nil then
@@ -391,7 +392,9 @@ function Ref.autoComputed<R>(computeFn: (use: <T>(Utils.Watchable<T> & Utils.Get
         table.clear(newComputeRefs)
     end)
 
-    computeNewValue()
+    computeNewValue(true)
+    isInit = false
+
     return newRef
 end
 
