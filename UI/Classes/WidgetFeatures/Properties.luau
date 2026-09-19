@@ -7,6 +7,7 @@ const WidgetType = require(script.Parent.Parent.Parent.Types.Widget)
 const Helpers = require(script.Parent.Parent.Parent.Utils.Helpers)
 const Logging = require(script.Parent.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Parent.Utils.Ref)
+const Scheduler = require(script.Parent.Parent.Parent.Utils.Scheduler)
 const Undefined = require(script.Parent.Parent.Parent.Utils.Undefined)
 
 local logger = Logging.getLogger("PeanutUI.Classes.WidgetFeatures.Properties")
@@ -155,7 +156,12 @@ return function(
         end
 
         linkedPropertiesUpdate[name] = update
-        table.insert(cleanups, (ref.watch(update)))
+        table.insert(cleanups, (ref.watch(function(value)
+            -- So if refs update more than once update is still called once
+            Scheduler.schedule("redraw", function()
+                update(value)
+            end)
+        end)))
     end
 
     local function syncRbxProperty(key: string)
