@@ -30,8 +30,8 @@ function SignalsClass.new(): Utils.Signals
         Scheduler.schedule("signals", function()
             scheduled = false
 
-            local scheduled = table.clone(scheduledSignals)
-            table.clear(scheduledSignals)
+            local scheduled = scheduledSignals
+            scheduledSignals = {}
 
             for signal, _ in scheduled do
                 local list = listeners[signal]

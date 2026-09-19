@@ -141,11 +141,11 @@ function Ref.new<T>(value: T | Utils.Ref<T> | Utils.ProtectedRef<T>, registerTo:
         if isDestroyed then return end
         if next(watchers) == nil then return end
 
-        local watcherClone = table.clone(watchers)
         if next(watchers) == nil then
             return
         end
 
+        local watcherClone = table.clone(watchers)
         for id, watcher in pairs(watcherClone) do
             if not watchers[id] then
                 return
