@@ -97,9 +97,18 @@ return function(
         return animationControl
     end
 
-    function instance.setAnimation(name: string, animation: Animations.Animation?)
+    function instance.setAnimation(name: string, animation_: (Animations.Animation | Animations.UnresolvedAnimation)?)
         ensureNotDestroyed()
         local object = instance.getObject()
+
+        local animation: Animations.Animation? = nil
+        if not animation_ then
+            -- Hi
+        elseif animation_._typeName == "animation" then
+            animation = animation_
+        else
+            animation = animation_.resolve(linkedProperties)
+        end
 
         if animation then
             for _, key in animation.properties do

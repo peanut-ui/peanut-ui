@@ -20,6 +20,14 @@ export type Animation = {
     read properties: {string}
 }
 
+-- May change in the future
+-- currently only for mapping properties like "backgroundColor" to "BackgroundColor3"
+export type UnresolvedAnimation = {
+    read _typeName: "unresolvedAnimation",
+
+    read resolve: (propertiesMap: {[string]: string}) -> Animation
+}
+
 export type AnimationControl = {
     read _typeName: "animationControl",
 

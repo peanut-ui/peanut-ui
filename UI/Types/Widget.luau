@@ -166,7 +166,7 @@ export type ModifiersFeature = {
 
 -- feature: animations
 export type AnimationsFeature = {
-    setAnimation: (name: string, animation: Animations.Animation?) -> (),
+    setAnimation: (name: string, animation: (Animations.Animation | Animations.UnresolvedAnimation)?) -> (),
     getAnimation: (name: string) -> Animations.AnimationControl?
 }
 
@@ -252,7 +252,7 @@ export type Interface<Props = DefaultProperties, Object = GuiObject, Events = De
     clearChildren: () -> (),
     children: {Interface},
 
-    setAnimation: (name: string, animation: Animations.Animation) -> (),
+    setAnimation: (name: string, animation: (Animations.Animation | Animations.UnresolvedAnimation)?) -> (),
     getAnimation: (name: string) -> Animations.AnimationControl,
 
     getSpace: () -> SpaceLike?,

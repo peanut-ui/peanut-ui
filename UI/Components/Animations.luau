@@ -43,6 +43,29 @@ function makeAnimation(step: AnimationsType.AnimationStep, properties: {string},
     return animation
 end
 
+function makeUnresolved<A...>(
+    properties: {string},
+    fn: ({string}, A...) -> AnimationsType.Animation,
+    ...: A...
+): AnimationsType.UnresolvedAnimation
+    local unresolved = {}
+    unresolved._typeName = "unresolvedAnimation" :: "unresolvedAnimation"
+
+    local args = table.pack(... :: any)
+    function unresolved.resolve(propertiesMap: {[string]: string})
+        local newProperties = {}
+        for _, property in properties do
+            table.insert(newProperties, propertiesMap[property] or property)
+        end
+
+        return fn(newProperties, table.unpack(args, 1, args.n))
+    end
+
+    table.freeze(unresolved)
+
+    return unresolved
+end
+
 Animations.makeAnimation = makeAnimation
 
 function Animations.Spin(degreePerSecond: number): AnimationsType.Animation
@@ -133,46 +156,57 @@ function Animations.PulseNumber(
     minimum: number,
     maximum: number,
     cyclesPerSecond: number
-): AnimationsType.Animation
-    local function step(object: GuiObject, dt: number, state: {number})
-        state[1] += cyclesPerSecond * math.pi * 2 * dt
-        local midpoint = (minimum + maximum) / 2
-        local amplitude = (maximum - minimum) / 2
-        (object :: any)[property] = midpoint + math.sin(state[1]) * amplitude
-    end
+): AnimationsType.UnresolvedAnimation
+    return makeUnresolved({property}, function(properties: {string}): AnimationsType.Animation
+        local property = properties[1]
 
-    local function createState(object: GuiObject)
-        if typeof((object :: any)[property]) ~= "number" then
-            logger.error("Property %s is not a number, can't start animation", property)
+        local function step(object: GuiObject, dt: number, state: {number})
+            state[1] += cyclesPerSecond * math.pi * 2 * dt
+            local midpoint = (minimum + maximum) / 2
+            local amplitude = (maximum - minimum) / 2
+            (object :: any)[property] = midpoint + math.sin(state[1]) * amplitude
         end
-        return {0}
-    end
 
-    return makeAnimation(step, {property}, createState, "GuiObject")
+        local function createState(object: GuiObject)
+            if typeof((object :: any)[property]) ~= "number" then
+                logger.error("Property %s is not a number, can't start animation", property)
+            end
+            return {0}
+        end
+
+        return makeAnimation(step, {property}, createState)
+    end)
 end
 
-function Animations.ColorCycle(property: string, cyclesPerSecond: number): AnimationsType.Animation
+function Animations.ColorCycle(
+    property: string,
+    cyclesPerSecond: number
+): AnimationsType.UnresolvedAnimation
     type State = { hue: number, saturation: number, value: number }
 
-    local function step(object: GuiObject, dt: number, state: State)
-        state.hue = (state.hue + cyclesPerSecond * dt) % 1
-        (object :: any)[property] = Color3.fromHSV(state.hue, state.saturation, state.value)
-    end
+    return makeUnresolved({property}, function(properties: {string}): AnimationsType.Animation
+        local property = properties[1]
 
-    local function createState(object: GuiObject)
-        if typeof((object :: any)[property]) ~= "Color3" then
-            logger.error("Property %s is not a Color3, can't start animation", property)
+        local function step(object: GuiObject, dt: number, state: State)
+            state.hue = (state.hue + cyclesPerSecond * dt) % 1
+            (object :: any)[property] = Color3.fromHSV(state.hue, state.saturation, state.value)
         end
-        local hue, saturation, value = (object :: any)[property]:ToHSV()
 
-        return {
-            hue = hue,
-            saturation = saturation,
-            value = value,
-        }
-    end
+        local function createState(object: GuiObject)
+            if typeof((object :: any)[property]) ~= "Color3" then
+                logger.error("Property %s is not a Color3, can't start animation", property)
+            end
+            local hue, saturation, value = (object :: any)[property]:ToHSV()
 
-    return makeAnimation(step, {property}, createState, "GuiObject")
+            return {
+                hue = hue,
+                saturation = saturation,
+                value = value,
+            }
+        end
+
+        return makeAnimation(step, {property}, createState, "GuiObject")
+    end)
 end
 
 return Animations
