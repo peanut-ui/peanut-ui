@@ -30,7 +30,7 @@ export type IfFlow = {
 type Branch = {
     conditionOrRef: ConditionOrRef,
     createFn: WidgetFn<any>,
-    props: {any}
+    props: {[number]: any, n: number}
 }
 
 local function addBranch(
@@ -107,7 +107,8 @@ function ControlFlow.If<Props...>(
                 if newBranch then
                     local ok, result = ComponentContext.withNoContext(function(...)
                         assert(newBranch)
-                        return newBranch.createFn(table.unpack(newBranch.props))
+                        local props = newBranch.props
+                        return newBranch.createFn(table.unpack(props, 1, props.n))
                     end)
 
                     if not ok then

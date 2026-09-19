@@ -21,7 +21,6 @@ type Elements = {
 local scheduled: Elements = {
     createObject = {},
     signals = {},
-    events = {},
     refs = {},
     redraw = {},
     defer = {},
@@ -98,7 +97,7 @@ local function schedule<A...>(name: TypeFuncs.KeyOf<Elements>, fn: (A...) -> (),
 
     local args = table.pack(... :: any)
     local function execute()
-        task.spawn(co, table.unpack(args))
+        task.spawn(co, table.unpack(args, 1, args.n))
     end
 
     table.insert(scheduled[name], execute)
