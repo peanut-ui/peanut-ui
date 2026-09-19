@@ -6,6 +6,7 @@ const Utils = require(script.Parent.Parent.Parent.Types.Utils)
 const WidgetType = require(script.Parent.Parent.Parent.Types.Widget)
 const Helpers = require(script.Parent.Parent.Parent.Utils.Helpers)
 const Logging = require(script.Parent.Parent.Parent.Utils.Logging)
+const Scheduler = require(script.Parent.Parent.Parent.Utils.Scheduler)
 
 local logger = Logging.getLogger("PeanutUI.Classes.WidgetFeatures.Animations")
 
@@ -151,6 +152,7 @@ return function(
             animation.animate(object)
         end
 
+        local restartScheduled = false
         for _, key in animation.properties do
             local originalKey = linkedPropertiesMap[key]
             if not originalKey then
@@ -163,12 +165,26 @@ return function(
 
             local ref = ensureRef(originalKey)
             unwatchKeys[originalKey] = ref.watch(function()
+                if restartScheduled then return end
+
                 local object = instance.getObject()
                 local propertyAnimation = propertyToAnimation[originalKey]
 
                 if object and propertyAnimation and propertyAnimation.isRunning(object) then
+                    restartScheduled = true
+
                     propertyAnimation.stop(object)
-                    propertyAnimation.animate(object)
+
+                    Scheduler.schedule("afterRedraw", function()
+                        restartScheduled = false
+
+                        local object = instance.getObject()
+                        if not object or propertyToAnimation[originalKey] ~= propertyAnimation then
+                            return
+                        end
+
+                        propertyAnimation.animate(object)
+                    end)
                 end
             end)
         end

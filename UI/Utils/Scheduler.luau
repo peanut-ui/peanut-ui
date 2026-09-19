@@ -12,6 +12,7 @@ type Elements = {
     createObject: {() -> ()},
     signals: {() -> ()},
     redraw: {() -> ()},
+    afterRedraw: {() -> ()},
     settled: {() -> ()},
 
     -- Ran when scheduler stops
@@ -23,6 +24,7 @@ local scheduled: Elements = {
     signals = {},
     refs = {},
     redraw = {},
+    afterRedraw = {},
     defer = {},
     idle = {},
     settled = {}
@@ -58,6 +60,7 @@ local function step()
     execute("createObject")
     execute("signals")
     execute("redraw")
+    execute("afterRedraw")
     execute("settled")
 end
 
