@@ -78,7 +78,7 @@ function Module.withContext<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R, U
 
     local ok, result = disableYielding(fn, ...)
     if not ok then
-        logger.warn(`Call resulted in error: {result}`)
+        logger.warn(`Call resulted in error:\n{result}`)
     end
 
     return ok, result, Module.pop()
@@ -89,7 +89,7 @@ function Module.withNoContext<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R)
 
     local ok, result = disableYielding(fn, ...)
     if not ok then
-        logger.warn(`Call resulted in error: {result}`)
+        logger.warn(`Call resulted in error:\n{result}`)
     end
 
     Module.pop()
