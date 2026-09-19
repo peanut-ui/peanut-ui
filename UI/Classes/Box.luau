@@ -33,6 +33,7 @@ function Box.new(): WidgetType.Box
     local events = Events.new()
 
     local fire = events.fire
+    local fireHook = hooks.fire
 
     local cleanups: {RBXScriptConnection | () -> ()} = {}
     local isDestroyed = false
@@ -117,14 +118,7 @@ function Box.new(): WidgetType.Box
     end
 
     function box._createObject()
-        for _, child in box.children do
-            if not child.isImplemented("_createObject") then
-                continue
-            end
-
-            child._createObject()
-        end
-
+        fireHook("ObjectCreateScheduled")
         return nil
     end
     -- widget: object -- end --
