@@ -5,7 +5,6 @@ const Utils = require(script.Parent.Parent.Parent.Types.Utils)
 const WidgetType = require(script.Parent.Parent.Parent.Types.Widget)
 const Helpers = require(script.Parent.Parent.Parent.Utils.Helpers)
 const Logging = require(script.Parent.Parent.Parent.Utils.Logging)
-const Scheduler = require(script.Parent.Parent.Parent.Utils.Scheduler)
 
 local logger = Logging.getLogger("PeanutUI.Classes.WidgetFeatures.Children")
 
