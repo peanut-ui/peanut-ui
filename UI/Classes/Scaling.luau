@@ -13,6 +13,33 @@ local function getScale(resolution: Vector2, reference: Vector2): number
     )
 end
 
+--- Applies responsive pixel scaling to a screen space.
+---
+--- The scale is calculated from the screen space's current size and the
+--- reference resolution. The smaller scale factor between the width and
+--- height is used, so the UI keeps its proportions and remains fully visible.
+--- The scale is recalculated whenever the screen space changes size.
+---
+--- @param onScreenSpace The screen space whose UI should be scaled
+--- @param referenceResolution The design resolution used as the scale baseline
+--- @param floorScale Whether to round the scale down to an integer; useful for pixel-perfect UI where fractional scaling could place elements between pixels
+--- @param minScale The smallest scale allowed after calculating the screen scale
+--- @param maxScale The largest scale allowed after calculating the screen scale
+---
+--- ### Example
+--- ```
+--- Scaling.simpleScale(
+---     space,
+---     Vector2.new(844, 390),
+---     true
+--- )
+--- ```
+--- Here, `space` is the screen space to scale, `Vector2.new(844, 390)` is the
+--- design resolution the UI is laid out for, and `true` enables integer scale
+--- steps. This is a good default for pixel-oriented UI because it avoids half
+--- pixels and keeps edges and text arranged cleanly. Use `false` or omit the
+--- value when smoother fractional scaling is more important than pixel
+--- alignment.
 function Scaling.simpleScale(
     onScreenSpace: {
         read _isSpaceLike: true,
