@@ -71,7 +71,7 @@ Animations.makeAnimation = makeAnimation
 
 function Animations.Spin(degreePerSecond: number): AnimationsType.Animation
     local function step(object: GuiObject, dt: number, state: {number})
-        state[1] += degreePerSecond * dt
+        state[1] = (state[1] + degreePerSecond * dt) % 360
         object.Rotation = state[1]
     end
 
