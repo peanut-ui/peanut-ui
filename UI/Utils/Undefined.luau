@@ -10,4 +10,4 @@ const Utils = require(script.Parent.Parent.Types.Utils)
 
 local Undefined = { _typeName = "undefined" } :: Utils.Undefined
 
-return table.freeze(Undefined)
+return table.freeze(Undefined) :: Utils.Undefined
