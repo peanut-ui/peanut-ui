@@ -3,7 +3,7 @@ const State = require(script.Parent.Parent.State)
 const Widget = require(script.Parent.Parent.Types.Widget)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 
-local logger = Logging.getLogger("PeanutUI.Classes.Scaling")
+local logger = Logging.getLogger("PeanutUI.Components.Scaling")
 local Scaling = {}
 
 local function getScale(resolution: Vector2, reference: Vector2): number

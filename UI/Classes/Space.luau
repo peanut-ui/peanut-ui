@@ -1,6 +1,8 @@
 --!strict
 --!optimize 2
 const Players = game:GetService("Players")
+const Widget = require(script.Parent.Parent.Classes.Widget)
+const Children = require(script.Parent.Parent.Classes.WidgetFeatures.Children)
 const SpaceType = require(script.Parent.Parent.Types.Space)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const WidgetType = require(script.Parent.Parent.Types.Widget)
@@ -11,8 +13,6 @@ const Logging = require(script.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Utils.Ref)
 const Signals = require(script.Parent.Parent.Utils.Signals)
 const Units = require(script.Parent.Parent.Utils.Units)
-const Widget = require(script.Parent.Widget)
-const Children = require(script.Parent.WidgetFeatures.Children)
 
 local logger = Logging.getLogger("PeanutUI.Classes.Space")
 

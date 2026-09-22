@@ -1,11 +1,11 @@
 --!strict
 --!optimize 2
+const Space = require(script.Parent.Parent.Classes.Space)
 const Widget = require(script.Parent.Parent.Types.Widget)
 const Logging = require(script.Parent.Parent.Utils.Logging)
-const Space = require(script.Parent.Space)
 -- Support for UILabs stories
 
-local logger = Logging.getLogger("PeanutUI.Classes.Stories")
+local logger = Logging.getLogger("PeanutUI.Components.Stories")
 local Stories = {}
 
 --- Makes simple story out of component

@@ -183,7 +183,7 @@ function Ref.new<T>(value: T | Utils.Ref<T> | Utils.ProtectedRef<T>, registerTo:
 
     function ref.getValue(): T
         ensureNotDestroyed()
-        return currentValue
+        return currentValue :: T
     end
 
     function ref.increaseValue(amount: number)

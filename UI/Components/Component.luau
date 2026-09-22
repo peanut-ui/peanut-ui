@@ -1,12 +1,12 @@
 --!strict
 --!optimize 2
+const Widget = require(script.Parent.Parent.Classes.Widget)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const WidgetType = require(script.Parent.Parent.Types.Widget)
 const Context = require(script.Parent.Parent.Utils.Context)
 const Logging = require(script.Parent.Parent.Utils.Logging)
-const Widget = require(script.Parent.Widget)
 
-local logger = Logging.getLogger("PeanutUI.Classes.Component")
+local logger = Logging.getLogger("PeanutUI.Components.Component")
 
 local Component = {}
 

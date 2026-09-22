@@ -19,6 +19,4 @@ And it fixes soo many things you would have with other frameworks or if you code
 This message was written on 2026-09-05 04:16am, yeah yeah I'm not sleeping...
 ]]
 
-return {
-
-}
+return {}
