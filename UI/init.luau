@@ -2,6 +2,9 @@
 --!optimize 2
 const Component = require(script.Components.Component)
 const ControlFlow = require(script.Components.ControlFlow)
+const WidgetType = require(script.Types.Widget)
+
+export type Widget = WidgetType.Interface
 
 local Components = table.freeze({
     define = Component.defineComponent,
@@ -14,6 +17,8 @@ local Components = table.freeze({
 })
 
 return table.freeze({
+    Logging = require(script.Utils.Logging),
+
     Widgets = require(script.Components.Widgets),
     Space = require(script.Classes.Space),
 
