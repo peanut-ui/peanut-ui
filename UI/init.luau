@@ -64,6 +64,8 @@ return table.freeze {
     Animations = require(script.Components.Animations),
     Transitions = require(script.Components.Transitions),
 
+    Undefined = require(script.Utils.Undefined),
+
     Ref = Ref,
     Units = require(script.Utils.Units),
     State = require(script.State),
