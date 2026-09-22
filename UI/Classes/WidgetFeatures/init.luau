@@ -17,4 +17,4 @@ function Module.requireField(logger: Logging.Instance, widget: Widget.WidgetLike
     end
 end
 
-return Module
+return table.freeze(Module)

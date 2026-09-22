@@ -291,4 +291,4 @@ function Animation.isRunning(object: Instance, step: Step?): boolean
     end
 end
 
-return Animation
+return table.freeze(Animation)

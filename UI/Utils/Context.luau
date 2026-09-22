@@ -80,7 +80,7 @@ function Module.withContext<R, A...>(name: string?, fn: (A...) -> R, ...: A...):
         logger.warn(`Call resulted in error:\n{result}`)
     end
 
-    return ok, result, Module.pop()
+    return ok, result :: R, Module.pop()
 end
 
 function Module.withNoContext<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R)
@@ -92,7 +92,7 @@ function Module.withNoContext<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R)
     end
 
     Module.pop()
-    return ok, result
+    return ok, result :: R
 end
 
-return Module
+return table.freeze(Module)

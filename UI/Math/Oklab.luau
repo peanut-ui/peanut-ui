@@ -90,7 +90,7 @@ local function oklchToRgb(value: {number}): Color3
     return oklabToRgb(oklchToOklab(value))
 end
 
-return {
+return table.freeze {
     oklabToRgb = oklabToRgb,
     rgbToOklab = rgbToOklab,
     oklabToOklch = oklabToOklch,

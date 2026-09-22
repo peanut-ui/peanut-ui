@@ -9,7 +9,7 @@ local Helpers = {}
 --- If value is Undefined, it will convert it to nil
 function Helpers.removeUndefined<T>(value: T): T
     if value == Undefined then
-        return nil
+        return nil :: T
     end
 
     return value
@@ -74,4 +74,4 @@ function Helpers.readonly<T>(original: T): T
 	return proxy :: T
 end
 
-return Helpers
+return table.freeze(Helpers)

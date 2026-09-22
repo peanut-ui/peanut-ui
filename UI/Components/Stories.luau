@@ -37,4 +37,4 @@ end
 
 Stories.makeStory = makeStory
 
-return Stories
+return table.freeze(Stories)

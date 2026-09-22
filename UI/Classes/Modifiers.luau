@@ -1040,4 +1040,4 @@ Modifiers.components = {
     )
 } :: {[string]: string | (properties: {[string]: any}) -> Modifier.Component}
 
-return Modifiers
+return table.freeze(Modifiers)

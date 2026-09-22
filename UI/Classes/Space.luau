@@ -465,4 +465,4 @@ local function createStorySpace(target: Frame): WidgetType.SpaceLike
 end
 Space.createStorySpace = createStorySpace
 
-return Space
+return table.freeze(Space)

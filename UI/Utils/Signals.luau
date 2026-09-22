@@ -100,4 +100,4 @@ function SignalsClass.new(): Utils.Signals
     return signals
 end
 
-return SignalsClass
+return table.freeze(SignalsClass)

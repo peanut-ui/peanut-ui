@@ -37,4 +37,4 @@ function Hooks.new(): Utils.Hooks
     return table.freeze(hooks :: any)
 end
 
-return Hooks
+return table.freeze(Hooks)

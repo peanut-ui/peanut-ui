@@ -73,4 +73,4 @@ function EventsClass.new(): Utils.Events
     return events
 end
 
-return EventsClass
+return table.freeze(EventsClass)

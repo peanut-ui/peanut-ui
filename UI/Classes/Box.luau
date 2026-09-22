@@ -152,4 +152,4 @@ function Box.new(): WidgetType.Box
     return box
 end
 
-return Box
+return table.freeze(Box)

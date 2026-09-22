@@ -728,4 +728,4 @@ function WidgetClass.new<C>(
     return instance :: any
 end
 
-return WidgetClass
+return table.freeze(WidgetClass)

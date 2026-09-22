@@ -117,4 +117,4 @@ function Units.ToUDim(obj: Utils.Unit | UDim): UDim
     error("Unknown type", 2)
 end
 
-return Units
+return table.freeze(Units)

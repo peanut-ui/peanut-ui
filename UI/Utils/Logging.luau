@@ -115,4 +115,4 @@ function Logger.replaceLogger(fn: (name: string, formatOrFn: string | () -> stri
     log = fn
 end
 
-return Logger
+return table.freeze(Logger)

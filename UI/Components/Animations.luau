@@ -250,4 +250,4 @@ function Animations.ColorCycleOklch(
     end)
 end
 
-return Animations
+return table.freeze(Animations)

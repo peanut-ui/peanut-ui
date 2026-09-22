@@ -145,4 +145,4 @@ function ControlFlow.If<Props...>(
     return flow
 end
 
-return ControlFlow
+return table.freeze(ControlFlow)

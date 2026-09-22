@@ -147,4 +147,4 @@ function Component.defineComponent<T>(
     end
 end
 
-return Component
+return table.freeze(Component)

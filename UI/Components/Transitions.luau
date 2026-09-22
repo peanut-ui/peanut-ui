@@ -92,4 +92,4 @@ function Transitions.EaseCubicBezier(
     return table.freeze(transition)
 end
 
-return Transitions
+return table.freeze(Transitions)

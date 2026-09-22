@@ -150,4 +150,4 @@ function Scaling.simpleScale(
     onScreenSpace.changeScaleFn(scaleFn)
 end
 
-return Scaling
+return table.freeze(Scaling)

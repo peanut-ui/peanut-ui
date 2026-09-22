@@ -148,7 +148,7 @@ local function getCurrentStage(): TypeFuncs.KeyOf<Elements> | "sync"
     return currentStage
 end
 
-return {
+return table.freeze {
     idle = idle,
     defer = defer,
     step = step,

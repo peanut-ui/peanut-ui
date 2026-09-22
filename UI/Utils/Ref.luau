@@ -562,4 +562,4 @@ function Ref.makeProtected<T>(
     return newProtectedRef :: any
 end
 
-return Ref
+return table.freeze(Ref)
