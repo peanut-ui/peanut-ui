@@ -234,7 +234,7 @@ export type Interface<Props = DefaultProperties, Object = GuiObject, Events = De
         name: K & KeyOf<Modifier.Modifiers>,
         params: Resolve<Modifier.Modifiers, K> | Utils.Undefined | {Resolve<Modifier.Modifiers, K> | Utils.Undefined}?
     ) -> (),
-    getModifier: <K>(name: K & keyof<Modifier.Components>, index: number?) -> any,
+    getModifier: <K>(name: K & Modifier.ComponentNames, index: number?) -> Resolve<Modifier.Components, K>,
 
     setTransition: <K>(key: K & KeyOf<Props>, transition: Animations.Transition?) -> (),
 

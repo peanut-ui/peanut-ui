@@ -197,27 +197,59 @@ export type Modifiers = {
     scale: Partial<Scale>?,
 }
 
+export type FlexComponent = Component<Flex>
+export type CornerRadiusComponent = Component<CornerRadius>
+export type PaddingComponent = Component<Padding>
+export type StrokeComponent = Component<Stroke>
+export type GradientComponent = Component<Gradient>
+export type ShadowComponent = Component<Shadow>
+
+export type ListComponent = Component<List>
+export type GridComponent = Component<Grid>
+export type TableComponent = Component<Table>
+
+export type AspectRatioComponent = Component<AspectRatio>
+export type SizeConstraintComponent = Component<SizeConstraint>
+export type TextSizeConstraintComponent = Component<TextSizeConstraint>
+export type ScaleComponent = Component<Scale>
+
+-- https://github.com/luau-lang/luau/issues/2736
+-- Sadly KeyOf/keyof doesn't work for now
+export type ComponentNames = "flex"
+    | "cornerRadius"
+    | "padding"
+    | "stroke"
+    | "gradient"
+    | "shadow"
+    | "list"
+    | "grid"
+    | "table"
+    | "aspectRatio"
+    | "sizeConstraint"
+    | "textSizeConstraint"
+    | "scale"
+
 export type Components = {
     [string]: Component,
 
     -- Styling
-    flex: Component<Flex>?,
-    cornerRadius: Component<CornerRadius>?,
-    padding: Component<Padding>?,
-    stroke: Component<Stroke>?,
-    gradient: Component<Gradient>?,
-    shadow: Component<Shadow>?,
+    flex: FlexComponent?,
+    cornerRadius: CornerRadiusComponent?,
+    padding: PaddingComponent?,
+    stroke: StrokeComponent?,
+    gradient: GradientComponent?,
+    shadow: ShadowComponent?,
 
     -- Layouts
-    list: Component<List>?,
-    grid: Component<Grid>?,
-    table: Component<Table>?,
+    list: ListComponent?,
+    grid: GridComponent?,
+    table: TableComponent?,
 
     -- Constraints
-    aspectRatio: Component<AspectRatio>?,
-    sizeConstraint: Component<SizeConstraint>?,
-    textSizeConstraint: Component<TextSizeConstraint>?,
-    scale: Component<Scale>?,
+    aspectRatio: AspectRatioComponent?,
+    sizeConstraint: SizeConstraintComponent?,
+    textSizeConstraint: TextSizeConstraintComponent?,
+    scale: ScaleComponent?,
 }
 
 return {}
