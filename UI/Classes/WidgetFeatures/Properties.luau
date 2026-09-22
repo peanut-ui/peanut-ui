@@ -77,6 +77,33 @@ return function(
         fire("PropertyChanged", key, ref.getValue())
     end
 
+    local function syncRbxProperty(key: string)
+        local object = instance.getObject()
+        if not object then
+            return
+        end
+
+        local rbxKey = rbxLinkedProperties[key]
+        if not rbxKey then
+            return
+        end
+
+        local ref = ensureRef(key)
+
+        rbxPropertyLocked[key] = true
+        local value = (object :: any)[rbxKey]
+
+        local transformFn = rbxPropertyTransform[key]
+        if transformFn then
+            value = transformFn(value)
+        end
+
+        ref.setValue(value)
+        fire("PropertyChanged", key, value)
+
+        rbxPropertyLocked[key] = nil
+    end
+
     function instance._linkProperty(
         name: string,
         property: string,
@@ -119,6 +146,9 @@ return function(
 
         if readonly == true then
             readonlyProperties[name] = true
+            linkedPropertiesUpdate[name] = function()
+                syncRbxProperty(name)
+            end
             return
         end
 
@@ -162,33 +192,6 @@ return function(
                 update(value)
             end)
         end)))
-    end
-
-    local function syncRbxProperty(key: string)
-        local object = instance.getObject()
-        if not object then
-            return
-        end
-
-        local rbxKey = rbxLinkedProperties[key]
-        if not rbxKey then
-            return
-        end
-
-        local ref = ensureRef(key)
-
-        rbxPropertyLocked[key] = true
-        local value = (object :: any)[rbxKey]
-
-        local transformFn = rbxPropertyTransform[key]
-        if transformFn then
-            value = transformFn(value)
-        end
-
-        ref.setValue(value)
-        fire("PropertyChanged", key, value)
-
-        rbxPropertyLocked[key] = nil
     end
 
     function instance.getProperty(key: any): any
