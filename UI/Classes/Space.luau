@@ -4,10 +4,15 @@ const Players = game:GetService("Players")
 const SpaceType = require(script.Parent.Parent.Types.Space)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const WidgetType = require(script.Parent.Parent.Types.Widget)
+const Events = require(script.Parent.Parent.Utils.Events)
+const Helpers = require(script.Parent.Parent.Utils.Helpers)
+const Hooks = require(script.Parent.Parent.Utils.Hooks)
 const Logging = require(script.Parent.Parent.Utils.Logging)
+const Ref = require(script.Parent.Parent.Utils.Ref)
 const Signals = require(script.Parent.Parent.Utils.Signals)
 const Units = require(script.Parent.Parent.Utils.Units)
 const Widget = require(script.Parent.Widget)
+const Children = require(script.Parent.WidgetFeatures.Children)
 
 local logger = Logging.getLogger("PeanutUI.Classes.Space")
 
@@ -80,7 +85,6 @@ local scaleFunctions: {
     number = function(scaleFunction: WidgetType.ScaleCallback, px: number, getOriginal: boolean?): number
         return scaleFunction(px, getOriginal)
     end
-
 }
 
 local function newSpace(
@@ -106,7 +110,7 @@ local function newSpace(
             local fn = scaleFunctions[(obj :: any)._typeName or ""]
 
             if not fn then
-                return obj
+                return obj :: any
             else
                 return fn(scaleFunction, obj, getOriginal)
             end
@@ -114,7 +118,7 @@ local function newSpace(
             local fn = scaleFunctions[typeof(obj)]
 
             if not fn then
-                return obj
+                return obj :: any
             else
                 return fn(scaleFunction, obj, getOriginal)
             end
@@ -207,6 +211,11 @@ local function newSpace(
         if registry[name] == widgetInternal then
             registry[name] = nil
         end
+
+        if stopScale then
+            stopScale()
+            stopScale = nil
+        end
     end)
 
     registry[name] = widget
@@ -278,5 +287,182 @@ function Space.getScreenSpace(name: string): SpaceType.ScreenSpace
 
     return registeredScreenSpaces[name]
 end
+
+local function findUIScale(target: GuiObject): UIScale?
+    local current: Instance? = target
+
+    while current do
+        local uiScale = current:FindFirstChildOfClass("UIScale")
+
+        if uiScale then
+            return uiScale
+        end
+
+        current = current.Parent
+    end
+
+    return nil
+end
+
+local freezeAndClear = Helpers.freezeAndClear
+
+--- Used for support of UI Labs stories
+local function createStorySpace(target: Frame): WidgetType.SpaceLike
+    local space = Widget.createEmptyWidget() :: any
+    space._typeName = "storySpace"
+    space._widgetLike = true
+    space._isSpaceLike = true
+    space._widgetName = "storySpace"
+    space._features["children"] = true
+    space._features["events"] = true
+    space.signals = Signals.new()
+
+    local events = Events.new()
+    local hooks = Hooks.new()
+
+    local isDestroyed = false
+
+    local fire = events.fire
+    local fireHook = hooks.fire
+
+    local cleanups: {RBXScriptConnection | () -> ()} = {}
+    local objectRef = Ref.new(target)
+
+    -- box: main -- start --
+    local function ensureNotDestroyed()
+        if isDestroyed then
+            logger.error("[%s %d] Tried to access widget after it was destroyed", space._widgetName, space._uniqueId)
+        end
+    end
+
+    local isDestroying = false
+    function space.destroy()
+        if isDestroyed then return end
+        if isDestroying then return end
+
+        -- So if event calls .destroy() again
+        isDestroying = true
+        fire("Destroying")
+        isDestroyed = true
+
+        for _, cleanup in ipairs(cleanups) do
+            if typeof(cleanup) == "RBXScriptConnection" then
+                cleanup:Disconnect()
+            else
+                cleanup()
+            end
+        end
+
+        freezeAndClear(cleanups)
+
+        objectRef.destroy()
+
+        fire("Destroyed")
+        events.destroy()
+        hooks.clear()
+    end
+
+    function space.isDestroyed()
+        return isDestroyed
+    end
+
+    function space._addCleanup(toCleanup: RBXScriptConnection | () -> ())
+        ensureNotDestroyed()
+        table.insert(cleanups, toCleanup)
+    end
+    -- box: main -- end --
+
+    -- feature: events -- start --
+    local function listen(name: string, callback: (...any) -> ...boolean?): () -> ()
+        ensureNotDestroyed()
+        return events.listen(name, callback)
+    end
+    space.listen = listen
+
+    function space._linkEvent(...)
+        logger.error("Story space cannot link events")
+    end
+    -- feature: events -- end --
+
+    -- widget: object -- start --
+    function space.getObject()
+        return target
+    end
+
+    function space.getObjectRef()
+        return Ref.makeProtected(objectRef :: any)
+    end
+
+    function space._redraw()
+        for _, child in space.children do
+            if not child.isImplemented("_redraw") then
+                continue
+            end
+
+            child._redraw()
+        end
+    end
+
+    function space._createObject()
+        fireHook("ObjectCreateScheduled")
+        return nil
+    end
+    -- widget: object -- end --
+
+    -- features: all -- start --
+    Children(
+        space,
+        ensureNotDestroyed,
+        hooks,
+        events
+    )
+    -- features: all -- end --
+
+    local uiScale = findUIScale(target)
+    local function scaleFunction(value: number, getOriginal: boolean?): number
+        if not uiScale then
+            return value
+        end
+
+        if not getOriginal then
+            return value
+        else
+            return value / uiScale.Scale
+        end
+    end
+
+    if uiScale then
+        uiScale:GetPropertyChangedSignal("Scale"):Connect(function(...)
+            space._redraw()
+        end)
+    end
+
+    function space.scaleObject(obj: any, getOriginal: boolean?): any
+        if typeof(obj) == "table" then
+            local fn = scaleFunctions[(obj :: any)._typeName or ""]
+
+            if not fn then
+                return obj
+            else
+                return fn(scaleFunction, obj, getOriginal)
+            end
+        else
+            local fn = scaleFunctions[typeof(obj)]
+
+            if not fn then
+                return obj
+            else
+                return fn(scaleFunction, obj, getOriginal)
+            end
+        end
+    end
+
+    function space.changeScaleFn(...: any)
+        logger.error("Story space doesn't support changing scale function")
+    end
+
+    return space
+end
+Space.createStorySpace = createStorySpace
 
 return Space
