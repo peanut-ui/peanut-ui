@@ -2,7 +2,6 @@
 --!optimize 2
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const Logging = require(script.Parent.Parent.PeanutUI.Utils.Logging)
-const Scheduler = require(script.Parent.Parent.PeanutUI.Utils.Scheduler)
 const Ref = require(ReplicatedStorage.PeanutUI.Utils.Ref)
 const Tests = require(ReplicatedStorage.PeanutUI.Utils.Tests)
 

@@ -73,6 +73,7 @@ function Tests.run(testName: string, fn: () -> ())
     if not ok then
         logger.error("Test %s: CRASHED with error: %s", testName, tostring(err))
     end
+    logger.info("-----------------------------------------")
 end
 
 return Tests
