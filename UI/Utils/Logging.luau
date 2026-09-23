@@ -35,10 +35,6 @@ local function resolveMessage(formatOrFn: string | () -> string, ...: any): stri
 end
 
 local function log(name: string, formatOrFn: string | () -> string, logLevel: number, ...: any)
-    if logLevel < level then
-        return
-    end
-
     local message = resolveMessage(formatOrFn, ...)
 
     if logLevel == 1 then
@@ -60,19 +56,31 @@ end
 ---
 --- @param name Name that is used for formatting
 --- @return Logger instance
-function Logger.getLogger(name: string): Instance
+function Logger.getLogger(name: string, logLevel: number?): Instance
     local logger = {}
     logger.name = name
 
     function logger.debug(string: string | () -> string, ...): ()
+        if 1 < (logLevel or level) then
+            return
+        end
+
         log(name, string, 1, ...)
     end
 
     function logger.info(string: string | () -> string, ...): ()
+        if 2 < (logLevel or level) then
+            return
+        end
+
         log(name, string, 2, ...)
     end
 
     function logger.warn(string: string | () -> string, ...): ()
+        if 3 < (logLevel or level) then
+            return
+        end
+
         log(name, string, 3, ...)
     end
 
@@ -118,10 +126,6 @@ Logger.resolveMessage = resolveMessage
 ---
 --- @param fn Log function, use `Logging.resolveMessage(formatOrFn, ...)` to resolve `formatOrFn` parameter
 function Logger.replaceLogger(fn: (name: string, formatOrFn: string | () -> string, logLevel: number, ...any) -> ())
-    Logger.setLevel = function()
-        log("Logging", "Custom logger was set, can't change level", 3)
-    end
-
     log = fn
 end
 
