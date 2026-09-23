@@ -11,7 +11,7 @@ local logger = Logging.getLogger("PeanutUI.Components.ControlFlow")
 
 local ControlFlow = {}
 
-export type ConditionOrRef = boolean | Utils.Ref<boolean>
+export type ConditionOrRef = boolean | Utils.SimpleRef<boolean>
 export type Materialize = {
     build: () -> Widget.Box
 }
@@ -52,8 +52,7 @@ function ControlFlow.If<Props...>(
     widgetFn: (Props...) -> Widget.WidgetLike,
     ...: Props...
 ): IfFlow & Materialize
-    local branches = Ref.reactive({}) :: {Branch}
-    local branchesRef = Ref.getRef(branches) :: Utils.Ref<{Branch}>
+    local branches = {} :: {Branch}
 
     addBranch(branches, conditionOrRef, widgetFn, ...)
 
@@ -77,15 +76,16 @@ function ControlFlow.If<Props...>(
             local box = Box.new()
             box._boxName = "if"
 
+            table.freeze(branches)
             local oldWidget: Widget.WidgetLike? = nil
 
-            local branch = Ref.computed(function(use)
-                for _, branch in use(branchesRef) do
+            local branch = Ref.computed(function()
+                for _, branch in branches do
                     local conditionOrRef = branch.conditionOrRef
                     local condition: boolean
 
                     if Ref.isRef(conditionOrRef) then
-                        condition = use(conditionOrRef :: Utils.Ref<boolean>)
+                        condition = (conditionOrRef :: Utils.Ref<boolean>).value
                     else
                         condition = conditionOrRef :: boolean
                     end
@@ -96,7 +96,7 @@ function ControlFlow.If<Props...>(
                 end
 
                 return nil
-            end) :: Utils.Ref<Branch?>
+            end)
 
             local function update(newBranch: Branch?)
                 if oldWidget then
@@ -133,8 +133,7 @@ function ControlFlow.If<Props...>(
                     oldWidget = nil
                 end
 
-                branch.destroy();
-                (Ref.getRef(branches) :: any).destroy()
+                branch.destroy()
             end)
 
             table.clear(flow)

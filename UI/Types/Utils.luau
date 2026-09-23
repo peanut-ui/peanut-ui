@@ -5,13 +5,16 @@ export type Ref<T> = {
     read _typeName: "ref",
     read _isProtected: nil,
     read getValue: () -> T,
-    read setValue: (value: T | Ref<T> | ProtectedRef<T>, immediate: boolean?) -> (),
+    read setValue: (value: T | Ref<T> | ProtectedRef<T>) -> (),
     read increaseValue: (number) -> (),
     read notifyChanged: () -> (),
     read notifyImmediate: () -> (),
-    read watch: (fn: RefWatchFn<T>, onUnwatch: () -> ()?) -> (() -> (), number),
+    read watch: (fn: RefWatchFn<T>, onUnwatch: () -> ()?, isSync: boolean?) -> (() -> (), number),
     read setOnUnwatch: (id: number, onUnwatch: () -> ()?) -> (),
     read destroy: () -> (),
+
+    read value: T,
+    write value: T | Ref<T> | ProtectedRef<T>,
 
     read _addCleanup: (() -> ()) -> ()
 }
@@ -21,7 +24,13 @@ export type Gettable<T> = {
 }
 
 export type Watchable<T> = {
-    read watch: (fn: RefWatchFn<T>, onUnwatch: () -> ()?) -> (() -> (), number),
+    read watch: (fn: RefWatchFn<T>, onUnwatch: () -> ()?, isSync: boolean?) -> (() -> (), number),
+}
+
+export type SimpleRef<T> = {
+    read _typeName: "ref",
+    read getValue: () -> T,
+    read watch: (fn: RefWatchFn<T>, onUnwatch: () -> ()?, isSync: boolean?) -> (() -> (), number),
 }
 
 export type ProtectedRef<T> = {
@@ -30,7 +39,9 @@ export type ProtectedRef<T> = {
     read getValue: () -> T,
     read notifyChanged: () -> (),
     read notifyImmediate: () -> (),
-    read watch: (fn: RefWatchFn<T>, onUnwatch: () -> ()?) -> (() -> (), number),
+    read watch: (fn: RefWatchFn<T>, onUnwatch: () -> ()?, isSync: boolean?) -> (() -> (), number),
+    read value: T,
+    read destroy: () -> (),
 }
 
 export type Undefined = { read _typeName: "undefined" }
@@ -84,9 +95,9 @@ export type Unit = {
     scale: number
 }
 
-export type Bucket = {
+export type Bucket<State = any?> = {
     createdRefs: {Ref<any>},
-    hooks: Hooks,
+    customState: State,
     contextName: string
 }
 

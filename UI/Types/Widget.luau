@@ -71,11 +71,11 @@ export type DefaultProperties = {
     selectable: boolean,
     selectionOrder: number,
 
-    selectionImageObject: Utils.Ref<GuiObject?>?,
-    nextSelectionDown: Utils.Ref<GuiObject?>?,
-    nextSelectionUp: Utils.Ref<GuiObject?>?,
-    nextSelectionRight: Utils.Ref<GuiObject?>?,
-    nextSelectionLeft: Utils.Ref<GuiObject?>?,
+    selectionImageObject: Utils.SimpleRef<GuiObject?>?,
+    nextSelectionDown: Utils.SimpleRef<GuiObject?>?,
+    nextSelectionUp: Utils.SimpleRef<GuiObject?>?,
+    nextSelectionRight: Utils.SimpleRef<GuiObject?>?,
+    nextSelectionLeft: Utils.SimpleRef<GuiObject?>?,
 
     interactable: boolean,
     active: boolean,
@@ -238,8 +238,8 @@ export type Interface<Props = DefaultProperties, Object = GuiObject, Events = De
 
     setTransition: <K>(key: K & KeyOf<Props>, transition: Animations.Transition?) -> (),
 
-    setProperty: <K>(key: K & KeyOf<Props>, value: Resolve<Props, K> | Utils.Ref<Resolve<Props, K>>) -> (),
-    snapProperty: <K>(key: K & KeyOf<Props>, value: Resolve<Props, K> | Utils.Ref<Resolve<Props, K>>) -> (),
+    setProperty: <K>(key: K & KeyOf<Props>, value: Resolve<Props, K> | Utils.SimpleRef<Resolve<Props, K>>) -> (),
+    snapProperty: <K>(key: K & KeyOf<Props>, value: Resolve<Props, K> | Utils.SimpleRef<Resolve<Props, K>>) -> (),
     getProperty: <K>(key: K & KeyOf<Props>) -> Resolve<Props, K>,
     getRef: <K>(key: K & KeyOf<Props>) -> Utils.ProtectedRef<Resolve<Props, K>>,
     observe: <K>(key: K & KeyOf<Props>, callback: (newValue: Resolve<Props, K>) -> ...boolean?) -> (() -> ()),
@@ -285,8 +285,8 @@ export type InternalInterface<Props = DefaultProperties, Object = GuiObject, Eve
 
 export type Args<Props = DefaultProperties, Widget = Interface, Events = DefaultEvents> = {
     children: {any}?,
-    properties: Partial<UnionProperties<Props, Utils.Ref<any>>>?,
-    events: Partial<UnionProperties<Events, Utils.Ref<any>>>?,
+    properties: Partial<UnionProperties<Props, Utils.SimpleRef<any>>>?,
+    events: Partial<Events>?,
     transitions: {[keyof<Props>]: Animations.Transition}?,
     modifiers: Modifier.Modifiers?,
     animations: {[string]: Animations.Animation}?,
