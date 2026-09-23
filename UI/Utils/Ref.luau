@@ -8,6 +8,11 @@ const Undefined = require(script.Parent.Undefined)
 
 const logger = Logging.getLogger("PeanutUI.Utils.Ref")
 
+type ComputedInternal = {
+    invalidate: () -> (),
+    watch: (fn: () -> ...boolean?) -> (() -> ()),
+}
+
 type Table = {[any]: any}
 local proxyToRefMap: {[any]: Utils.Ref<any>} = setmetatable({}, { __mode = "k" })
 local proxyCache: {[Table]: Table} = setmetatable({}, { __mode = "k" })
@@ -18,7 +23,7 @@ local proxyGetRef: {[Table]: (string) -> Utils.Ref<any>} = setmetatable({}, { __
 local proxyChildWatchers: {[Table]: {[any]: () -> ()}} = setmetatable({}, { __mode = "k" })
 local rawCache: {[Table]: Table} = setmetatable({}, { __mode = "k" })
 
-local computeInvalidate: {[any]: () -> ()} = setmetatable({}, { __mode = "k" })
+local computeInternal: {[any]: ComputedInternal} = setmetatable({}, { __mode = "k" })
 
 local protectedRefCache: {[Utils.Ref<any>]: Utils.ProtectedRef<any>} = setmetatable({}, { __mode = "kv" })
 
@@ -582,12 +587,42 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
         if isDirty then computeNewValue() end
     end)
 
+    local counter = 0
+    local watchers: {[number]: () -> ...boolean?} = {}
+
     local lastComputeRefs: {[Utils.SimpleRef<any>]: () -> ()} = {}
 
     local watchingCounter = 0
 
     local protectedRef: Utils.ProtectedRef<R>
     local invalidate: () -> ()
+
+    local function watch(fn: () -> ...boolean?): () -> ()
+        counter += 1
+        local id = counter
+
+        watchers[id] = fn
+
+        return function()
+            watchers[id] = nil
+        end
+    end
+
+    local function notify()
+        if next(watchers) == nil then return end
+
+        local watcherClone = table.clone(watchers)
+        for id, watcher in pairs(watcherClone) do
+            if not watchers[id] then
+                return
+            end
+
+            local ok, result = Context.withNoContext(watcher :: any)
+            if not ok or result == true then
+                watchers[id] = nil
+            end
+        end
+    end
 
     local isComputing = false
     function computeNewValue()
@@ -618,7 +653,12 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
 
         for ref, _ in newComputeRefs do
             if lastComputeRefs[ref] == nil then
-                lastComputeRefs[ref] = ref.watch(invalidate, nil, true)
+                local internal = computeInternal[ref :: any]
+                if internal then
+                    lastComputeRefs[ref] = internal.watch(invalidate)
+                else
+                    lastComputeRefs[ref] = ref.watch(invalidate, nil, true)
+                end
             end
         end
 
@@ -646,13 +686,7 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
             end)
         end
 
-        for ref, _ in lastComputeRefs do
-            local invalidate = computeInvalidate[ref :: any]
-            if invalidate then
-                invalidate()
-            end
-        end
-
+        notify()
     end
 
     newRef._addCleanup(function()
@@ -681,8 +715,12 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
         true
     )
 
-    computeInvalidate[protectedRef] = invalidate
-    computeInvalidate[newRef] = invalidate
+    local internal = {
+        invalidate = invalidate,
+        watch = watch
+    }
+    computeInternal[protectedRef] = internal
+    computeInternal[newRef] = internal
 
     return protectedRef
 end
