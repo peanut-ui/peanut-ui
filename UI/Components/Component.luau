@@ -4,15 +4,16 @@ const Widget = require(script.Parent.Parent.Classes.Widget)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const WidgetType = require(script.Parent.Parent.Types.Widget)
 const Context = require(script.Parent.Parent.Utils.Context)
+const Hooks = require(script.Parent.Parent.Utils.Hooks)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 
 local logger = Logging.getLogger("PeanutUI.Components.Component")
 
 local Component = {}
 
-local function getBucketOrError(): Utils.Bucket
+local function getBucketOrError(): Utils.Bucket<Utils.Hooks>
     local currentBucket = Context.getCurrentBucket()
-    if not currentBucket then
+    if not currentBucket or currentBucket.contextName ~= "component" then
         logger.error("There's no component context available. Is it running in defineComponent?")
         error("")
     end
@@ -27,7 +28,7 @@ end
 --- @param fn A callback that receives the component's root widget
 function Component.onSetup(fn: (widget: WidgetType.Interface) -> ())
     local bucket = getBucketOrError()
-    bucket.hooks.add("OnSetup", fn)
+    bucket.customState.add("OnSetup", fn)
 end
 
 --- Registers a callback that runs when the component's Roblox GUI object is created.
@@ -36,7 +37,7 @@ end
 --- @param fn A callback that receives the created GUI object
 function Component.onCreated(fn: (object: GuiObject) -> ...boolean)
     local bucket = getBucketOrError()
-    bucket.hooks.add("OnCreated", fn :: any)
+    bucket.customState.add("OnCreated", fn :: any)
 end
 
 --- Registers a callback that runs before the component begins destruction.
@@ -46,7 +47,7 @@ end
 --- @param fn A cleanup callback
 function Component.onBeforeDestroyed(fn: () -> ...boolean)
     local bucket = getBucketOrError()
-    bucket.hooks.add("OnBeforeDestroyed", fn :: any)
+    bucket.customState.add("OnBeforeDestroyed", fn :: any)
 end
 
 --- Registers a callback that runs after the component has been destroyed.
@@ -56,7 +57,7 @@ end
 --- @param fn A callback that runs after destruction
 function Component.onDestroyed(fn: () -> ...boolean)
     local bucket = getBucketOrError()
-    bucket.hooks.add("OnDestroyed", fn :: any)
+    bucket.customState.add("OnDestroyed", fn :: any)
 end
 
 --- Creates a component with lifecycle controls.
@@ -102,7 +103,8 @@ function Component.defineComponent<T>(
     fn: (props: T & {[string]: any}) -> any
 ): (props: T) -> WidgetType.Interface
     return function(props)
-        local ok, widget, bucket = Context.withContext("component", fn, props)
+        local bucket = Context.createBucket("component", Hooks.new())
+        local ok, widget = Context.withContextBucket(bucket, fn, props)
         if not ok then
             logger.error("Couldn't create component because it errored")
         end
@@ -119,7 +121,7 @@ function Component.defineComponent<T>(
             end
         end)
 
-        local fireHook = bucket.hooks.fire
+        local fireHook = bucket.customState.fire
 
         fireHook("OnSetup", widget)
 

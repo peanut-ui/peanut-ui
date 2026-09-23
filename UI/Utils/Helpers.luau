@@ -74,4 +74,24 @@ function Helpers.readonly<T>(original: T): T
 	return proxy :: T
 end
 
+function Helpers.disableYielding<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R?)
+    local thread = coroutine.create(fn)
+
+    local ok, result = coroutine.resume(thread, ...)
+
+    if not ok then
+        local errorTrace = debug.traceback(thread, tostring(result))
+        return false, errorTrace
+    end
+
+    if coroutine.status(thread) ~= "dead" then
+        local trace = debug.traceback(thread)
+        coroutine.close(thread)
+
+        return false, `Cannot yield in current context.\nHINT: check for tags: yield in method's description\nTraceback: {trace}`
+    end
+
+    return true, result
+end
+
 return table.freeze(Helpers)

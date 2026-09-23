@@ -1,6 +1,6 @@
 --!strict
 --!optimize 2
-const Hooks = require(script.Parent.Hooks)
+const Helpers = require(script.Parent.Helpers)
 const Logging = require(script.Parent.Logging)
 const Utils = require(script.Parent.Parent.Types.Utils)
 
@@ -11,30 +11,12 @@ export type NoContext = false
 local stack: {Utils.Bucket | NoContext} = {}
 local Module = {}
 
-local function disableYielding<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R?)
-    local thread = coroutine.create(fn)
+local disableYielding = Helpers.disableYielding
 
-    local ok, result = coroutine.resume(thread, ...)
-
-    if not ok then
-        local errorTrace = debug.traceback(thread, tostring(result))
-        return false, errorTrace
-    end
-
-    if coroutine.status(thread) ~= "dead" then
-        local trace = debug.traceback(thread)
-        coroutine.close(thread)
-
-        return false, `Cannot yield in current context.\nHINT: check for tags: yield in method's description\nTraceback: {trace}`
-    end
-
-    return true, result
-end
-
-local function createBucket(name: string?): Utils.Bucket
+local function createBucket<State>(name: string?, customState: State?): Utils.Bucket<State>
     return {
         createdRefs = {},
-        hooks = Hooks.new(),
+        customState = customState,
         contextName = name or "unknown"
     }
 end
@@ -53,9 +35,14 @@ local function getCurrentBucket(): Utils.Bucket?
 end
 
 Module.getCurrentBucket = getCurrentBucket
+Module.createBucket = createBucket
 
 function Module.push(name: string?)
     table.insert(stack, createBucket(name))
+end
+
+function Module.pushBucket(bucket: Utils.Bucket)
+    table.insert(stack, bucket)
 end
 
 function Module.pushNoContext()
@@ -81,6 +68,18 @@ function Module.withContext<R, A...>(name: string?, fn: (A...) -> R, ...: A...):
     end
 
     return ok, result :: R, Module.pop()
+end
+
+function Module.withContextBucket<R, A...>(bucket: Utils.Bucket, fn: (A...) -> R, ...: A...): (boolean, R)
+    Module.pushBucket(bucket)
+
+    local ok, result = disableYielding(fn, ...)
+    if not ok then
+        logger.warn(`Call resulted in error:\n{result}`)
+    end
+
+    Module.pop()
+    return ok, result :: R
 end
 
 function Module.withNoContext<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R)
