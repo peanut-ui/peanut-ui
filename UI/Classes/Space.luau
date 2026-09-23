@@ -3,6 +3,7 @@
 const Players = game:GetService("Players")
 const Widget = require(script.Parent.Parent.Classes.Widget)
 const Children = require(script.Parent.Parent.Classes.WidgetFeatures.Children)
+const State = require(script.Parent.Parent.State)
 const SpaceType = require(script.Parent.Parent.Types.Space)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const WidgetType = require(script.Parent.Parent.Types.Widget)
@@ -360,6 +361,8 @@ local function createStorySpace(target: Frame): WidgetType.SpaceLike
         fire("Destroyed")
         events.destroy()
         hooks.clear()
+
+        State.removeWidget(space :: any)
     end
 
     function space.isDestroyed()
