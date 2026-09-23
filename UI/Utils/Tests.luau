@@ -71,7 +71,7 @@ function Tests.run(testName: string, fn: () -> ())
     logger.info("--- Running Test: %s ---", testName)
     const ok, err = pcall(fn)
     if not ok then
-        logger.error("Test %s: CRASHED with error: %s", testName, tostring(err))
+        logger.warn("Test %s: CRASHED with error: %s", testName, tostring(err))
     end
     logger.info("-----------------------------------------")
 end
