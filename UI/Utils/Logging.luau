@@ -21,6 +21,9 @@ export type Instance = {
 local level = 2
 local Logger = {}
 
+--- Resolves `formatOrFn` object, pass `...` to automatically format string using `string.format`
+---
+--- `...` doesn't format if `formatOrFn` is a function
 local function resolveMessage(formatOrFn: string | () -> string, ...: any): string
     if typeof(formatOrFn) == "function" then
         return formatOrFn()
@@ -51,6 +54,12 @@ local function log(name: string, formatOrFn: string | () -> string, logLevel: nu
     end
 end
 
+--- Creates logger instance to log
+---
+--- logger.error and logger.critical always errors and stops execution of code
+---
+--- @param name Name that is used for formatting
+--- @return Logger instance
 function Logger.getLogger(name: string): Instance
     local logger = {}
     logger.name = name
@@ -96,17 +105,18 @@ function Logger.setLevel(newLevel: number)
     level = newLevel
 end
 
---- Resolves `formatOrFn` object
 Logger.resolveMessage = resolveMessage
 
---[[
-    **Log levels:**
-    * 1 -> debug
-    * 2 -> info
-    * 3 -> warn
-    * 4 -> error
-    * 5 -> critical
-]]
+--- Replace log function that logger instance (from Logging.getLogger) uses
+---
+--- **Log levels:**
+--- * 1 -> debug
+--- * 2 -> info
+--- * 3 -> warn
+--- * 4 -> error
+--- * 5 -> critical
+---
+--- @param fn Log function, use `Logging.resolveMessage(formatOrFn, ...)` to resolve `formatOrFn` parameter
 function Logger.replaceLogger(fn: (name: string, formatOrFn: string | () -> string, logLevel: number, ...any) -> ())
     Logger.setLevel = function()
         log("Logging", "Custom logger was set, can't change level", 3)
