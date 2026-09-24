@@ -165,7 +165,7 @@ local function createModifier(
             value = transformFn(modifier :: any, value)
         end
 
-        ref.setValue(value, true)
+        ref.setValue(value)
     end
 
     local function checkRbxPropertyEvent(key: string)
@@ -209,7 +209,7 @@ local function createModifier(
         if not ref then
             propertiesRefs[key] = Ref.new(value)
         else
-            ref.setValue(value, true)
+            ref.setValue(value)
         end
     end
 
