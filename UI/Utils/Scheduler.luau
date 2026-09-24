@@ -140,10 +140,15 @@ end
 local ticksRanBeforeStop = 0
 local isRunning = true
 local isScheduled = false
+local shouldSchedule = false
 local function scheduleNextStep()
-    if not isRunning then return end
+    if not isRunning then
+        shouldSchedule = true
+        return
+    end
     if isScheduled then return end
     isScheduled = true
+    shouldSchedule = false
 
     task.defer(function()
         isScheduled = false
@@ -227,10 +232,23 @@ local function getCurrentStagePhase(): TypeFuncs.KeyOf<Phases> | "sync"
     return currentStagePhase
 end
 
+local function stop()
+    isRunning = false
+end
+
+local function start()
+    isRunning = true
+    if shouldSchedule then
+        scheduleNextStep()
+    end
+end
+
 return table.freeze {
     idle = idle,
     defer = defer,
     step = step,
+    stop = stop,
+    start = start,
     schedule = schedule,
     scheduleBefore = scheduleBefore,
     scheduleAfter = scheduleAfter,
