@@ -1,5 +1,5 @@
 --!strict
-const State = require(script.Parent.Parent.State)
+const Utils = require(script.Parent.Parent.Types.Utils)
 const Widget = require(script.Parent.Parent.Types.Widget)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 
@@ -44,7 +44,8 @@ function Scaling.simpleScale(
     onScreenSpace: {
         read _isSpaceLike: true,
         read getObject: () -> ScreenGui,
-        read changeScaleFn: (Widget.ScaleFn) -> ()
+        read changeScaleFn: (Widget.ScaleFn) -> (),
+        read signals: Utils.Signals
     },
     referenceResolution: Vector2,
     floorScale: boolean?,
@@ -90,7 +91,7 @@ function Scaling.simpleScale(
             scale = math.min(scale, maxScale)
         end
 
-        State.onScaleChanged()
+        onScreenSpace.signals.fire("scaleChanged")
     end
 
     local function connectObject()

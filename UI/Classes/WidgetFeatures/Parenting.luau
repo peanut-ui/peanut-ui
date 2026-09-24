@@ -54,7 +54,14 @@ return function(
         return space
     end
 
+    local scaleChangedSignal: () -> ()? = nil
     function instance._setSpace(newSpace: WidgetType.SpaceLike?)
+        if widgetsAreSame(space, newSpace) then return end
+        if scaleChangedSignal then
+            -- Unwatch it >_<
+            scaleChangedSignal()
+            scaleChangedSignal = nil
+        end
         space = newSpace
 
         if children then
@@ -75,6 +82,11 @@ return function(
             if instance.isImplemented("_redraw") then
                 instance._redraw()
             end
+            scaleChangedSignal = newSpace.signals.listen("ScaleChanged", function()
+                if instance.isImplemented("_redraw") then
+                    instance._redraw()
+                end
+            end)
         end
 
         hooksFire("SpaceChanged", space)

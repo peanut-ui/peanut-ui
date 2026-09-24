@@ -84,11 +84,6 @@ function State.removeWidget(widget: Widget.BaseInterface | number)
     end
 end
 
-function State.onScaleChanged()
-    -- TODO: Update only properties that depend on scale
-    State.redrawAll()
-end
-
 function State.redrawAll()
     for _, widget in registeredWidgets do
         -- Widget may not implement redraw

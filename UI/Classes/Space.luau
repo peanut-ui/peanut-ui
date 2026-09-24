@@ -206,6 +206,8 @@ local function newSpace(
         else
             logger.error("Type for scale function was not table or number!")
         end
+
+        signals.fire("ScaleChanged")
     end
 
     widgetInternal._addCleanup(function()
@@ -316,10 +318,12 @@ local function createStorySpace(target: Frame): WidgetType.SpaceLike
     space._widgetName = "storySpace"
     space._features["children"] = true
     space._features["events"] = true
-    space.signals = Signals.new()
 
+    local signals = Signals.new()
     local events = Events.new()
     local hooks = Hooks.new()
+
+    space.signals = signals
 
     local isDestroyed = false
 
@@ -436,7 +440,7 @@ local function createStorySpace(target: Frame): WidgetType.SpaceLike
 
     if uiScale then
         uiScale:GetPropertyChangedSignal("Scale"):Connect(function(...)
-            space._redraw()
+            signals.fire("ScaleChanged")
         end)
     end
 
