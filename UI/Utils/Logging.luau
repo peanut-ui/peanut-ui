@@ -113,6 +113,18 @@ function Logger.setLevel(newLevel: number)
     level = newLevel
 end
 
+--[[
+    **Log levels:**
+    * 1 -> debug
+    * 2 -> info
+    * 3 -> warn
+    * 4 -> error
+    * 5 -> critical
+]]
+function Logger.getLevel(): number
+    return level
+end
+
 Logger.resolveMessage = resolveMessage
 
 --- Replace log function that logger instance (from Logging.getLogger) uses
