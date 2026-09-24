@@ -103,6 +103,7 @@ local function drainStage(stage: TypeFuncs.KeyOf<Elements>, phase: TypeFuncs.Key
         end
 
         if budget <= 0 then
+            logger.warn("Stage %s ran out of budget and will run on the next tick (15 steps). Please simplify your code!", stage)
             stepRan[stage] = true
         end
     end
@@ -208,14 +209,22 @@ local function scheduleAfter<A...>(name: TypeFuncs.KeyOf<Elements>, fn: (A...) -
     return scheduleAt(name, "after", fn, ...)
 end
 
+--- Runs in the beginning of the next tick
 local function defer<A...>(fn: (A...) -> (), ...: A...): thread
     return schedule("defer", fn, ...)
 end
 
+--- Runs in the end of the current tick
+local function settled<A...>(fn: (A...) -> (), ...: A...): thread
+    return schedule("settled", fn, ...)
+end
+
+--- Runs when there's no work left
 local function idle<A...>(fn: (A...) -> (), ...: A...): thread
     return schedule("idle", fn, ...)
 end
 
+--- Waits for the stage and phase (yields)
 local function waitFor(stage: TypeFuncs.KeyOf<Elements>, phase: TypeFuncs.KeyOf<Phases>?)
     local cor = coroutine.running()
     scheduleAt(stage, phase or "schedule", function(...)
@@ -246,6 +255,7 @@ end
 return table.freeze {
     idle = idle,
     defer = defer,
+    settled = settled,
     step = step,
     stop = stop,
     start = start,
