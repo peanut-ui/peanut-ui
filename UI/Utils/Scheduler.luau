@@ -144,6 +144,14 @@ local function idle<A...>(fn: (A...) -> (), ...: A...): thread
     return schedule("idle", fn, ...)
 end
 
+local function nextTick<A...>(fn: (A...) -> (), ...: A...)
+    local cor = coroutine.running()
+    schedule("defer", function()
+        task.spawn(cor)
+    end)
+    coroutine.yield()
+end
+
 local function getCurrentStage(): TypeFuncs.KeyOf<Elements> | "sync"
     return currentStage
 end
@@ -153,5 +161,6 @@ return table.freeze {
     defer = defer,
     step = step,
     schedule = schedule,
+    nextTick = nextTick,
     getCurrentStage = getCurrentStage
 }
