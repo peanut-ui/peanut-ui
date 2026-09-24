@@ -122,7 +122,9 @@ local function drain(stage: TypeFuncs.KeyOf<Elements>)
     executeStage(stage, "after")
 end
 
+local shouldSchedule = false
 local function step()
+    shouldSchedule = false
     execute("defer")
     drain("watchers")
     execute("create")
@@ -140,7 +142,6 @@ end
 local ticksRanBeforeStop = 0
 local isRunning = true
 local isScheduled = false
-local shouldSchedule = false
 local function scheduleNextStep()
     if not isRunning then
         shouldSchedule = true
@@ -148,7 +149,6 @@ local function scheduleNextStep()
     end
     if isScheduled then return end
     isScheduled = true
-    shouldSchedule = false
 
     task.defer(function()
         isScheduled = false
