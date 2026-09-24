@@ -42,7 +42,7 @@ export type ProtectedRef<T> = {
     read destroy: () -> (),
 }
 
-export type Undefined = { read _typeName: "undefined" }
+export type Undefined = "__peanutui__undefined__"
 export type Optional<T> = T | Undefined
 
 export type SignalsCallback = () -> ...boolean?
