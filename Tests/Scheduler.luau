@@ -88,4 +88,44 @@ Tests.run("Scheduler waitFor", function()
     Tests.expectTrue("waitFor resumes", resumed)
 end)
 
+Tests.run("Scheduler complicated behavior", function()
+    stopSchedulerTemporarily()
+
+    local deferRan = false
+    local watchersRan = false
+    local createRan = false
+    local redrawRan = false
+
+    Scheduler.schedule("watchers", function()
+        watchersRan = true
+
+        Scheduler.schedule("create", function()
+            createRan = true
+
+            Scheduler.schedule("redraw", function()
+                redrawRan = true
+
+                -- Defer has to run on the next tick step
+                Scheduler.schedule("defer", function()
+                    deferRan = true
+                end)
+            end)
+        end)
+    end)
+
+    Tests.expectFalse("Watchers ran on schedule", watchersRan)
+    Tests.expectFalse("Create ran on schedule", createRan)
+    Tests.expectFalse("Redraw ran on schedule", redrawRan)
+    Tests.expectFalse("Defer ran on schedule", deferRan)
+    Scheduler.step()
+
+    Tests.expectTrue("Watchers ran on step", watchersRan)
+    Tests.expectTrue("Create ran on step", createRan)
+    Tests.expectTrue("Redraw ran on step", redrawRan)
+    Tests.expectFalse("Defer ran on step", deferRan)
+    Scheduler.step()
+
+    Tests.expectTrue("Defer ran on next step", deferRan)
+end)
+
 return {}
