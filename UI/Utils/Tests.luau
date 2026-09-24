@@ -66,14 +66,62 @@ function Tests.expectError(testName: string, fn: () -> ())
     end
 end
 
+local isRunning = false
+local finallyHooks: {() -> ()} = {}
+local passed = 0
+local failed = 0
+
+--- Run function with multiple tests
+function Tests.runFunction(fn: () -> ())
+    if isRunning then
+        logger.error("Cannot run test inside of a test")
+    end
+
+    local originalLevel = Logging.getLevel()
+    Logging.setLevel(4)
+
+    xpcall(fn, function(err)
+        logger.warn("Test function crashed with error:\n%s", tostring(err))
+    end)
+
+    logger.info("Tests passed: %d, tests failed: %d", passed, failed)
+    Logging.setLevel(originalLevel)
+end
+
+--- Cleanup for test
+function Tests.finally(fn: () -> ())
+    if not isRunning then
+        logger.error("No test is running")
+    end
+    table.insert(finallyHooks, fn)
+end
+
 --- Wrapper to safely run an isolated test block and catch unexpected crashes
 function Tests.run(testName: string, fn: () -> ())
-    logger.info("--- Running Test: %s ---", testName)
-    const ok, err = pcall(fn)
-    if not ok then
-        logger.warn("Test %s: CRASHED with error: %s", testName, tostring(err))
+    if isRunning then
+        logger.error("Cannot run test inside of a test")
     end
+    isRunning = true
+
+    logger.info("--- Running Test: %s ---", testName)
+
+    local ok = xpcall(fn, function(err)
+        logger.warn("Test %s: CRASHED with error:\n%s", testName, tostring(err))
+    end)
+    if ok then
+        passed += 1
+    else
+        failed += 1
+    end
+
+    for _, fn in finallyHooks do
+        xpcall(fn, function(msg)
+            logger.warn("Cleanup function of test '%s' errored with message '%s', this may cause leaks", testName, tostring(msg))
+        end)
+    end
+
     logger.info("-----------------------------------------")
+    isRunning = false
 end
 
 return Tests
