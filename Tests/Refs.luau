@@ -7,13 +7,14 @@ const Tests = require(ReplicatedStorage.PeanutUI.Utils.Tests)
 
 Tests.run("Seed & store", function()
     const r = Ref.new(10)
-    Tests.expectValue("seed", r.value, 10)
+    Tests.expectValue("Seed", r.value, 10)
 
     r.value = 25
-    Tests.expectValue("after update", r.value, 25)
+    Tests.expectValue("After update", r.value, 25)
 
-    Tests.expectTrue("is a ref", Ref.isRef(r))
-    Tests.expectFalse("plain value is not a ref", Ref.isRef(10))
+    Tests.expectTrue("Is a ref", Ref.isRef(r))
+    Tests.expectFalse("Plain value is not a ref", Ref.isRef(10))
+    Tests.expectFalse("Table value is not a ref", Ref.isRef({}))
 end)
 
 Tests.run("Watch & release", function()
@@ -25,11 +26,11 @@ Tests.run("Watch & release", function()
     end, nil, true)
 
     r.value = "world"
-    Tests.expectValue("watch saw update", receivedValue, "world")
+    Tests.expectValue("Watch saw update", receivedValue, "world")
 
     unwatch()
     r.value = "test"
-    Tests.expectValue("watch stopped", receivedValue, "world")
+    Tests.expectValue("Watch stopped", receivedValue, "world")
 end)
 
 Tests.run("Once only", function()
@@ -43,7 +44,7 @@ Tests.run("Once only", function()
 
     r.value = 2
     r.value = 3
-    Tests.expectValue("one fire", count, 1)
+    Tests.expectValue("One fire", count, 1)
 end)
 
 Tests.run("Transform", function()
@@ -52,10 +53,10 @@ Tests.run("Transform", function()
         return tostring(val * 2)
     end)
 
-    Tests.expectValue("transform start", strRef.value, "10")
+    Tests.expectValue("Transform start", strRef.value, "10")
 
     count.value = 8
-    Tests.expectValue("transform after change", strRef.value, "16")
+    Tests.expectValue("Transform after change", strRef.value, "16")
 end)
 
 Tests.run("Computed", function()
@@ -66,10 +67,10 @@ Tests.run("Computed", function()
         return x.value + y.value
     end)
 
-    Tests.expectValue("base sum", computedSum.value, 7)
+    Tests.expectValue("Base sum", computedSum.value, 7)
 
     x.value = 10
-    Tests.expectValue("sum after update", computedSum.value, 14)
+    Tests.expectValue("Sum after update", computedSum.value, 14)
 end)
 
 Tests.run("Loop guard", function()
@@ -78,7 +79,7 @@ Tests.run("Loop guard", function()
         return loopRef.value + 1
     end)
 
-    Tests.expectError("catches self-loop", function()
+    Tests.expectError("Catches self-loop", function()
         local _ = loopRef.value
     end)
 end)
@@ -100,7 +101,7 @@ Tests.run("Reactive proxy", function()
 
     const scoreRef = Ref.toRef(proxy, "score")
     Tests.expectTrue("toRef returns field ref", Ref.isRef(scoreRef))
-    Tests.expectValue("field ref matches", scoreRef.value, 200)
+    Tests.expectValue("Field ref matches", scoreRef.value, 200)
 end)
 
 Tests.run("Swap", function()
@@ -130,6 +131,46 @@ Tests.run("Scheduled watch", function()
     ref.value += 1
     Scheduler.waitFor("watchers", "after")
     Tests.expectValue("Watch triggered only once", triggered, 1)
+end)
+
+Tests.run("Complicated computed behavior", function()
+    const a = Ref.new(0)
+
+    const b = Ref.computed(function()
+        return a.value * 2
+    end)
+    const c = Ref.computed(function()
+        return a.value * 3
+    end)
+
+    local computedTimes = 0
+    const d = Ref.computed(function()
+        computedTimes += 1
+        return a.value * 3 + b.value + c.value
+    end)
+
+    Tests.expectValue("Lazy compute", computedTimes, 0)
+
+    d.getValue()
+    Tests.expectValue("Compute once on get", computedTimes, 1)
+
+    a.value += 1
+    Tests.expectValue("Lazy compute on dependency change", computedTimes, 1)
+
+    d.getValue()
+    Tests.expectValue("Compute once on get when dirty", computedTimes, 2)
+
+    local watcherGotValue = -1
+    a.value += 1
+    d.watch(function(value)
+        watcherGotValue = value
+    end)
+    Tests.expectValue("Compute once on watch when dirty", computedTimes, 3)
+
+    a.value += 1
+    Scheduler.waitFor("watchers", "after")
+    Tests.expectValue("Auto compute when there's a watcher", computedTimes, 4)
+    Tests.expectValue("Watcher got last value", watcherGotValue, d.value)
 end)
 
 return {}
