@@ -144,7 +144,7 @@ local function idle<A...>(fn: (A...) -> (), ...: A...): thread
     return schedule("idle", fn, ...)
 end
 
-local function nextTick<A...>(fn: (A...) -> (), ...: A...)
+local function nextTick()
     local cor = coroutine.running()
     schedule("defer", function()
         task.spawn(cor)
