@@ -103,7 +103,7 @@ local function drainStage(stage: TypeFuncs.KeyOf<Elements>, phase: TypeFuncs.Key
         end
 
         if budget <= 0 then
-            logger.warn("Stage %s ran out of budget and will run on the next tick (15 steps). Please simplify your code!", stage)
+            logger.warn("Stage %s ran out of budget (15). Please simplify your code!", stage)
             stepRan[stage] = true
         end
     end
