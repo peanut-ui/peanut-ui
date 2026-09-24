@@ -2,12 +2,21 @@
 --!optimize 2
 -- Yummy helpers module
 
+const TypeFuncs = require(script.Parent.Parent.Types.TypeFuncs)
+const Utils = require(script.Parent.Parent.Types.Utils)
 const Undefined = require(script.Parent.Undefined)
 
 local Helpers = {}
+type Defined<T> = T & TypeFuncs.Negate<nil | Utils.Undefined>
+
+--- Asserts if type is defined
+function Helpers.requireDefined<T>(value: T): Defined<T>
+    assert(value ~= nil and value ~= Undefined)
+    return value :: Defined<T>
+end
 
 --- If value is Undefined, it will convert it to nil
-function Helpers.removeUndefined<T>(value: T): T
+function Helpers.removeUndefined<T>(value: T): T & TypeFuncs.Negate<Utils.Undefined>
     if value == Undefined then
         return nil :: T
     end
@@ -20,6 +29,7 @@ function Helpers.isDefined(v: any): boolean
     return v ~= nil and v ~= Undefined
 end
 
+--- Checks if object is widget or *widget like*
 local function isWidget(obj: any)
     if typeof(obj) ~= "table" then
         return false
@@ -37,6 +47,7 @@ local function isWidget(obj: any)
 end
 Helpers.isWidget = isWidget
 
+--- Checks if widgets are the same (checks their _uniqueId)
 function Helpers.widgetsAreSame(a: any, b: any)
     if not isWidget(a) or not isWidget(b) then
         return false
@@ -45,6 +56,7 @@ function Helpers.widgetsAreSame(a: any, b: any)
     return a._uniqueId == b._uniqueId
 end
 
+--- Freeze and clear table, useful in cleanups
 function Helpers.freezeAndClear(tbl: {[any]: any}?)
     if type(tbl) ~= "table" then
         return
@@ -54,6 +66,7 @@ function Helpers.freezeAndClear(tbl: {[any]: any}?)
     table.freeze(tbl)
 end
 
+--- Makes readonly proxy
 function Helpers.readonly<T>(original: T): T
 	local proxy = {}
 
@@ -74,6 +87,7 @@ function Helpers.readonly<T>(original: T): T
 	return proxy :: T
 end
 
+--- Runs function and checks if it yielded, if it did then closes coroutine and errors
 function Helpers.disableYielding<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R?)
     local thread = coroutine.create(fn)
 

@@ -163,4 +163,10 @@ export type function Flatten(IntersectionType: type): type
     return result
 end
 
+export type function Negate(input: type)
+    return
+        if input.tag == "negation" then input
+        else types.negationof(input)
+end
+
 return {}
