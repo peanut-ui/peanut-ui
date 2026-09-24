@@ -1,6 +1,7 @@
 --!strict
 --!optimize 2
-const Tests = require(script.Parent.PeanutUI.Utils.Tests)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const Tests = require(ReplicatedStorage.PeanutUI.Utils.Tests)
 
 return {
     runAll = function()
