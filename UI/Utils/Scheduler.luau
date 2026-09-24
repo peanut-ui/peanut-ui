@@ -8,81 +8,133 @@ local logger = Logging.getLogger("PeanutUI.Utils.Scheduler")
 type Elements = {
     [string]: {() -> ()},
     defer: {() -> ()},
-    refs: {() -> ()},
-    beforeCreate: {() -> ()},
+    watchers: {() -> ()},
     create: {() -> ()},
     signals: {() -> ()},
     redraw: {() -> ()},
-    afterRedraw: {() -> ()},
     settled: {() -> ()},
 
     -- Ran when scheduler stops
     idle: {() -> ()}
 }
 
-local scheduled: Elements = {
-    beforeCreate = {},
-    create = {},
-    signals = {},
-    refs = {},
-    redraw = {},
-    afterRedraw = {},
-    defer = {},
-    idle = {},
-    settled = {}
+type StageAdditional = {
+    stepRan: {[string]: boolean}
+}
+
+type Phases = {
+    [string]: Elements & StageAdditional,
+    before: Elements & StageAdditional,
+    schedule: Elements & StageAdditional,
+    after: Elements & StageAdditional
+}
+
+local scheduled: Phases = {
+    before = {
+        stepRan = {},
+        create = {},
+        signals = {},
+        watchers = {},
+        redraw = {},
+        defer = {},
+        idle = {},
+        settled = {}
+    },
+    schedule = {
+        stepRan = {},
+        create = {},
+        signals = {},
+        watchers = {},
+        redraw = {},
+        defer = {},
+        idle = {},
+        settled = {}
+    },
+    after = {
+        stepRan = {},
+        create = {},
+        signals = {},
+        watchers = {},
+        redraw = {},
+        defer = {},
+        idle = {},
+        settled = {}
+    }
 }
 
 local currentStage = "sync"
-local stepRan: {[string]: boolean} = {}
+local currentStagePhase = "sync"
 local isFlushing = false
 
-local function execute(name: TypeFuncs.KeyOf<Elements>)
-    currentStage = name
-    stepRan[name] = true
+local function executeStage(stage: TypeFuncs.KeyOf<Elements>, phase: TypeFuncs.KeyOf<Phases>)
+    currentStage = stage
+    currentStagePhase = phase
 
-    local snapshot = scheduled[name]
-    scheduled[name] = {}
+    local stageScheduled = scheduled[phase]
 
-    logger.debug("Running stage %s, snapshot size %d", name, #snapshot)
+    local stepRan = stageScheduled.stepRan
+    stepRan[stage] = true
+
+    local snapshot = stageScheduled[stage]
+    stageScheduled[stage] = {}
+
+    logger.debug("Running stage %s, phase: %s, snapshot size %d", stage, phase, #snapshot)
     for _, fn in snapshot do
         fn()
     end
 end
 
-local function drain(name: TypeFuncs.KeyOf<Elements>)
-    currentStage = name
+local function drainStage(stage: TypeFuncs.KeyOf<Elements>, phase: TypeFuncs.KeyOf<Phases>)
+    currentStage = stage
+    currentStagePhase = phase
+
+    local stageScheduled = scheduled[phase]
+    local stepRan = stageScheduled.stepRan
 
     local budget = 15
-    while budget > 0 and #scheduled[name] > 0 do
+    while budget > 0 and #stageScheduled[stage] > 0 do
         budget -= 1
-        local snapshot = scheduled[name]
-        scheduled[name] = {}
+        local snapshot = stageScheduled[stage]
+        stageScheduled[stage] = {}
 
-        logger.debug("Draining stage %s, snapshot size %d, budget left %d", name, #snapshot, budget)
+        logger.debug("Draining stage %s, phase: %s, snapshot size %d, budget left %d", stage, phase, #snapshot, budget)
         for _, fn in snapshot do
             fn()
         end
 
         if budget <= 0 then
-            stepRan[name] = true
+            stepRan[stage] = true
         end
     end
 
-    stepRan[name] = true
+    stepRan[stage] = true
+end
+
+local function execute(stage: TypeFuncs.KeyOf<Elements>)
+    executeStage(stage, "before")
+    executeStage(stage, "schedule")
+    executeStage(stage, "after")
+end
+
+local function drain(stage: TypeFuncs.KeyOf<Elements>)
+    executeStage(stage, "before")
+    drainStage(stage, "schedule")
+    executeStage(stage, "after")
 end
 
 local function step()
     execute("defer")
-    drain("refs")
-    execute("beforeCreate")
+    drain("watchers")
     execute("create")
     execute("signals")
     execute("redraw")
-    execute("afterRedraw")
     execute("settled")
 
-    stepRan = {}
+    scheduled.before.stepRan = {} :: any
+    scheduled.schedule.stepRan = {} :: any
+    scheduled.after.stepRan = {} :: any
     currentStage = "sync"
+    currentStagePhase = "sync"
 end
 
 local ticksRanBeforeStop = 0
@@ -120,7 +172,7 @@ local function scheduleNextStep()
     end)
 end
 
-local function schedule<A...>(name: TypeFuncs.KeyOf<Elements>, fn: (A...) -> (), ...: A...): thread
+local function scheduleAt<A...>(stage: TypeFuncs.KeyOf<Elements>, phase: TypeFuncs.KeyOf<Phases>, fn: (A...) -> (), ...: A...): thread
     local co = coroutine.create(fn)
 
     local args = table.pack(... :: any)
@@ -128,12 +180,27 @@ local function schedule<A...>(name: TypeFuncs.KeyOf<Elements>, fn: (A...) -> (),
         task.spawn(co, table.unpack(args, 1, args.n))
     end
 
-    table.insert(scheduled[name], execute)
+    local stageScheduled = scheduled[phase]
+    local stepRan = stageScheduled.stepRan
 
-    if not isFlushing or stepRan[name] then
+    table.insert(stageScheduled[stage], execute)
+
+    if not isFlushing or stepRan[stage] then
         scheduleNextStep()
     end
     return co
+end
+
+local function schedule<A...>(name: TypeFuncs.KeyOf<Elements>, fn: (A...) -> (), ...: A...): thread
+    return scheduleAt(name, "schedule", fn, ...)
+end
+
+local function scheduleBefore<A...>(name: TypeFuncs.KeyOf<Elements>, fn: (A...) -> (), ...: A...): thread
+    return scheduleAt(name, "before", fn, ...)
+end
+
+local function scheduleAfter<A...>(name: TypeFuncs.KeyOf<Elements>, fn: (A...) -> (), ...: A...): thread
+    return scheduleAt(name, "after", fn, ...)
 end
 
 local function defer<A...>(fn: (A...) -> (), ...: A...): thread
@@ -144,9 +211,9 @@ local function idle<A...>(fn: (A...) -> (), ...: A...): thread
     return schedule("idle", fn, ...)
 end
 
-local function nextTick()
+local function waitFor(stage: TypeFuncs.KeyOf<Elements>, phase: TypeFuncs.KeyOf<Phases>?)
     local cor = coroutine.running()
-    schedule("defer", function()
+    scheduleAt(stage, phase or "schedule", function(...)
         task.spawn(cor)
     end)
     coroutine.yield()
@@ -156,11 +223,18 @@ local function getCurrentStage(): TypeFuncs.KeyOf<Elements> | "sync"
     return currentStage
 end
 
+local function getCurrentStagePhase(): TypeFuncs.KeyOf<Phases> | "sync"
+    return currentStagePhase
+end
+
 return table.freeze {
     idle = idle,
     defer = defer,
     step = step,
     schedule = schedule,
-    nextTick = nextTick,
-    getCurrentStage = getCurrentStage
+    scheduleBefore = scheduleBefore,
+    scheduleAfter = scheduleAfter,
+    waitFor = waitFor,
+    getCurrentStage = getCurrentStage,
+    getCurrentStagePhase = getCurrentStagePhase
 }

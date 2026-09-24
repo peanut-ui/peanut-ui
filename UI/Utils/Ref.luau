@@ -216,10 +216,6 @@ local function makeProtected<T>(
         return ref.notifyChanged()
     end
 
-    function newProtectedRef.notifyImmediate(): any
-        return ref.notifyImmediate()
-    end
-
     function newProtectedRef.destroy()
         if allowDestroy == true then
             ref.destroy()
@@ -359,7 +355,7 @@ function Ref.new<T>(
         if scheduled then return end
         scheduled = true
 
-        Scheduler.schedule("refs", function()
+        Scheduler.schedule("watchers", function()
             scheduled = false
             notifyImmediate(watchers)
         end)
@@ -482,7 +478,6 @@ function Ref.new<T>(
     end
 
     ref.notifyChanged = notifyWatchers
-    ref.notifyImmediate = notifyImmediate
 
     ref.setValue(value, true)
 
@@ -678,7 +673,7 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
 
         if watchingCounter > 0 and not scheduled then
             scheduled = true
-            Scheduler.schedule("refs", function()
+            Scheduler.schedule("watchers", function()
                 scheduled = false
                 if isDirty then
                     computeNewValue()

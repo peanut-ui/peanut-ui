@@ -184,7 +184,7 @@ return function(
 
                     propertyAnimation.stop(object)
 
-                    Scheduler.schedule("afterRedraw", function()
+                    Scheduler.scheduleAfter("redraw", function()
                         restartScheduled = false
 
                         local object = instance.getObject()
