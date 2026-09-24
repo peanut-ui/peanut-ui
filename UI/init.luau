@@ -7,6 +7,7 @@ const Modifier = require(script.Types.Modifier)
 const Utils = require(script.Types.Utils)
 const WidgetType = require(script.Types.Widget)
 const Ref = require(script.Utils.Ref)
+const Scheduler = require(script.Utils.Scheduler)
 
 export type Widget = WidgetType.Interface
 export type BaseWidget = WidgetType.BaseInterface
@@ -70,7 +71,7 @@ return table.freeze {
     Units = require(script.Utils.Units),
     State = require(script.State),
 
-    -- shortcuts
+    -- Ref shortcuts
     ref = Ref.new,
     computed = Ref.computed,
     transform = Ref.transform,
@@ -80,4 +81,10 @@ return table.freeze {
     reactive = Ref.reactive,
     swap = Ref.swap,
     deepSwap = Ref.deepSwap,
+
+    -- Scheduler shortcuts
+    defer = Scheduler.defer,
+    settled = Scheduler.settled,
+    idle = Scheduler.idle,
+    waitFor = Scheduler.waitFor,
 }
