@@ -104,46 +104,62 @@ function Component.defineComponent<T>(
 ): (props: T) -> WidgetType.Interface
     return function(props)
         local bucket = Context.createBucket("component", Hooks.new())
-        local ok, widget = Context.withContextBucket(bucket, fn, props)
+
+        local ok, widget = Context.withContextBucket(bucket, function(props)
+            local widget = fn(props)
+
+            if not widget or not Widget.isWidget(widget) then
+                logger.error("Function in defineComponent has to return a widget!")
+            end
+
+            (widget :: WidgetType.InternalInterface)._addCleanup(function()
+                for _, ref in bucket.createdRefs do
+                    ref.destroy()
+                end
+            end)
+
+            local fireHook = bucket.customState.fire
+
+            fireHook("OnSetup", widget)
+
+            local guiObject = (widget :: WidgetType.Interface).getObject()
+            if guiObject then
+                fireHook("OnCreated", guiObject)
+            else
+                widget.listen("ObjectCreated", function(guiObject)
+                    Context.withContextBucket(bucket, function()
+                        fireHook("OnCreated", guiObject)
+                        return nil
+                    end)
+
+                    return true
+                end)
+            end
+
+            widget.listen("Destroying", function()
+                Context.withContextBucket(bucket, function()
+                    fireHook("OnBeforeDestroyed")
+                    return nil
+                end)
+
+                return true
+            end)
+
+            widget.listen("Destroyed", function()
+                Context.withContextBucket(bucket, function()
+                    fireHook("OnDestroyed")
+                    return nil
+                end)
+
+                return true
+            end)
+
+            return widget
+        end, props)
+
         if not ok then
             logger.error("Couldn't create component because it errored")
         end
-
-        if not widget or not Widget.isWidget(widget) then
-            logger.error("Function in defineComponent has to return a widget!")
-        end
-
-        assert(bucket, "Bucket was nil? weird");
-
-        (widget :: WidgetType.InternalInterface)._addCleanup(function()
-            for _, ref in bucket.createdRefs do
-                ref.destroy()
-            end
-        end)
-
-        local fireHook = bucket.customState.fire
-
-        fireHook("OnSetup", widget)
-
-        local guiObject = (widget :: WidgetType.Interface).getObject()
-        if guiObject then
-            fireHook("OnCreated", guiObject)
-        else
-            widget.listen("ObjectCreated", function()
-                fireHook("OnCreated", guiObject)
-                return true
-            end)
-        end
-
-        widget.listen("Destroying", function()
-            fireHook("OnBeforeDestroyed")
-            return true
-        end)
-
-        widget.listen("Destroyed", function()
-            fireHook("OnDestroyed")
-            return true
-        end)
 
         return widget
     end
