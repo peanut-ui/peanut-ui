@@ -4,7 +4,16 @@ const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const Scheduler = require(script.Parent.Parent.PeanutUI.Utils.Scheduler)
 const Tests = require(ReplicatedStorage.PeanutUI.Utils.Tests)
 
+local function stopSchedulerTemporarily()
+    Scheduler.stop()
+    Tests.finally(function()
+        Scheduler.start()
+    end)
+end
+
 Tests.run("Scheduler phase order", function()
+    stopSchedulerTemporarily()
+
     local order = {}
 
     Scheduler.scheduleBefore("redraw", function()
@@ -19,12 +28,14 @@ Tests.run("Scheduler phase order", function()
 
     Scheduler.step()
 
-    Tests.expectDeepEqual("phase order", order, { "before", "schedule", "after" })
-    Tests.expectValue("stage reset", Scheduler.getCurrentStage(), "sync")
-    Tests.expectValue("phase reset", Scheduler.getCurrentStagePhase(), "sync")
+    Tests.expectDeepEqual("Phase order", order, { "before", "schedule", "after" })
+    Tests.expectValue("Stage reset", Scheduler.getCurrentStage(), "sync")
+    Tests.expectValue("Phase reset", Scheduler.getCurrentStagePhase(), "sync")
 end)
 
 Tests.run("Scheduler stage order", function()
+    stopSchedulerTemporarily()
+
     local order = {}
     local stages: {"defer" | "watchers" | "create" | "signals" | "redraw" | "settled"} = {
         "defer",
@@ -43,10 +54,12 @@ Tests.run("Scheduler stage order", function()
 
     Scheduler.step()
 
-    Tests.expectDeepEqual("stage order", order, stages)
+    Tests.expectDeepEqual("Stage order", order, stages)
 end)
 
 Tests.run("Scheduler watcher drain", function()
+    stopSchedulerTemporarily()
+
     local order = {}
 
     Scheduler.schedule("watchers", function()
@@ -58,7 +71,7 @@ Tests.run("Scheduler watcher drain", function()
 
     Scheduler.step()
 
-    Tests.expectDeepEqual("drained watchers", order, { "first", "second" })
+    Tests.expectDeepEqual("Drained watchers", order, { "first", "second" })
 end)
 
 Tests.run("Scheduler waitFor", function()
