@@ -5,6 +5,7 @@ const Logging = require(script.Parent.Parent.Utils.Logging)
 local logger = Logging.getLogger("PeanutUI.Components.Scaling")
 local Scaling = {}
 
+@native
 local function getScale(resolution: Vector2, reference: Vector2): number
     return math.min(
         resolution.X / reference.X,
@@ -54,6 +55,7 @@ function Scaling.simpleScale(
     local createdByMe = false
     local scale = 1
 
+    @native
     local function recalculateScale()
         if not object then
             scale = 1
@@ -121,14 +123,17 @@ function Scaling.simpleScale(
         logger.error("Unknown type!")
     end
 
+    @native
+    local function scaleIt(px: number, getOriginal: boolean?)
+        if getOriginal == true then
+            return px / scale
+        else
+            return px * scale
+        end
+    end
+
     local scaleFn = {
-        fn = function(px: number, getOriginal: boolean?)
-            if getOriginal == true then
-                return px / scale
-            else
-                return px * scale
-            end
-        end,
+        fn = scaleIt,
         stop = function()
             if unwatchObjectCreation then
                 unwatchObjectCreation()
