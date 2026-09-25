@@ -74,7 +74,7 @@ function SignalsClass.new(): Utils.Signals
         return function()
             if listeners[signal] then
                 listeners[signal][callback] = nil
-                if #listeners[signal] == 0 then
+                if next(listeners[signal]) == nil then
                     listeners[signal] = nil
                 end
             end
