@@ -131,5 +131,9 @@ return function(
         if parent then
             parent.removeChild(instance)
         end
+        if scaleChangedSignal then
+            scaleChangedSignal()
+            scaleChangedSignal = nil
+        end
     end)
 end
