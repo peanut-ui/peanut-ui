@@ -61,6 +61,7 @@ function Scaling.simpleScale(
             return
         end
 
+        local oldScale = scale
         local size = object.AbsoluteSize
         scale = getScale(
             size,
@@ -86,7 +87,9 @@ function Scaling.simpleScale(
             scale = math.min(scale, maxScale)
         end
 
-        onSpace.signals.fire("ScaleChanged")
+        if oldScale ~= scale then
+            onSpace.signals.fire("ScaleChanged")
+        end
     end
 
     local function connectObject()
