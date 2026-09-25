@@ -437,6 +437,7 @@ function Ref.new<T>(
         watchersOnUnwatch[id] = onUnwatch
 
         return function()
+            if isDestroyed then return end
             watchersToUse[id] = nil
             local onUnwatch = watchersOnUnwatch[id]
             watchersOnUnwatch[id] = nil
