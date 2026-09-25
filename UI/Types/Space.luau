@@ -12,19 +12,54 @@ export type SpaceProps = {
     [string]: any,
 
     name: string,
+    visible: boolean,
+    zIndexBehavior: Enum.ZIndexBehavior,
     absoluteSize: Vector2,
     absolutePosition: Vector2,
     absoluteRotation: number,
 }
 
 export type ScreenSpaceProps = Flatten<SpaceProps & {
-    visible: boolean,
     displayOrder: number,
-    zIndexBehavior: Enum.ZIndexBehavior,
     clipToDeviceSafeArea: boolean,
     ignoreGuiInset: boolean,
     safeAreaCompatibility: Enum.SafeAreaCompatibility,
     screenInsets: Enum.ScreenInsets
+}>
+
+export type SurfaceSpaceProps = Flatten<SpaceProps & {
+    active: boolean,
+    adornee: Instance?,
+    face: Enum.NormalId,
+    alwaysOnTop: boolean,
+    brightness: number,
+    canvasSize: Vector2,
+    clipsDescendants: boolean,
+    lightInfluence: number,
+    maxDistance: number,
+    pixelsPerStud: number,
+    sizingMode: Enum.SurfaceGuiSizingMode,
+    toolPunchThroughDistance: number,
+    zOffset: number
+}>
+
+export type BillboardSpaceProps = Flatten<SpaceProps & {
+    active: boolean,
+    adornee: Instance?,
+    alwaysOnTop: boolean,
+    brightness: number,
+    clipsDescendants: boolean,
+    currentDistance: number,
+    distanceStep: number,
+    extentsOffset: Vector3,
+    extentsOffsetWorldSpace: Vector3,
+    lightInfluence: number,
+    maxDistance: number,
+    playerToHideFrom: Instance?,
+    size: Utils.Size,
+    sizeOffset: Vector2,
+    studsOffset: Vector3,
+    studsOffsetWorldSpace: Vector3,
 }>
 
 export type SpaceEvents<Object = LayerCollector> = {
@@ -41,7 +76,7 @@ export type SpaceEvents<Object = LayerCollector> = {
 
 type Unsupported = (...never) -> ...never
 
-export type Interface<Props = SpaceProps, Object = LayerCollector, Events = SpaceEvents> = Widget.SpaceLike & {
+export type Interface<Props = SpaceProps, Object = LayerCollector, Events = SpaceEvents> = Widget.SpaceLike<Object> & {
     _typeName: "space",
     _spaceName: string,
 
@@ -64,10 +99,6 @@ export type Interface<Props = SpaceProps, Object = LayerCollector, Events = Spac
     removeChild: (child: Widget.Interface, andDestroy: boolean?) -> (),
     clearChildren: () -> (),
     children: {Widget.Interface},
-
-    -- LayerCollector object is ALWAYS created in this type
-    getObjectRef: () -> Utils.Ref<Object>,
-    getObject: () -> Object,
 }
 
 export type InternalInterface<Props = SpaceProps, Object = LayerCollector, Events = SpaceEvents> =
@@ -75,5 +106,7 @@ export type InternalInterface<Props = SpaceProps, Object = LayerCollector, Event
     Interface<Props, Object, Events>
 
 export type ScreenSpace = Interface<ScreenSpaceProps, ScreenGui, SpaceEvents<ScreenGui>>
+export type BillboardSpace = Interface<BillboardSpaceProps, BillboardGui, SpaceEvents<BillboardGui>>
+export type SurfaceSpace = Interface<SurfaceSpaceProps, SurfaceGui, SpaceEvents<SurfaceGui>>
 
 return {}

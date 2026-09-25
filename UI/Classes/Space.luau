@@ -5,6 +5,7 @@ const Widget = require(script.Parent.Parent.Classes.Widget)
 const Children = require(script.Parent.Parent.Classes.WidgetFeatures.Children)
 const State = require(script.Parent.Parent.State)
 const SpaceType = require(script.Parent.Parent.Types.Space)
+const TypeFuncs = require(script.Parent.Parent.Types.TypeFuncs)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const WidgetType = require(script.Parent.Parent.Types.Widget)
 const Events = require(script.Parent.Parent.Utils.Events)
@@ -13,23 +14,28 @@ const Hooks = require(script.Parent.Parent.Utils.Hooks)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Utils.Ref)
 const Signals = require(script.Parent.Parent.Utils.Signals)
+const Undefined = require(script.Parent.Parent.Utils.Undefined)
 const Units = require(script.Parent.Parent.Utils.Units)
 
 local logger = Logging.getLogger("PeanutUI.Classes.Space")
 
-local registeredScreenSpaces: {[string]: SpaceType.ScreenSpace} = {}
 local Space = {}
 
 local function linkProperties(
     widget: SpaceType.InternalInterface,
     properties: {[string]: string},
-    transformFn: {[string]: (any) -> any}?
+    transformFn: {[string]: (any) -> any}?,
+    syncWithObject: {[string]: (boolean | (any) -> any)?}?,
+    readonly: {[string]: boolean?}?
 )
     local link = widget._linkProperty
     for name, property in properties do
         link(
-            name :: any, property,
-            transformFn and transformFn[property]
+            name :: any,
+            property,
+            transformFn and transformFn[name],
+            syncWithObject and syncWithObject[name],
+            readonly and readonly[name]
         )
     end
 end
@@ -93,10 +99,13 @@ local function newSpace(
     registry: {[string]: any},
     createObjectFn: () -> LayerCollector,
     linkedProperties: {[string]: string},
-    properties: {[string]: any}
+    properties: {[string]: any},
+    transformFn: {[string]: (any) -> any}?,
+    syncWithObject: {[string]: (boolean | (any) -> any)?}?,
+    readonly: {[string]: boolean?}?
 ): SpaceType.Interface
     if registry[name] then
-        logger.error(`Cannot create name with existing name: {name}`)
+        logger.error(`Cannot create space with existing name: {name}`)
     end
 
     local signals = Signals.new()
@@ -140,6 +149,7 @@ local function newSpace(
             end
 
             local newObject = createObjectFn()
+            newObject.ResetOnSpawn = false
             newObject:SetAttribute("_uniqueId", widget._uniqueId)
             widget._setObject(newObject)
 
@@ -163,14 +173,23 @@ local function newSpace(
                         end
                     end
 
+                    signals.fire("PlayerGuiFailed")
                     logger.critical("Could not get PlayerGui!")
                 end)
             end
 
             local link = widget._linkProperty
-            linkProperties(widget, linkedProperties)
+            linkProperties(
+                widget,
+                linkedProperties,
+                transformFn,
+                syncWithObject,
+                readonly
+            )
 
             link("name", "Name")
+            link("visible", "Enabled")
+            link("zIndexBehavior", "ZIndexBehavior")
             link("absoluteSize", "AbsoluteSize", nil, function(v)
                 return scaleObject(v, true)
             end, true)
@@ -230,7 +249,10 @@ local function createConstructor(
     registry: {[string]: any},
     createObjectFn: () -> LayerCollector,
     linkedProperties: {[string]: string},
-    defaultProperties: any
+    defaultProperties: any,
+    transformFn: {[string]: (any) -> any}?,
+    syncWithObject: {[string]: (boolean | (any) -> any)?}?,
+    readonly: {[string]: boolean?}?
 ): (string, {[string]: any}?) -> SpaceType.Interface
     return function(name, props)
         local properties = props and table.clone(props) or {}
@@ -245,19 +267,25 @@ local function createConstructor(
             registry,
             createObjectFn,
             linkedProperties,
-            properties
+            properties,
+            transformFn,
+            syncWithObject,
+            readonly
         )
     end
 end
 
-local defaultScreenProperties: SpaceType.ScreenSpaceProps = {
+-- ScreenSpace -- start --
+local registeredScreenSpaces: {[string]: SpaceType.ScreenSpace} = {}
+local defaultScreenProperties = {
     name = "ScreenSpace",
     absoluteSize = Vector2.zero,
     absolutePosition = Vector2.zero,
     absoluteRotation = 0,
-    visible = true,
-    displayOrder = 0,
     zIndexBehavior = Enum.ZIndexBehavior.Sibling,
+    visible = true,
+
+    displayOrder = 0,
     clipToDeviceSafeArea = true,
     ignoreGuiInset = false,
     safeAreaCompatibility = Enum.SafeAreaCompatibility.FullscreenExtension,
@@ -272,16 +300,14 @@ Space.createScreenSpace = createConstructor(
         return Instance.new("ScreenGui")
     end,
     {
-        visible = "Enabled",
         displayOrder = "DisplayOrder",
-        zIndexBehavior = "ZIndexBehavior",
         clipToDeviceSafeArea = "ClipToDeviceSafeArea",
         ignoreGuiInset = "IgnoreGuiInset",
         safeAreaCompatibility = "SafeAreaCompatibility",
         screenInsets = "ScreenInsets"
     },
     defaultScreenProperties
-) :: (name: string, props: SpaceType.ScreenSpaceProps?) -> SpaceType.ScreenSpace
+) :: (name: string, props: TypeFuncs.Partial<SpaceType.ScreenSpaceProps>?) -> SpaceType.ScreenSpace
 
 function Space.getScreenSpace(name: string): SpaceType.ScreenSpace
     if not registeredScreenSpaces[name] then
@@ -290,7 +316,142 @@ function Space.getScreenSpace(name: string): SpaceType.ScreenSpace
 
     return registeredScreenSpaces[name]
 end
+-- ScreenSpace -- end --
 
+-- BillboardSpace -- start --
+local registeredBillboardSpaces: {[string]: SpaceType.BillboardSpace} = {}
+local defaultBillboardProperties = {
+    name = "BillboardSpace",
+    absoluteSize = Vector2.zero,
+    absolutePosition = Vector2.zero,
+    absoluteRotation = 0,
+    visible = true,
+    zIndexBehavior = Enum.ZIndexBehavior.Sibling,
+
+    active = true,
+    adornee = Undefined,
+    alwaysOnTop = false,
+    brightness = 1,
+    clipsDescendants = true,
+    currentDistance = 0,
+    distanceStep = 0,
+    extentsOffset = Vector3.zero,
+    extentsOffsetWorldSpace = Vector3.zero,
+    lightInfluence = 1,
+    maxDistance = math.huge,
+    playerToHideFrom = Undefined,
+    size = Units.Size(200, 50),
+    sizeOffset = Vector2.zero,
+    studsOffset = Vector3.zero,
+    studsOffsetWorldSpace = Vector3.zero
+}
+
+table.freeze(defaultBillboardProperties)
+
+Space.createBillboardSpace = createConstructor(
+    registeredBillboardSpaces,
+    function(): LayerCollector
+        return Instance.new("BillboardGui")
+    end,
+    {
+        active = "Active",
+        adornee = "Adornee",
+        alwaysOnTop = "AlwaysOnTop",
+        brightness = "Brightness",
+        clipsDescendants = "ClipsDescendants",
+        currentDistance = "CurrentDistance",
+        distanceStep = "DistanceStep",
+        extentsOffset = "ExtentsOffset",
+        extentsOffsetWorldSpace = "ExtentsOffsetWorldSpace",
+        lightInfluence = "LightInfluence",
+        maxDistance = "MaxDistance",
+        playerToHideFrom = "PlayerToHideFrom",
+        size = "Size",
+        sizeOffset = "SizeOffset",
+        studsOffset = "StudsOffset",
+        studsOffsetWorldSpace = "StudsOffsetWorldSpace"
+    },
+    defaultBillboardProperties,
+    { -- transform
+        size = Units.ToUDim2
+    },
+    { -- sync
+        currentDistance = true
+    },
+    { -- readonly
+        currentDistance = true
+    }
+) :: (name: string, props: TypeFuncs.Partial<SpaceType.SurfaceSpaceProps>?) -> SpaceType.SurfaceSpace
+
+function Space.getBillboardSpace(name: string): SpaceType.BillboardSpace
+    if not registeredBillboardSpaces[name] then
+        logger.error(`Couldn't find space with name: {name}`)
+    end
+
+    return registeredBillboardSpaces[name]
+end
+-- BillboardSpace -- end --
+
+-- SurfaceSpace -- start --
+local registeredSurfaceSpaces: {[string]: SpaceType.SurfaceSpace} = {}
+local defaultSurfaceProperties = {
+    name = "SurfaceSpace",
+    absoluteSize = Vector2.zero,
+    absolutePosition = Vector2.zero,
+    absoluteRotation = 0,
+    visible = true,
+    zIndexBehavior = Enum.ZIndexBehavior.Sibling,
+
+    active = true,
+    adornee = Undefined,
+    face = Enum.NormalId.Front,
+    alwaysOnTop = false,
+    brightness = 1,
+    canvasSize = Vector2.new(800, 600),
+    clipsDescendants = true,
+    lightInfluence = 1,
+    maxDistance = 1000,
+    pixelsPerStud = 50,
+    sizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud,
+    toolPunchThroughDistance = 0,
+    zOffset = 0
+}
+
+table.freeze(defaultSurfaceProperties)
+
+Space.createSurfaceSpace = createConstructor(
+    registeredSurfaceSpaces,
+    function(): LayerCollector
+        return Instance.new("SurfaceGui")
+    end,
+    {
+        active = "Active",
+        adornee = "Adornee",
+        face = "Face",
+        alwaysOnTop = "AlwaysOnTop",
+        brightness = "Brightness",
+        canvasSize = "CanvasSize",
+        clipsDescendants = "ClipsDescendants",
+        lightInfluence = "LightInfluence",
+        maxDistance = "MaxDistance",
+        pixelsPerStud = "PixelsPerStud",
+        sizingMode = "SizingMode",
+        toolPunchThroughDistance = "ToolPunchThroughDistance",
+        zOffset = "ZOffset"
+    },
+    defaultSurfaceProperties
+) :: (name: string, props: TypeFuncs.Partial<SpaceType.SurfaceSpaceProps>?) -> SpaceType.SurfaceSpace
+
+function Space.getSurfaceSpace(name: string): SpaceType.SurfaceSpace
+    if not registeredSurfaceSpaces[name] then
+        logger.error(`Couldn't find space with name: {name}`)
+    end
+
+    return registeredSurfaceSpaces[name]
+end
+-- BillboardSpace -- end --
+
+-- StorySpace -- start --
 local function findUIScale(target: GuiObject): UIScale?
     local current: Instance? = target
 
@@ -471,5 +632,6 @@ local function createStorySpace(target: Frame): WidgetType.SpaceLike
     return space
 end
 Space.createStorySpace = createStorySpace
+-- StorySpace -- end --
 
 return table.freeze(Space)
