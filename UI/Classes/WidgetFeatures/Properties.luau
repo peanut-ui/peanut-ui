@@ -169,7 +169,7 @@ return function(
                 end
 
                 local oldValue = (object :: any)[property]
-                if oldValue == nil or value == oldValue then
+                if value == oldValue then
                     return
                 end
 
