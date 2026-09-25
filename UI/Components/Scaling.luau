@@ -1,5 +1,4 @@
 --!strict
-const Utils = require(script.Parent.Parent.Types.Utils)
 const Widget = require(script.Parent.Parent.Types.Widget)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 
@@ -41,12 +40,7 @@ end
 --- value when smoother fractional scaling is more important than pixel
 --- alignment.
 function Scaling.simpleScale(
-    onScreenSpace: {
-        read _isSpaceLike: true,
-        read getObject: () -> ScreenGui,
-        read changeScaleFn: (Widget.ScaleFn) -> (),
-        read signals: Utils.Signals
-    },
+    onSpace: Widget.SpaceLike,
     referenceResolution: Vector2,
     floorScale: boolean?,
     minScale: number?,
@@ -91,7 +85,7 @@ function Scaling.simpleScale(
             scale = math.min(scale, maxScale)
         end
 
-        onScreenSpace.signals.fire("scaleChanged")
+        onSpace.signals.fire("ScaleChanged")
     end
 
     local function connectObject()
@@ -106,10 +100,10 @@ function Scaling.simpleScale(
             end)
     end
 
-    if typeof(onScreenSpace) == "table" and onScreenSpace._isSpaceLike == true then
-        local newObject = onScreenSpace.getObject()
+    if typeof(onSpace) == "table" and onSpace._isSpaceLike == true then
+        local newObject = onSpace.getObject()
 
-        if newObject:IsA("ScreenGui") then
+        if newObject:IsA("GuiBase") then
             object = Instance.new("Frame")
             object.Size = UDim2.new(1, 0, 1, 0)
             object.BackgroundTransparency = 1
@@ -119,7 +113,7 @@ function Scaling.simpleScale(
             object.Parent = newObject
             createdByMe = true
         else
-            logger.error("Object was not ScreenGui")
+            logger.error("Object was not GuiBase")
         end
         recalculateScale()
         connectObject()
@@ -148,7 +142,7 @@ function Scaling.simpleScale(
         end
     }
 
-    onScreenSpace.changeScaleFn(scaleFn)
+    onSpace.changeScaleFn(scaleFn)
 end
 
 return table.freeze(Scaling)

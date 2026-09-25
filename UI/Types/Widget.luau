@@ -102,12 +102,15 @@ export type ScaleFn = ScaleCallback | {
     stop: () -> ()
 }
 
-export type SpaceLike = WidgetLike & {
+export type SpaceLike<Object = any> = WidgetLike & {
     _isSpaceLike: true,
     signals: Utils.Signals,
 
     scaleObject: <T>(value: T, getOriginal: boolean?) -> T,
-    changeScaleFn: (ScaleFn) -> ()
+    changeScaleFn: (ScaleFn) -> (),
+
+    getObject: () -> Object,
+    getObjectRef: () -> Utils.Ref<Object>,
 }
 
 -- feature: properties
