@@ -109,7 +109,8 @@ return function(
         property: string,
         transformFn: ((any) -> any)?,
         syncWithObject: (boolean | (any) -> any)?,
-        readonly: boolean?
+        readonly: boolean?,
+        redrawOnHooks: {string}?
     )
         ensureNotDestroyed()
         if linkedProperties[name] then
@@ -152,12 +153,13 @@ return function(
             return
         end
 
-        local function update(value)
+        local function update()
             if rbxPropertyLocked[name] == true then
                 logger.debug("[%s %d] Skipped update of %s cause it's locked", instance._widgetName, id, name)
                 return
             end
 
+            local value = ref.getValue()
             local object = instance.getObject()
             if object then
                 if value == Undefined then
@@ -186,12 +188,17 @@ return function(
         end
 
         linkedPropertiesUpdate[name] = update
-        table.insert(cleanups, (ref.watch(function(value)
-            -- So if refs update more than once update is still called once
-            Scheduler.schedule("redraw", function()
-                update(value)
-            end)
-        end)))
+        table.insert(cleanups, (ref.watch(update)))
+
+        if redrawOnHooks then
+            for _, hook in ipairs(redrawOnHooks) do
+                hooks.add(hook, function()
+                    inRedrawMode = true
+                    update()
+                    inRedrawMode = false
+                end)
+            end
+        end
     end
 
     function instance.getProperty(key: any): any
@@ -323,8 +330,7 @@ return function(
         end
 
         for key, update in pairs(linkedPropertiesUpdate) do
-            local ref = ensureRef(key)
-            update(ref.getValue())
+            update()
         end
 
         inRedrawMode = false

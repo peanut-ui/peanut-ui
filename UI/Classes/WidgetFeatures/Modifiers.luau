@@ -120,6 +120,12 @@ return function(
         end
     end)
 
+    hooks.add("ScaleChanged", function()
+        for _, modifier in pairs(modifierComponents) do
+            modifier._redraw()
+        end
+    end)
+
     hooks.add("OnRedraw", function()
         for _, modifier in pairs(modifierComponents) do
             modifier._redraw()

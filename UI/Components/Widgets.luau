@@ -146,12 +146,15 @@ local function linkProperties(
     properties: {[string]: string},
     transformFn: {[string]: ((any) -> any) | "scale"}?,
     syncWithObject: {[string]: (boolean | "scale" | (any) -> any)?}?,
-    readonly: {[string]: boolean?}?
+    readonly: {[string]: boolean?}?,
+    redrawOnHooks: {[string]: {string}}?
 )
     local link = (widget :: WidgetClass.InternalInterface)._linkProperty
     for name, property in properties do
         local transform = transformFn and transformFn[name]
         local sync = syncWithObject and syncWithObject[name]
+        local hooks = redrawOnHooks and table.clone(redrawOnHooks[name])
+
         if transform == "scale" then
             transform = function(value: any): any
                 local space = widget.getSpace()
@@ -160,6 +163,11 @@ local function linkProperties(
                 end
 
                 return space.scaleObject(value)
+            end
+            if not hooks then
+                hooks = {"ScaleChanged"}
+            else
+                table.insert(hooks, "ScaleChanged")
             end
         end
 
@@ -179,9 +187,14 @@ local function linkProperties(
             property,
             transform :: (any) -> any,
             sync :: boolean | (any) -> any,
-            readonly and readonly[name]
+            readonly and readonly[name],
+            hooks
         )
     end
+end
+
+local function freeze(obj: {[any]: any}?)
+    if obj then table.freeze(obj) end
 end
 
 local function createBasicObject<T>(
@@ -193,8 +206,17 @@ local function createBasicObject<T>(
     transformFn: {[string]: ((any) -> any) | "scale"}?,
     syncWithObject: {[string]: (boolean | "scale" | (any) -> any)?}?,
     readonly: {[string]: boolean?}?,
+    redrawOnHooks: {[string]: {string}}?,
     setupFn: (any) -> ()?
 ): (WidgetClass.Args) -> WidgetClass.Interface
+    table.freeze(defaultProperties)
+    freeze(linkedProperties)
+    freeze(linkEvents)
+    freeze(transformFn)
+    freeze(syncWithObject)
+    freeze(readonly)
+    freeze(redrawOnHooks)
+
     return function(args)
         local argsCopy = table.clone(args)
 
@@ -203,7 +225,14 @@ local function createBasicObject<T>(
             widget._setCreateObject(createFn)
 
             if linkedProperties then
-                linkProperties(widget, linkedProperties, transformFn, syncWithObject, readonly)
+                linkProperties(
+                    widget,
+                    linkedProperties,
+                    transformFn,
+                    syncWithObject,
+                    readonly,
+                    redrawOnHooks
+                )
             end
             if setupFn then
                 setupFn(widget)

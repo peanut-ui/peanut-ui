@@ -123,7 +123,8 @@ export type PropertiesFeature = {
         name: string, object: string,
         transformFn: ((value: any) -> any)?,
         syncWithObject: (boolean | (any) -> any)?,
-        readonly: boolean?
+        readonly: boolean?,
+        redrawOnHooks: {string}?
     ) -> (),
     _propertiesRefs: {[string]: Utils.Ref<any>},
 
@@ -270,7 +271,8 @@ export type InternalFunctions<Props = DefaultProperties, Object = GuiObject, Eve
         name: K & KeyOf<Props>, object: string,
         transformFn: ((value: Resolve<Props, K>) -> any)?,
         syncWithObject: (boolean | (any) -> any)?,
-        readonly: boolean?
+        readonly: boolean?,
+        redrawOnHooks: {string}?
     ) -> (),
     _linkEvent: <K>(name: K & KeyOf<Events>, event: string?) -> (),
     _setParent: (parent: Interface?) -> (),

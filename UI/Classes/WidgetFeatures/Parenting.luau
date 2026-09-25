@@ -83,9 +83,7 @@ return function(
                 instance._redraw()
             end
             scaleChangedSignal = newSpace.signals.listen("ScaleChanged", function()
-                if instance.isImplemented("_redraw") then
-                    instance._redraw()
-                end
+                hooks.fire("ScaleChanged")
             end)
         end
 

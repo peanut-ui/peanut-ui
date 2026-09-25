@@ -159,7 +159,7 @@ local function defaultSetup(widget: Widget.BaseInterface)
             end
 
             return space.scaleObject(Units.ToUDim2(value))
-        end)
+        end, nil, nil, {"ScaleChanged"})
         link("position", "Position", function(value)
             local space = widget.getSpace()
             if not space then
@@ -167,7 +167,7 @@ local function defaultSetup(widget: Widget.BaseInterface)
             end
 
             return space.scaleObject(Units.ToUDim2(value))
-        end)
+        end, nil, nil, {"ScaleChanged"})
         link("anchorPoint", "AnchorPoint")
         link("backgroundColor", "BackgroundColor3")
         link("backgroundTransparency", "BackgroundTransparency")
@@ -193,7 +193,7 @@ local function defaultSetup(widget: Widget.BaseInterface)
             end
 
             return space.scaleObject(v, true)
-        end)
+        end, nil, nil, {"ScaleChanged"})
 
         link("interactable", "Interactable")
         link("active", "Active")
@@ -205,7 +205,7 @@ local function defaultSetup(widget: Widget.BaseInterface)
             end
 
             return space.scaleObject(v, true)
-        end, true)
+        end, true, {"ScaleChanged"})
         link("absolutePosition", "AbsolutePosition", nil, function(v)
             local space = widget.getSpace()
             if not space then
@@ -213,10 +213,10 @@ local function defaultSetup(widget: Widget.BaseInterface)
             end
 
             return space.scaleObject(v, true)
-        end, true)
+        end, true, {"ScaleChanged"})
         link("absoluteRotation", "AbsoluteRotation", nil, nil, true)
 
-        setProperty("layoutOrder", widget._propertiesRefs.autoLayoutOrder)
+        setProperty("layoutOrder", widget._propertiesRefs.autoLayoutOrder or 0)
 
         observe("visible", function(newValue: boolean)
             if not widget.getObject() and newValue then
