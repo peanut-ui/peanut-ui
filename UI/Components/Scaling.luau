@@ -5,7 +5,6 @@ const Logging = require(script.Parent.Parent.Utils.Logging)
 local logger = Logging.getLogger("PeanutUI.Components.Scaling")
 local Scaling = {}
 
-@native
 local function getScale(resolution: Vector2, reference: Vector2): number
     return math.min(
         resolution.X / reference.X,
