@@ -334,6 +334,7 @@ end
 ---
 --- @param value Any primitive value or ref, any ref or reactive table is gonna be watched automatically
 --- @param beforeGetValue Internal parameter for calling function before get (used in computed)
+--- @param bucket_ (internal) To which bucket register Ref, put Undefined to make its ownership global
 --- @return Reactive value
 ---
 --- ### Examples
