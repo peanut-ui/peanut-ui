@@ -23,36 +23,36 @@ end
 --- Asserts that a value matches the expected value
 function Tests.expectValue(testName: string, value: any, expected: any)
     if value == expected then
-        logger.info("Test %s: PASSED", testName)
+        logger.info("%s: PASSED", testName)
     else
-        logger.error("Test %s: FAILED; got %s, expected %s", testName, tostring(value), tostring(expected))
+        logger.error("%s: FAILED; got %s, expected %s", testName, tostring(value), tostring(expected))
     end
 end
 
 --- Asserts that two tables or reactive proxies are deeply equal
 function Tests.expectDeepEqual(testName: string, value: any, expected: any)
     if deepEqual(value, expected) then
-        logger.info("Test %s: PASSED", testName)
+        logger.info("%s: PASSED", testName)
     else
-        logger.error("Test %s: FAILED; tables are not deep equal", testName)
+        logger.error("%s: FAILED; tables are not deep equal", testName)
     end
 end
 
 --- Asserts that a condition evaluates to true
 function Tests.expectTrue(testName: string, condition: boolean)
     if condition == true then
-        logger.info("Test %s: PASSED", testName)
+        logger.info("%s: PASSED", testName)
     else
-        logger.error("Test %s: FAILED; expected true, got false/nil", testName)
+        logger.error("%s: FAILED; expected true, got false/nil", testName)
     end
 end
 
 --- Asserts that a condition evaluates to false
 function Tests.expectFalse(testName: string, condition: boolean)
     if condition == false then
-        logger.info("Test %s: PASSED", testName)
+        logger.info("%s: PASSED", testName)
     else
-        logger.error("Test %s: FAILED; expected false, got true", testName)
+        logger.error("%s: FAILED; expected false, got true", testName)
     end
 end
 
@@ -60,9 +60,9 @@ end
 function Tests.expectError(testName: string, fn: () -> ())
     const ok, _ = pcall(fn)
     if not ok then
-        logger.info("Test %s: PASSED (Correctly threw an error)", testName)
+        logger.info("%s: PASSED (Correctly threw an error)", testName)
     else
-        logger.error("Test %s: FAILED; expected an error to be thrown, but none occurred", testName)
+        logger.error("%s: FAILED; expected an error to be thrown, but none occurred", testName)
     end
 end
 
@@ -114,12 +114,14 @@ function Tests.run(testName: string, fn: () -> ())
         failed += 1
     end
 
-    for _, fn in finallyHooks do
+    local hooks = finallyHooks
+    finallyHooks = {}
+
+    for _, fn in hooks do
         xpcall(fn, function(msg)
             logger.warn("Cleanup function of test '%s' errored with message '%s', this may cause leaks", testName, tostring(msg))
         end)
     end
-    table.clear(finallyHooks)
 
     logger.info("-----------------------------------------")
     isRunning = false

@@ -629,6 +629,7 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
         end
     end
 
+    local previousBucket: Utils.Bucket? = nil
     local isComputing = false
     function computeNewValue()
         if isComputing then
@@ -636,6 +637,7 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
             error("")
         end
         if not isDirty then return end
+        isDirty = false
 
         isComputing = true
         local newComputeRefs = {} :: ComputedDeps
@@ -643,6 +645,9 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
         newComputeRefs[protectedRef] = nil
         newComputeRefs[newRef] = nil
 
+        if previousBucket then
+            previousBucket.stop()
+        end
         local bucket = Context.createBucket("ref", newComputeRefs)
 
         local ok, result = Context.withContextBucket(bucket, function()
@@ -653,7 +658,6 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
             error("")
         end
 
-        isDirty = false
         newRef.setValue(result)
 
         for ref, _ in newComputeRefs do

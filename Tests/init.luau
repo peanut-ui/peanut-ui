@@ -8,6 +8,13 @@ return {
         Tests.runFunction(function()
             require(script.Scheduler)
             require(script.Refs)
+            require(script.Utilities)
+            require(script.HooksAndLogging)
+            require(script.Math)
+            require(script.Boxes)
+            require(script.Engines)
+            require(script.Components)
+            require(script.CoreUI)
         end)
     end
 }

@@ -256,6 +256,10 @@ local function cubicBezier(
 	y2: number
 ): (number) -> number
 	return function(x: number): number
+		if x == 0 or x == 1 then
+			return x
+		end
+
 		local function sampleX(t: number): number
 			local omt = 1 - t
 			return 3 * omt * omt * t * x1

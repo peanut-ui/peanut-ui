@@ -114,7 +114,7 @@ return function(
     )
         ensureNotDestroyed()
         if linkedProperties[name] then
-            logger.error("Cannot link property that is already linked")
+            logger.error("Cannot link property that is already linked, tried to link %s", name)
         end
 
         logger.debug(

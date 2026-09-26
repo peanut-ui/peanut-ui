@@ -44,8 +44,7 @@ local function createBucket<State>(name: string?, customState: State?): Utils.Bu
             local toCleanup = cleanups
             cleanups = nil :: any
 
-            for i = #toCleanup, -1, 1 do
-                local fn = toCleanup[i]
+            for id, fn in toCleanup do
                 fn()
             end
         end

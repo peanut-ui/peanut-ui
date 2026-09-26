@@ -13,7 +13,6 @@ local defaultFontFace = Font.new("rbxasset://fonts/families/Roboto.json")
 export type CanvasGroupProps = Flatten<{
     groupColor: Color3,
     groupTransparency: number,
-    selectionImageObject: GuiObject?
 } & WidgetClass.DefaultProperties>
 
 export type ImageProps = Flatten<{
@@ -285,7 +284,6 @@ return {
         "canvasGroup",
         {
             groupColor = Color3.new(1, 1, 1),
-            selectionImageObject = Undefined,
             groupTransparency = 0,
         },
         function()
@@ -294,7 +292,6 @@ return {
         {
             groupColor = "GroupColor",
             groupTransparency = "GroupTransparency",
-            selectionImageObject = "SelectionImageObject",
         }
     ) :: (CanvasGroupArgs) -> CanvasGroup,
     ImageLabel = createBasicObject(

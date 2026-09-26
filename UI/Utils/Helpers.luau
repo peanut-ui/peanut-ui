@@ -67,7 +67,7 @@ function Helpers.freezeAndClear(tbl: {[any]: any}?)
 end
 
 --- Makes readonly proxy
-function Helpers.readonly<T>(original: T): T
+function Helpers.readonly<T>(original: T & {[any]: any}): T
 	local proxy = {}
 
 	setmetatable(proxy, {
@@ -79,6 +79,9 @@ function Helpers.readonly<T>(original: T): T
 
         __iter = function()
             return next, original, nil
+        end,
+        __len = function(): number
+            return #original
         end,
 
 		__metatable = false,

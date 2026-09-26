@@ -272,6 +272,9 @@ function Ease.stop(object: Instance, property: string?)
         if state then
             state.properties[property] = nil
             state.onCompletedProperty[property] = nil
+			if not next(state.properties) then
+				objectsState[object] = nil
+			end
         end
     else
         objectsState[object] = nil

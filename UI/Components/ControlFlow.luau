@@ -98,7 +98,11 @@ function ControlFlow.If<Props...>(
                 return nil
             end)
 
+            local oldBranch: Branch? = nil
             local function update(newBranch: Branch?)
+                if oldBranch == newBranch then return end
+                oldBranch = newBranch
+
                 if oldWidget then
                     box.removeChild(oldWidget)
                     oldWidget.destroy()

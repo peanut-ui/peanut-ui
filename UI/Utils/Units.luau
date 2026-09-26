@@ -109,8 +109,8 @@ function Units.ToUDim(obj: Utils.Unit | UDim): UDim
     if type(obj) == "table" then
         if obj._typeName == "unit" then
             return UDim.new(
-                obj.px,
-                obj.scale
+                obj.scale,
+                obj.px
             )
         end
     end

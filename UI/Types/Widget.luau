@@ -145,7 +145,7 @@ export type EventsFeature = {
 
 -- feature: parenting
 export type ParentingFeature = {
-    setParent: (parent: WidgetLike) -> (),
+    setParent: (parent: WidgetLike?) -> (),
     getParent: () -> BaseInterface,
 
     _setParent: (parent: BaseInterface?) -> (),
