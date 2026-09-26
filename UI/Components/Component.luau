@@ -113,9 +113,7 @@ function Component.defineComponent<T>(
             end
 
             (widget :: WidgetType.InternalInterface)._addCleanup(function()
-                for _, ref in bucket.createdRefs do
-                    ref.destroy()
-                end
+                bucket.stop()
             end)
 
             local fireHook = bucket.customState.fire

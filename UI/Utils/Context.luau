@@ -13,11 +13,42 @@ local Module = {}
 
 local disableYielding = Helpers.disableYielding
 
+local counter = 0
 local function createBucket<State>(name: string?, customState: State?): Utils.Bucket<State>
+    local stopped = false
+    local cleanups = {}
+
     return {
-        createdRefs = {},
+        cleanups = cleanups,
         customState = customState,
-        contextName = name or "unknown"
+        contextName = name or "unknown",
+
+        addCleanup = function(callback: () -> ()): number
+            if stopped then
+                logger.error("Tried to access Bucket after it was stopped")
+            end
+            counter += 1
+            local id = counter
+            cleanups[id] = callback
+            return id
+        end,
+
+        removeCleanup = function(id: number)
+            if stopped then return end
+            cleanups[id] = nil
+        end,
+
+        stop = function()
+            if stopped then return end
+            stopped = true
+            local toCleanup = cleanups
+            cleanups = nil :: any
+
+            for i = #toCleanup, -1, 1 do
+                local fn = toCleanup[i]
+                fn()
+            end
+        end
     }
 end
 

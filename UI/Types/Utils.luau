@@ -94,9 +94,13 @@ export type Unit = {
 }
 
 export type Bucket<State = any?> = {
-    createdRefs: {Ref<any>},
+    cleanups: {[number]: () -> ()},
     customState: State,
-    contextName: string
+    contextName: string,
+
+    addCleanup: (() -> ()) -> number,
+    removeCleanup: (number) -> (),
+    stop: () -> ()
 }
 
 return {}

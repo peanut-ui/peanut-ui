@@ -54,7 +54,7 @@ local function track(ref: Utils.Ref<any>)
     bucket.customState[ref] = true
 end
 
-local function createReactiveProxy(rawTarget: Table, isShallow: boolean?, createdRefs: {Utils.Ref<any>}?): any
+local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
     if rawCache[rawTarget] then
         return rawTarget
     end
@@ -63,13 +63,8 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?, create
         return proxyCache[rawTarget]
     end
 
-    if not createdRefs then
-        local bucket = Context.getCurrentBucket()
-        createdRefs = bucket and bucket.createdRefs
-    end
-
     local proxy = {}
-    local myRef = Ref.new(proxy, createdRefs)
+    local myRef = Ref.new(proxy)
     proxyToRefMap[proxy] = myRef
 
     local valueRefs: {[any]: Utils.Ref<any>} = {}
@@ -79,7 +74,7 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?, create
 
     local function watchChild(key: any, childRaw: any)
         if type(childRaw) == "table" then
-            local childProxy = createReactiveProxy(childRaw, nil, createdRefs)
+            local childProxy = createReactiveProxy(childRaw, nil)
             local childRef = proxyToRefMap[childProxy]
 
             childWatchers[key] = childRef.watch(function()
@@ -93,7 +88,7 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?, create
             return valueRefs[key]
         end
 
-        local newRef = Ref.new(rawTarget[key], createdRefs)
+        local newRef = Ref.new(rawTarget[key])
         valueRefs[key] = newRef
         return newRef
     end
@@ -134,7 +129,7 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?, create
         __index = function(_, key)
             local val = rawTarget[key]
             if isShallow ~= true and type(val) == "table" then
-                return createReactiveProxy(val, nil, createdRefs)
+                return createReactiveProxy(val, nil)
             end
             if isInContext() then
                 track(getRef(key))
@@ -274,7 +269,6 @@ end
 --- Before `refs` scheduler stage is fully drained (empty) it will be running watchers.
 ---
 --- @param value Any primitive value or ref, any ref or reactive table is gonna be watched automatically
---- @param registerTo Internal parameter to register ref to scope, leave nil unless really needed
 --- @param beforeGetValue Internal parameter for calling function before get (used in computed)
 --- @return Reactive value
 ---
@@ -302,7 +296,6 @@ end
 --- ```
 function Ref.new<T>(
     value: T | Utils.SimpleRef<T>,
-    registerTo: {Utils.Ref<any>}?,
     beforeGetValue: () -> ()?
 ): Utils.Ref<T>
     local ref = {}
@@ -433,18 +426,43 @@ function Ref.new<T>(
 
         local watchersToUse = if isSync == true then syncWatchers else watchers
 
+        local bucket: Utils.Bucket?
+        local bucketCleanupId: number
+
         watchersToUse[id] = fn
         watchersOnUnwatch[id] = onUnwatch
 
-        return function()
+        local function unwatch()
             if isDestroyed then return end
+
             watchersToUse[id] = nil
             local onUnwatch = watchersOnUnwatch[id]
             watchersOnUnwatch[id] = nil
             if onUnwatch then
                 onUnwatch()
             end
-        end, id
+
+            if bucket and bucketCleanupId then
+                bucket.removeCleanup(bucketCleanupId)
+            end
+        end
+
+        bucket = Context.getCurrentBucket()
+        if bucket then
+            bucketCleanupId = bucket.addCleanup(function()
+                if isDestroyed then return end
+
+                watchersToUse[id] = nil
+
+                local onUnwatch = watchersOnUnwatch[id]
+                watchersOnUnwatch[id] = nil
+                if onUnwatch then
+                    onUnwatch()
+                end
+            end)
+        end
+
+        return unwatch, id
     end
 
     function ref.setOnUnwatch(id: number, onUnwatch: () -> ()?)
@@ -497,15 +515,6 @@ function Ref.new<T>(
         end
     })
     table.freeze(ref)
-
-    if not registerTo then
-        local bucket = Context.getCurrentBucket()
-        registerTo = bucket and bucket.createdRefs
-    end
-
-    if registerTo then
-        table.insert(registerTo, ref :: any)
-    end
 
     return ref :: any
 end
@@ -579,7 +588,7 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
     local isDirty = true
     local computeNewValue: () -> ()
 
-    local newRef = Ref.new(nil, nil, function()
+    local newRef = Ref.new(nil, function()
         if isDirty then computeNewValue() end
     end)
 
