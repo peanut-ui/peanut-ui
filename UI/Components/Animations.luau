@@ -93,8 +93,8 @@ function Animations.Float(distance: number, cyclesPerSecond: number): Animations
         object.Position = UDim2.new(
             base.X.Scale,
             base.X.Offset,
-            base.Y.Scale,
-            base.Y.Offset + offset
+            base.Y.Scale + offset,
+            base.Y.Offset
         )
     end
 
