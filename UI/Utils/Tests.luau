@@ -119,6 +119,7 @@ function Tests.run(testName: string, fn: () -> ())
             logger.warn("Cleanup function of test '%s' errored with message '%s', this may cause leaks", testName, tostring(msg))
         end)
     end
+    table.clear(finallyHooks)
 
     logger.info("-----------------------------------------")
     isRunning = false
