@@ -330,7 +330,7 @@ return {
         { tileSize = "scale"},
         { isLoaded = true },
         { isLoaded = true }
-    ) :: (ImageLabelArgs) -> ImageProps,
+    ) :: (ImageLabelArgs) -> ImageLabel,
     ImageButton = createBasicObject(
         "imageButton",
         {
