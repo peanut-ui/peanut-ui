@@ -1,6 +1,7 @@
 --!strict
 --!optimize 2
 const Context = require(script.Parent.Context)
+const Helpers = require(script.Parent.Helpers)
 const Logging = require(script.Parent.Logging)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const Scheduler = require(script.Parent.Scheduler)
@@ -17,6 +18,8 @@ type Table = {[any]: any}
 local proxyToRefMap: {[any]: Utils.Ref<any>} = setmetatable({}, { __mode = "k" })
 local proxyCache: {[Table]: Table} = setmetatable({}, { __mode = "k" })
 
+local proxyIsShallow: {[Table]: boolean} = setmetatable({}, { __mode = "k" })
+
 local proxySwap: {[Table]: (Table, boolean?) -> ()} = setmetatable({}, { __mode = "k" })
 local proxyGetRef: {[Table]: (string) -> Utils.Ref<any>} = setmetatable({}, { __mode = "k" })
 
@@ -32,8 +35,8 @@ Ref.Undefined = Undefined
 
 type ComputedDeps = {[Utils.SimpleRef<any>]: boolean}
 
-local function getComputedBucket(): Utils.Bucket<ComputedDeps>?
-    local currentBucket = Context.getCurrentBucket()
+local function getComputedBucket(bucket: Utils.Bucket?): Utils.Bucket<ComputedDeps>?
+    local currentBucket = bucket or Context.getCurrentBucket()
     if not currentBucket or currentBucket.contextName ~= "ref" then
         return nil
     end
@@ -43,6 +46,12 @@ end
 
 local function isInContext()
     return getComputedBucket() ~= nil
+end
+
+local function errorOnSideEffect()
+    if getComputedBucket() ~= nil then
+        logger.error("Side effects are not allowed here!")
+    end
 end
 
 local function track(ref: Utils.Ref<any>)
@@ -56,16 +65,27 @@ end
 
 local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
     if rawCache[rawTarget] then
+        if proxyIsShallow[rawTarget] then
+            logger.error("Proxy modes (shallow vs deep) mismatch between different places")
+        end
         return rawTarget
     end
 
     if proxyCache[rawTarget] then
-        return proxyCache[rawTarget]
+        local proxy = proxyCache[rawTarget]
+        if proxyIsShallow[proxy] then
+            logger.error("Proxy modes (shallow vs deep) mismatch between different places")
+        end
+        return proxy
     end
 
     local proxy = {}
-    local myRef = Ref.new(proxy)
+    local myRef = Ref.new(proxy, nil, Undefined)
     proxyToRefMap[proxy] = myRef
+
+    proxyIsShallow[proxy] = isShallow == true
+    proxyCache[rawTarget] = proxy
+    rawCache[proxy] = rawTarget
 
     local valueRefs: {[any]: Utils.Ref<any>} = {}
 
@@ -73,24 +93,38 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
     proxyChildWatchers[proxy] = childWatchers
 
     local function watchChild(key: any, childRaw: any)
-        if type(childRaw) == "table" then
-            local childProxy = createReactiveProxy(childRaw, nil)
-            local childRef = proxyToRefMap[childProxy]
+        local ok, err = Context.withNoContext(function()
+            if type(childRaw) == "table" then
+                local childProxy = createReactiveProxy(childRaw, nil)
+                local childRef = proxyToRefMap[childProxy]
 
-            childWatchers[key] = childRef.watch(function()
-                myRef.notifyChanged()
-            end)
+                childWatchers[key] = childRef.watch(function()
+                    myRef.notifyChanged()
+                end)
+            end
+
+            return nil
+        end)
+        if not ok then
+            logger.error("Couldn't watch child:\n%s", tostring(err))
         end
     end
 
     local function getRef(key: any)
-        if valueRefs[key] then
-            return valueRefs[key]
+        local ok, result = Context.withNoContext(function()
+            if valueRefs[key] then
+                return valueRefs[key]
+            end
+
+            local newRef = Ref.new(rawTarget[key], nil, Undefined)
+            valueRefs[key] = newRef
+            return newRef
+        end)
+        if not ok then
+            logger.error("Couldn't watch child:\n%s", tostring(result))
         end
 
-        local newRef = Ref.new(rawTarget[key])
-        valueRefs[key] = newRef
-        return newRef
+        return result
     end
     proxyGetRef[proxy] = getRef
 
@@ -128,16 +162,27 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
     local meta = {
         __index = function(_, key)
             local val = rawTarget[key]
-            if isShallow ~= true and type(val) == "table" then
-                return createReactiveProxy(val, nil)
-            end
+
             if isInContext() then
                 track(getRef(key))
             end
+
+            if isShallow ~= true and type(val) == "table" then
+                local ok, result = Context.withNoContext(function()
+                    return createReactiveProxy(val, nil)
+                end)
+                if not ok then
+                    logger.error("Couldn't create sub-proxy:\n%s", tostring(result))
+                end
+
+                return result
+            end
+
             return val
         end,
 
         __newindex = function(_, key, val)
+            errorOnSideEffect()
             local cleanVal = rawCache[val] or val
             if rawTarget[key] == cleanVal then return end
 
@@ -159,13 +204,32 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
             myRef.notifyChanged()
         end,
 
-        __len = function(_) return #rawTarget end,
-        __iter = function(_) return next, rawTarget end,
+        __len = function(_)
+            track(myRef)
+
+            return #rawTarget
+        end,
+        __iter = function(_)
+            track(myRef)
+
+            local function iterate(_, key)
+                local nextKey, value = next(rawTarget, key)
+                if nextKey == nil then
+                    return nil
+                end
+
+                if isShallow ~= true and type(value) == "table" then
+                    value = createReactiveProxy(value, nil)
+                end
+
+                return nextKey, value
+            end
+
+            return iterate, nil, nil
+        end,
     }
 
     setmetatable(proxy, meta)
-    proxyCache[rawTarget] = proxy
-    rawCache[proxy] = rawTarget
 
     return proxy
 end
@@ -296,8 +360,16 @@ end
 --- ```
 function Ref.new<T>(
     value: T | Utils.SimpleRef<T>,
-    beforeGetValue: () -> ()?
+    beforeGetValue: () -> ()?,
+    bucket_: (Utils.Bucket | Utils.Undefined)?
 ): Utils.Ref<T>
+    errorOnSideEffect()
+
+    if not bucket_ then
+        bucket_ = Context.getCurrentBucket()
+    end
+    local bucket = Helpers.removeUndefined(bucket_) :: Utils.Bucket?
+
     local ref = {}
     ref._typeName = "ref" :: "ref"
 
@@ -369,6 +441,7 @@ function Ref.new<T>(
 
     function ref.increaseValue(amount: number)
         ensureNotDestroyed()
+        errorOnSideEffect()
 
         if typeof(currentValue) ~= "number" then
             logger.error("Cannot increase non-number")
@@ -381,6 +454,7 @@ function Ref.new<T>(
 
     function ref.setValue(newValue: T | Utils.SimpleRef<T>)
         ensureNotDestroyed()
+        errorOnSideEffect()
 
         if newValue == currentValue then
             return
@@ -420,6 +494,7 @@ function Ref.new<T>(
 
     function ref.watch(fn: Utils.RefWatchFn<T>, onUnwatch: () -> ()?, isSync: boolean?): (() -> (), number)
         ensureNotDestroyed()
+        errorOnSideEffect()
 
         counter += 1
         local id = counter
@@ -498,7 +573,15 @@ function Ref.new<T>(
 
     ref.notifyChanged = notifyWatchers
 
-    ref.setValue(value, true)
+    ref.setValue(value)
+
+    if bucket then
+        local id = bucket.addCleanup(ref.destroy)
+        ref._addCleanup(function()
+            assert(bucket)
+            bucket.removeCleanup(id)
+        end)
+    end
 
     setmetatable(ref, {
         __index = function(_, key): T?
@@ -636,7 +719,8 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
             logger.error("Circular dependency detected in computed property!")
             error("")
         end
-        if not isDirty then return end
+
+        if not isDirty then return nil end
         isDirty = false
 
         isComputing = true
@@ -654,21 +738,33 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
             return computeFn()
         end)
         if not ok then
+            isDirty = true
+            isComputing = false
             logger.error(`Couldn't calculate result for computed:\n{result}`)
             error("")
         end
 
-        newRef.setValue(result)
+        local ok2, err = Context.withNoContext(function()
+            newRef.setValue(result)
 
-        for ref, _ in newComputeRefs do
-            if lastComputeRefs[ref] == nil then
-                local internal = computeInternal[ref :: any]
-                if internal then
-                    lastComputeRefs[ref] = internal.watch(invalidate)
-                else
-                    lastComputeRefs[ref] = ref.watch(invalidate, nil, true)
+            for ref, _ in newComputeRefs do
+                if lastComputeRefs[ref] == nil then
+                    local internal = computeInternal[ref :: any]
+                    if internal then
+                        lastComputeRefs[ref] = internal.watch(invalidate)
+                    else
+                        lastComputeRefs[ref] = ref.watch(invalidate, nil, true)
+                    end
                 end
             end
+
+            return nil
+        end)
+        if not ok2 then
+            isDirty = true
+            isComputing = false
+            logger.error("There was an error in computed:\n%s", tostring(err))
+            error("")
         end
 
         for ref, unwatch in pairs(lastComputeRefs) do
@@ -678,6 +774,8 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
             end
         end
         isComputing = false
+
+        return nil
     end
 
     local scheduled = false
@@ -803,17 +901,13 @@ end
 --- Ref.swap(proxy, { a = 2 })
 --- ```
 function Ref.swap<T>(proxy: T, newTable: T & Table)
+    errorOnSideEffect()
     local swap = proxySwap[proxy]
     if not swap then
         logger.error("Ref.swap can be used only on reactive proxy (see Ref.reactive)")
     end
 
     swap(newTable)
-
-    local myRef = proxyToRefMap[proxy]
-    if myRef then
-        myRef.notifyChanged()
-    end
 end
 
 local function deepSwap(proxy: any, newTable: Table, seen_: {[any]: boolean}?)
@@ -865,6 +959,7 @@ end
 --- Ref.deepSwap(proxy, { nested = { a = 5 } })
 --- ```
 function Ref.deepSwap<T>(proxy: T, newTable: T & Table)
+    errorOnSideEffect()
     local swap = proxySwap[proxy]
     if not swap then
         logger.error("Ref.deepSwap can be used only on reactive proxy (see Ref.reactive)")

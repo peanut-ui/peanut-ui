@@ -112,7 +112,7 @@ function Component.defineComponent<T>(
                 logger.error("Function in defineComponent has to return a widget!")
             end
 
-            (widget :: WidgetType.InternalInterface)._addCleanup(function()
+            widget.listen("Destroyed", function()
                 bucket.stop()
             end)
 
