@@ -2,6 +2,7 @@
 --!optimize 2
 -- Module for automated tests
 const Logging = require(script.Parent.Logging)
+const Scheduler = require(script.Parent.Scheduler)
 
 const logger = Logging.getLogger("PeanutUI.Utils.Tests", 2)
 
@@ -81,7 +82,7 @@ function Tests.runFunction(fn: () -> ())
     Logging.setLevel(4)
 
     xpcall(fn, function(err)
-        logger.warn("Test function crashed with error:\n%s", tostring(err))
+        logger.warn("Test function crashed with error:\n%s", err)
     end)
 
     logger.info("Tests passed: %d, tests failed: %d", passed, failed)
@@ -101,6 +102,7 @@ function Tests.run(testName: string, fn: () -> ())
     if isRunning then
         logger.error("Cannot run test inside of a test")
     end
+    Scheduler.reset()
     isRunning = true
 
     logger.info("--- Running Test: %s ---", testName)
@@ -112,6 +114,7 @@ function Tests.run(testName: string, fn: () -> ())
         passed += 1
     else
         failed += 1
+        error("One of tests failed")
     end
 
     local hooks = finallyHooks

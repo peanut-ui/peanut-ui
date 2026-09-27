@@ -259,6 +259,59 @@ local function start()
     end
 end
 
+local function getShouldSchedule()
+    return shouldSchedule
+end
+
+--- Resets state of scheduler
+--- Yields until scheduler fully stops (unless `force` was set to true)
+local function reset(force: boolean?)
+    while not force and (isFlushing or isScheduled) do
+        task.wait()
+    end
+
+    scheduled = {
+        before = {
+            stepRan = {},
+            create = {},
+            signals = {},
+            watchers = {},
+            redraw = {},
+            defer = {},
+            idle = {},
+            settled = {}
+        },
+        schedule = {
+            stepRan = {},
+            create = {},
+            signals = {},
+            watchers = {},
+            redraw = {},
+            defer = {},
+            idle = {},
+            settled = {}
+        },
+        after = {
+            stepRan = {},
+            create = {},
+            signals = {},
+            watchers = {},
+            redraw = {},
+            defer = {},
+            idle = {},
+            settled = {}
+        }
+    }
+
+    currentStage = "sync"
+    currentStagePhase = "sync"
+    isFlushing = false
+    shouldSchedule = false
+    ticksRanBeforeStop = 0
+    isRunning = true
+    isScheduled = false
+end
+
 return table.freeze {
     idle = idle,
     defer = defer,
@@ -271,5 +324,7 @@ return table.freeze {
     scheduleAfter = scheduleAfter,
     waitFor = waitFor,
     getCurrentStage = getCurrentStage,
-    getCurrentStagePhase = getCurrentStagePhase
+    getCurrentStagePhase = getCurrentStagePhase,
+    getShouldSchedule = getShouldSchedule,
+    reset = reset
 }

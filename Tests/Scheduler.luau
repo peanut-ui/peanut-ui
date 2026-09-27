@@ -117,15 +117,18 @@ Tests.run("Scheduler complicated behavior", function()
     Tests.expectFalse("Create ran on schedule", createRan)
     Tests.expectFalse("Redraw ran on schedule", redrawRan)
     Tests.expectFalse("Defer ran on schedule", deferRan)
+    Tests.expectTrue("Scheduler should schedule", Scheduler.getShouldSchedule())
     Scheduler.step()
 
     Tests.expectTrue("Watchers ran on step", watchersRan)
     Tests.expectTrue("Create ran on step", createRan)
     Tests.expectTrue("Redraw ran on step", redrawRan)
     Tests.expectFalse("Defer ran on step", deferRan)
+    Tests.expectTrue("Scheduler should schedule after step", Scheduler.getShouldSchedule())
     Scheduler.step()
 
     Tests.expectTrue("Defer ran on next step", deferRan)
+    Tests.expectFalse("Scheduler has to stop", Scheduler.getShouldSchedule())
 end)
 
 return {}
