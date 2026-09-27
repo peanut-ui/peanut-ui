@@ -49,14 +49,6 @@ local rgbToOklab = Oklab.rgbToOklab
 local oklabToRgb = Oklab.oklabToRgb
 
 local pi = math.pi
-local exp = math.exp
-local sin = math.sin
-local cos = math.cos
-local min = math.min
-local max = math.max
-local sqrt = math.sqrt
-local atan2 = math.atan2
-local round = math.round
 
 local function magnitudeSq(vec: {number})
     local out = 0
@@ -156,7 +148,7 @@ do
         local v = self.v
 
         if d == 1 then -- critically damped
-            local q = exp(-f*dt)
+            local q = math.exp(-f*dt)
             local w = dt*q
 
             local c0 = q + w*f
@@ -170,11 +162,11 @@ do
             end
 
         elseif d < 1 then -- underdamped
-            local q = exp(-d*f*dt)
-            local c = sqrt(1 - d*d)
+            local q = math.exp(-d*f*dt)
+            local c = math.sqrt(1 - d*d)
 
-            local i = cos(dt*f*c)
-            local j = sin(dt*f*c)
+            local i = math.cos(dt*f*c)
+            local j = math.sin(dt*f*c)
 
             -- Damping ratios approaching 1 can cause division by very small numbers.
             -- To mitigate that, group terms around z=j/c and find an approximation for z.
@@ -218,13 +210,13 @@ do
             end
 
         else -- overdamped
-            local c = sqrt(d*d - 1)
+            local c = math.sqrt(d*d - 1)
 
             local r1 = -f*(d + c)
             local r2 = -f*(d - c)
 
-            local ec1 = exp(r1*dt)
-            local ec2 = exp(r2*dt)
+            local ec1 = math.exp(r1*dt)
+            local ec2 = math.exp(r2*dt)
 
             for idx = 1, #p do
                 local o = p[idx] - g[idx]
@@ -288,7 +280,7 @@ do
         local ry = dot(c0.YVector, c1.YVector)
         local rz = dot(c0.ZVector, c1.ZVector)
         local trace = rx + ry + rz
-        return trace > 1 + 2*cos(SLEEP_ROTATION_DIFF)
+        return trace > 1 + 2*math.cos(SLEEP_ROTATION_DIFF)
     end
 
     local function angleDiff(c0: CFrame, c1: CFrame)
@@ -296,13 +288,13 @@ do
         local y = dot(c0.YVector, c1.YVector)
         local z = dot(c0.ZVector, c1.ZVector)
         local w = x + y + z - 1
-        return atan2(sqrt(max(0, 1 - w*w*0.25)), w*0.5)
+        return math.atan2(math.sqrt(math.max(0, 1 - w*w*0.25)), w*0.5)
     end
 
     -- gives approx. 21% accuracy improvement over CFrame.fromAxisAngle near poles
     local function fromAxisAngle(axis: Vector3, angle: number)
-        local c = cos(angle)
-        local s = sin(angle)
+        local c = math.cos(angle)
+        local s = math.sin(angle)
         local x, y, z = axis.X, axis.Y, axis.Z
 
         local mxy = x*y*(1 - c)
@@ -349,7 +341,7 @@ do
         local v0 = self.v
 
         local offset = axisAngleDiff(p0, g)
-        local decay = exp(-d*f*dt)
+        local decay = math.exp(-d*f*dt)
 
         local pt: CFrame
         local vt: Vector3
@@ -359,10 +351,10 @@ do
             vt = (v0*(1 - dt*f) - offset*(dt*f*f))*decay
 
         elseif d < 1 then -- underdamped
-            local c = sqrt(1 - d*d)
+            local c = math.sqrt(1 - d*d)
 
-            local i = cos(dt*f*c)
-            local j = sin(dt*f*c)
+            local i = math.cos(dt*f*c)
+            local j = math.sin(dt*f*c)
 
             local y = j/(f*c)
             local z = j/c
@@ -371,7 +363,7 @@ do
             vt = (v0*(i - z*d) - offset*(z*f))*decay
 
         else -- overdamped
-            local c = sqrt(d*d - 1)
+            local c = math.sqrt(d*d - 1)
 
             local r1 = -f*(d + c)
             local r2 = -f*(d - c)
@@ -379,8 +371,8 @@ do
             local co2 = (v0 - offset*r1)/(2*f*c)
             local co1 = offset - co2
 
-            local e1 = co1*exp(r1*dt)
-            local e2 = co2*exp(r2*dt)
+            local e1 = co1*math.exp(r1*dt)
+            local e2 = co2*math.exp(r2*dt)
 
             pt = rotateAxis(e1 + e2, g)
             vt = e1*r1 + e2*r2
@@ -503,7 +495,7 @@ local typeMetadata = {
         end,
 
         fromIntermediate = function(value: {number})
-            return UDim.new(value[1], round(value[2]))
+            return UDim.new(value[1], math.round(value[2]))
         end,
     },
 
@@ -517,7 +509,7 @@ local typeMetadata = {
         end,
 
         fromIntermediate = function(value: {number})
-            return UDim2.new(value[1], round(value[2]), value[3], round(value[4]))
+            return UDim2.new(value[1], math.round(value[2]), value[3], math.round(value[4]))
         end,
     },
 
