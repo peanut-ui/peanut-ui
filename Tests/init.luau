@@ -15,6 +15,7 @@ return {
             require(script.Engines)
             require(script.Components)
             require(script.CoreUI)
+            require(script.Ownership)
         end)
     end
 }
