@@ -119,7 +119,7 @@ return function(
         logger.debug(
             "[%s %d] Linking property. Name %s, Property %s, Transform %s, Sync %s, Readonly %s",
             instance._widgetName, id, name, property, typeof(transformFn), typeof(syncWithObject),
-            tostring(readonly or false)
+            readonly or false
         )
 
         if
@@ -176,7 +176,7 @@ return function(
 
                 logger.debug(
                     "[%s %d] Updating property %s to %s (type %s)",
-                    instance._widgetName, id, name, tostring(value), typeof(value)
+                    instance._widgetName, id, name, value, typeof(value)
                 )
 
                 if inRedrawMode then

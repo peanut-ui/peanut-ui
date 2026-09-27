@@ -26,12 +26,33 @@ local Logger = {}
 --- `...` doesn't format if `formatOrFn` is a function
 local function resolveMessage(formatOrFn: string | () -> string, ...: any): string
     if typeof(formatOrFn) == "function" then
-        return formatOrFn()
-    elseif select("#", ...) > 0 then
-        return string.format(formatOrFn, ...)
-    else
+        local ok, result = pcall(formatOrFn)
+        if not ok then
+            return `(message callback failed: {tostring(result)})`
+        end
+        return result
+    end
+
+    local argCount = select("#", ...)
+    if argCount == 0 then
         return formatOrFn
     end
+
+    local args = table.pack(...)
+    for index = 1, argCount do
+        local value = args[index]
+        local valueType = typeof(value)
+        if valueType ~= "number" and valueType ~= "string" then
+            args[index] = tostring(value)
+        end
+    end
+
+    local ok, result = pcall(string.format, formatOrFn, table.unpack(args, 1, argCount))
+    if not ok then
+        return `{formatOrFn} (format failed: {tostring(result)})`
+    end
+
+    return result
 end
 
 local function log(name: string, formatOrFn: string | () -> string, logLevel: number, ...: any)
@@ -86,12 +107,12 @@ function Logger.getLogger(name: string, logLevel: number?): Instance
 
     function logger.error(string: string | () -> string, ...)
         log(name, string, 4, ...)
-        error(string)  -- In case log doesn't stop execution
+        error(resolveMessage(string, ...))  -- In case log doesn't stop execution
     end
 
     function logger.critical(string: string | () -> string, ...)
         log(name, string, 5, ...)
-        error(string)  -- Same as in logger.error
+        error(resolveMessage(string, ...))  -- Same as in logger.error
     end
 
     function logger.getLogger(newName: string): Instance
