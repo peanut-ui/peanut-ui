@@ -178,7 +178,13 @@ return function(
                     "[%s %d] Updating property %s to %s (type %s)",
                     instance._widgetName, id, name, tostring(value), typeof(value)
                 )
-                if transitions and transitions[name] and not inRedrawMode then
+
+                if inRedrawMode then
+                    if transitions and transitions[name] then
+                        transitions[name].stop(object, property)
+                    end
+                    (object :: any)[property] = value
+                elseif transitions and transitions[name] then
                     transitions[name].animate(object, property, value)
                 else
                     (object :: any)[property] = value
