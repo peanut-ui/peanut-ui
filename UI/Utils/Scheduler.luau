@@ -76,6 +76,9 @@ local function executeStage(stage: TypeFuncs.KeyOf<Elements>, phase: TypeFuncs.K
     stepRan[stage] = true
 
     local snapshot = stageScheduled[stage]
+    if #snapshot == 0 then
+        return
+    end
     stageScheduled[stage] = {}
 
     logger.debug("Running stage %s, phase: %s, snapshot size %d", stage, phase, #snapshot)
