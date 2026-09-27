@@ -201,5 +201,18 @@ Tests.run("Computed diamond shape", function()
     Tests.expectValue("Watcher got last value", watcherGotValue, d.value)
 end)
 
+Tests.run("Side-effects error", function()
+    const a = Ref.new(0)
+
+    const b = Ref.computed(function()
+        a.setValue(12)
+        return a.value
+    end)
+
+    a.value = 1
+    Tests.expectError("Error on read", function()
+        b.getValue()
+    end)
+end)
 
 return {}
