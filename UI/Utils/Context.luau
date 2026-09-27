@@ -139,7 +139,7 @@ function Module.withContext<R, A...>(name: string?, fn: (A...) -> R, ...: A...):
 
     local ok, result = disableYielding(fn, ...)
     if not ok then
-        logger.warn(`Call resulted in error:\n{result}`)
+        logger.warn("Call resulted in error:\n%s", result)
     end
 
     return ok, result :: R, Module.pop()
@@ -150,7 +150,7 @@ function Module.withContextBucket<R, A...>(bucket: Utils.Bucket, fn: (A...) -> R
 
     local ok, result = disableYielding(fn, ...)
     if not ok then
-        logger.warn(`Call resulted in error:\n{result}`)
+        logger.warn("Call resulted in error:\n%s", result)
     end
 
     Module.pop()
@@ -162,7 +162,7 @@ function Module.withNoContext<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R)
 
     local ok, result = disableYielding(fn, ...)
     if not ok then
-        logger.warn(`Call resulted in error:\n{result}`)
+        logger.warn("Call resulted in error:\n%s", result)
     end
 
     Module.pop()

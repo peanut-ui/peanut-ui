@@ -20,7 +20,7 @@ local destroyingConnections: {[Instance]: RBXScriptConnection} = {}
 
 @native
 local function process(dt: number)
-	for object, stepFuncs in runningAnimations do
+    for object, stepFuncs in runningAnimations do
         for fn, _ in stepFuncs do
             local objectState = stepStates[object]
             local stop = fn(object, dt, objectState and objectState[fn])
@@ -61,7 +61,7 @@ local function process(dt: number)
                 end
             end
         end
-	end
+    end
 end
 
 RunService.PreRender:Connect(process)

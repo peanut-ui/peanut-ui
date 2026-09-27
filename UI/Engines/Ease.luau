@@ -26,7 +26,7 @@ type AnimationState = {
     transform: TypeTransform,
     curve: Curve,
 
-	intermediate: {number},
+    intermediate: {number},
     from: {number},
     to: {number},
 
@@ -46,69 +46,69 @@ Ease.Curves = Curves
 local objectsState: {[Instance]: ObjectState} = setmetatable({}, { __mode = "k" })
 
 local typeTransforms: {[string]: TypeTransform} = {
-	boolean = {
-		toIntermediate = function(value)
-			return {value and 1 or 0}
-		end,
+    boolean = {
+        toIntermediate = function(value)
+            return {value and 1 or 0}
+        end,
 
-		fromIntermediate = function(value)
-			return value[1] >= 0.5
-		end,
-	},
+        fromIntermediate = function(value)
+            return value[1] >= 0.5
+        end,
+    },
 
-	number = {
-		toIntermediate = function(value)
-			return {value}
-		end,
+    number = {
+        toIntermediate = function(value)
+            return {value}
+        end,
 
-		fromIntermediate = function(value)
-			return value[1]
-		end,
-	},
+        fromIntermediate = function(value)
+            return value[1]
+        end,
+    },
 
-	NumberRange = {
-		toIntermediate = function(value)
-			return {value.Min, value.Max}
-		end,
+    NumberRange = {
+        toIntermediate = function(value)
+            return {value.Min, value.Max}
+        end,
 
-		fromIntermediate = function(value)
-			return NumberRange.new(value[1], value[2])
-		end,
-	},
+        fromIntermediate = function(value)
+            return NumberRange.new(value[1], value[2])
+        end,
+    },
 
-	UDim = {
-		toIntermediate = function(value)
-			return {value.Scale, value.Offset}
-		end,
+    UDim = {
+        toIntermediate = function(value)
+            return {value.Scale, value.Offset}
+        end,
 
-		fromIntermediate = function(value: {number})
-			return UDim.new(value[1], math.round(value[2]))
-		end,
-	},
+        fromIntermediate = function(value: {number})
+            return UDim.new(value[1], math.round(value[2]))
+        end,
+    },
 
-	UDim2 = {
-		toIntermediate = function(value)
-			local x = value.X
-			local y = value.Y
-			return {x.Scale, x.Offset, y.Scale, y.Offset}
-		end,
+    UDim2 = {
+        toIntermediate = function(value)
+            local x = value.X
+            local y = value.Y
+            return {x.Scale, x.Offset, y.Scale, y.Offset}
+        end,
 
-		fromIntermediate = function(value: {number})
-			return UDim2.new(value[1], math.round(value[2]), value[3], math.round(value[4]))
-		end,
-	},
+        fromIntermediate = function(value: {number})
+            return UDim2.new(value[1], math.round(value[2]), value[3], math.round(value[4]))
+        end,
+    },
 
-	Vector2 = {
-		toIntermediate = function(value)
-			return {value.X, value.Y}
-		end,
+    Vector2 = {
+        toIntermediate = function(value)
+            return {value.X, value.Y}
+        end,
 
-		fromIntermediate = function(value: {number})
-			return Vector2.new(value[1], value[2])
-		end,
-	},
+        fromIntermediate = function(value: {number})
+            return Vector2.new(value[1], value[2])
+        end,
+    },
 
-	Vector3 = {
+    Vector3 = {
         toIntermediate = function(value)
             return {value.X, value.Y, value.Z}
         end,
@@ -118,80 +118,80 @@ local typeTransforms: {[string]: TypeTransform} = {
         end,
     },
 
-	Color3 = {
-		toIntermediate = rgbToOklab,
-		fromIntermediate = oklabToRgb,
-	},
+    Color3 = {
+        toIntermediate = rgbToOklab,
+        fromIntermediate = oklabToRgb,
+    },
 
-	NumberSequence = {
-		toIntermediate = function(value: NumberSequence)
-			local keypoints = value.Keypoints
-			local first = keypoints[1]
-			local last = keypoints[#keypoints]
+    NumberSequence = {
+        toIntermediate = function(value: NumberSequence)
+            local keypoints = value.Keypoints
+            local first = keypoints[1]
+            local last = keypoints[#keypoints]
 
-			return {
-				first.Time, first.Value,
-				last.Time, last.Value,
-			}
-		end,
+            return {
+                first.Time, first.Value,
+                last.Time, last.Value,
+            }
+        end,
 
-		fromIntermediate = function(value: {number})
-			return NumberSequence.new({
-				NumberSequenceKeypoint.new(value[1], value[2]),
-				NumberSequenceKeypoint.new(value[3], value[4]),
-			})
-		end,
-	},
+        fromIntermediate = function(value: {number})
+            return NumberSequence.new({
+                NumberSequenceKeypoint.new(value[1], value[2]),
+                NumberSequenceKeypoint.new(value[3], value[4]),
+            })
+        end,
+    },
 
-	-- Only interpolates start and end keypoints
-	ColorSequence = {
-		toIntermediate = function(value)
-			local keypoints = value.Keypoints
+    -- Only interpolates start and end keypoints
+    ColorSequence = {
+        toIntermediate = function(value)
+            local keypoints = value.Keypoints
 
-			local luv0 = rgbToOklab(keypoints[1].Value)
-			local luv1 = rgbToOklab(keypoints[#keypoints].Value)
+            local luv0 = rgbToOklab(keypoints[1].Value)
+            local luv1 = rgbToOklab(keypoints[#keypoints].Value)
 
-			return {
-				luv0[1], luv0[2], luv0[3],
-				luv1[1], luv1[2], luv1[3],
-			}
-		end,
+            return {
+                luv0[1], luv0[2], luv0[3],
+                luv1[1], luv1[2], luv1[3],
+            }
+        end,
 
-		fromIntermediate = function(value: {number})
-			return ColorSequence.new(
-				oklabToRgb{value[1], value[2], value[3]},
-				oklabToRgb{value[4], value[5], value[6]}
-			)
-		end,
-	},
+        fromIntermediate = function(value: {number})
+            return ColorSequence.new(
+                oklabToRgb{value[1], value[2], value[3]},
+                oklabToRgb{value[4], value[5], value[6]}
+            )
+        end,
+    },
 }
 
 @native
 local function process(dt: number)
-	for object, state in objectsState do
-		for property, animationState in state.properties do
-			animationState.elapsed += dt
+    for object, state in objectsState do
+        for property, animationState in state.properties do
+            animationState.elapsed += dt
 
-			local t = math.clamp(
-				animationState.elapsed / animationState.duration,
-				0,
-				1
-			)
+            local t = math.clamp(
+                animationState.elapsed / animationState.duration,
+                0,
+                1
+            )
 
-			local alpha = animationState.curve(t)
-			local intermediate = animationState.intermediate
+            local alpha = animationState.curve(t)
+            local intermediate = animationState.intermediate
 
-			for index, from in animationState.from do
-				local to = animationState.to[index]
+            for index, from in animationState.from do
+                local to = animationState.to[index]
 
-				intermediate[index] = from + (to - from) * alpha
-			end
+                intermediate[index] = from + (to - from) * alpha
+            end
 
-			(object :: any)[property] = animationState.transform
-				.fromIntermediate(intermediate)
+            (object :: any)[property] = animationState.transform
+                .fromIntermediate(intermediate)
 
-			if t >= 1 then
-				state.properties[property] = nil
+            if t >= 1 then
+                state.properties[property] = nil
 
                 if state.onCompletedProperty[property] then
                     local onCompleted = state.onCompletedProperty[property]
@@ -201,11 +201,11 @@ local function process(dt: number)
                         task.spawn(callback)
                     end
                 end
-			end
-		end
+            end
+        end
 
-		if next(state.properties) == nil then
-			objectsState[object] = nil
+        if next(state.properties) == nil then
+            objectsState[object] = nil
 
             if state.onCompleted then
                 local onCompleted = state.onCompleted
@@ -215,23 +215,28 @@ local function process(dt: number)
                     task.spawn(callback)
                 end
             end
-		end
-	end
+        end
+    end
 end
 
 RunService.PreRender:Connect(function(deltaTime)
-	if next(objectsState) == nil then
-		return
-	end
+    if next(objectsState) == nil then
+        return
+    end
 
-	process(deltaTime)
+    process(deltaTime)
 end)
 
 function Ease.target(object: Instance, property: string, to: any, duration: number, curve: Curve)
     local from = (object :: any)[property]
 
     if typeof(to) ~= typeof(from) then
-        logger.error(`Object's property {property} had type {typeof(from)} while type {typeof(to)} was passed`)
+        logger.error(
+            "Object's property %s had type %s while type %s was passed",
+            property,
+            typeof(from),
+            typeof(to)
+        )
     end
 
     if duration == 0 then
@@ -252,20 +257,20 @@ function Ease.target(object: Instance, property: string, to: any, duration: numb
 
     local transform = typeTransforms[typeof(from)]
     if not transform then
-        logger.error(`Type {typeof(from)} is not supported`)
+        logger.error("Type %s is not supported", typeof(from))
     end
 
-	local fromIntermediate = transform.toIntermediate(from)
-	local toIntermediate = transform.toIntermediate(to)
-	if #fromIntermediate ~= #toIntermediate then
-		logger.error("Intermediate values had different length! Most likely a bug.")
-	end
+    local fromIntermediate = transform.toIntermediate(from)
+    local toIntermediate = transform.toIntermediate(to)
+    if #fromIntermediate ~= #toIntermediate then
+        logger.error("Intermediate values had different length! Most likely a bug.")
+    end
 
     state.properties[property] = {
         transform = transform,
         curve = curve,
 
-		intermediate = table.create(#fromIntermediate, 0),
+        intermediate = table.create(#fromIntermediate, 0),
         from = fromIntermediate,
         to = toIntermediate,
 
@@ -280,9 +285,9 @@ function Ease.stop(object: Instance, property: string?)
         if state then
             state.properties[property] = nil
             state.onCompletedProperty[property] = nil
-			if not next(state.properties) then
-				objectsState[object] = nil
-			end
+            if not next(state.properties) then
+                objectsState[object] = nil
+            end
         end
     else
         objectsState[object] = nil

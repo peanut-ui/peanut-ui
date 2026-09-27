@@ -106,7 +106,7 @@ local function newSpace(
     readonly: {[string]: boolean?}?
 ): SpaceType.Interface
     if registry[name] then
-        logger.error(`Cannot create space with existing name: {name}`)
+        logger.error("Cannot create space with existing name: %s", name)
     end
 
     local signals = Signals.new()
@@ -312,7 +312,7 @@ Space.createScreenSpace = createConstructor(
 
 function Space.getScreenSpace(name: string): SpaceType.ScreenSpace
     if not registeredScreenSpaces[name] then
-        logger.error(`Couldn't find space with name: {name}`)
+        logger.error("Couldn't find space with name: %s", name)
     end
 
     return registeredScreenSpaces[name]
@@ -386,7 +386,7 @@ Space.createBillboardSpace = createConstructor(
 
 function Space.getBillboardSpace(name: string): SpaceType.BillboardSpace
     if not registeredBillboardSpaces[name] then
-        logger.error(`Couldn't find space with name: {name}`)
+        logger.error("Couldn't find space with name: %s", name)
     end
 
     return registeredBillboardSpaces[name]
@@ -445,7 +445,7 @@ Space.createSurfaceSpace = createConstructor(
 
 function Space.getSurfaceSpace(name: string): SpaceType.SurfaceSpace
     if not registeredSurfaceSpaces[name] then
-        logger.error(`Couldn't find space with name: {name}`)
+        logger.error("Couldn't find space with name: %s", name)
     end
 
     return registeredSurfaceSpaces[name]

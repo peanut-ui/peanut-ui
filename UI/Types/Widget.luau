@@ -10,7 +10,7 @@ export type Partial<Table> = TypeFuncs.Partial<Table>
 export type UnionProperties<Table, UnionWith> = TypeFuncs.UnionProperties<Table, UnionWith>
 
 export type ReadOnlyArray<T> = {
-	read [number]: T,
+    read [number]: T,
 }
 
 export type WidgetEvents = {

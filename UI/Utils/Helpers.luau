@@ -68,14 +68,14 @@ end
 
 --- Makes readonly proxy
 function Helpers.readonly<T>(original: T & {[any]: any}): T
-	local proxy = {}
+    local proxy = {}
 
-	setmetatable(proxy, {
-		__index = original,
+    setmetatable(proxy, {
+        __index = original,
 
-		__newindex = function()
-			error("attempt to modify read-only table", 2)
-		end,
+        __newindex = function()
+            error("attempt to modify read-only table", 2)
+        end,
 
         __iter = function()
             return next, original, nil
@@ -84,10 +84,10 @@ function Helpers.readonly<T>(original: T & {[any]: any}): T
             return #original
         end,
 
-		__metatable = false,
-	})
+        __metatable = false,
+    })
 
-	return proxy :: T
+    return proxy :: T
 end
 
 --- Runs function and checks if it yielded, if it did then closes coroutine and errors

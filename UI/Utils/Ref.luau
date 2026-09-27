@@ -238,7 +238,10 @@ end
 
 local function assertType(a: any, b: any)
     if (a ~= nil and b ~= nil) and typeof(a) ~= typeof(b) then
-        logger.error(`Type mismatch! {typeof(a)} ~= {typeof(b)}`)
+        logger.error(
+            "Type mismatch! %s ~= %s",
+            typeof(a), typeof(b)
+        )
     end
 end
 
