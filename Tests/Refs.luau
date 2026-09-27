@@ -215,4 +215,15 @@ Tests.run("Side-effects error", function()
     end)
 end)
 
+Tests.run("Mixed reactive mode error", function()
+    const tbl = {}
+    local a = Ref.reactive(tbl, true)
+
+    Tests.expectValue("Reactive table is same", Ref.toRaw(a), tbl)
+    Tests.expectError("Making other mode proxy will error", function()
+        Ref.reactive(tbl, false)
+    end)
+end)
+
+
 return {}
