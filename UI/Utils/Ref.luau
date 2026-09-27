@@ -67,7 +67,7 @@ end
 
 local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
     if rawCache[rawTarget] then
-        if proxyIsShallow[rawTarget] then
+        if proxyIsShallow[rawTarget] ~= (isShallow == true) then
             logger.error("Proxy modes (shallow vs deep) mismatch between different places")
         end
         return rawTarget
@@ -75,7 +75,7 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
 
     if proxyCache[rawTarget] then
         local proxy = proxyCache[rawTarget]
-        if proxyIsShallow[proxy] then
+        if proxyIsShallow[proxy] ~= (isShallow == true) then
             logger.error("Proxy modes (shallow vs deep) mismatch between different places")
         end
         return proxy
@@ -393,8 +393,7 @@ function Ref.new<T>(
 
         if beforeGetValue then beforeGetValue() end
 
-        local watcherClone = table.clone(watchers)
-        for id, watcher in pairs(watcherClone) do
+        for id, watcher in pairs(watchers) do
             if not watchers[id] then
                 continue
             end
@@ -679,8 +678,7 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
     local function notify()
         if next(watchers) == nil then return end
 
-        local watcherClone = table.clone(watchers)
-        for id, watcher in pairs(watcherClone) do
+        for id, watcher in pairs(watchers) do
             if not watchers[id] then
                 continue
             end
@@ -695,8 +693,7 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
     local function notifyDependents()
         if next(dependents) == nil then return end
 
-        local dependentClone = table.clone(dependents)
-        for id, dependent in pairs(dependentClone) do
+        for id, dependent in pairs(dependents) do
             if not dependents[id] then
                 continue
             end

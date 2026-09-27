@@ -26,6 +26,7 @@ type AnimationState = {
     transform: TypeTransform,
     curve: Curve,
 
+	intermediate: {number},
     from: {number},
     to: {number},
 
@@ -42,7 +43,7 @@ type ObjectState = {
 local Ease = {}
 Ease.Curves = Curves
 
-local objectsState: {[Instance]: ObjectState} = {}
+local objectsState: {[Instance]: ObjectState} = setmetatable({}, { __mode = "k" })
 
 local typeTransforms: {[string]: TypeTransform} = {
 	boolean = {
@@ -178,7 +179,7 @@ local function process(dt: number)
 			)
 
 			local alpha = animationState.curve(t)
-			local intermediate = table.create(#animationState.from, 0)
+			local intermediate = animationState.intermediate
 
 			for index, from in animationState.from do
 				local to = animationState.to[index]
@@ -254,12 +255,19 @@ function Ease.target(object: Instance, property: string, to: any, duration: numb
         logger.error(`Type {typeof(from)} is not supported`)
     end
 
+	local fromIntermediate = transform.toIntermediate(from)
+	local toIntermediate = transform.toIntermediate(to)
+	if #fromIntermediate ~= #toIntermediate then
+		logger.error("Intermediate values had different length! Most likely a bug.")
+	end
+
     state.properties[property] = {
         transform = transform,
         curve = curve,
 
-        from = transform.toIntermediate(from),
-        to = transform.toIntermediate(to),
+		intermediate = table.create(#fromIntermediate, 0),
+        from = fromIntermediate,
+        to = toIntermediate,
 
         elapsed = 0,
         duration = duration

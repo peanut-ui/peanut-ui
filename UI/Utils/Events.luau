@@ -49,7 +49,7 @@ function EventsClass.new(): Utils.Events
             return
         end
 
-        for callback, _ in pairs(table.clone(list)) do
+        for callback, _ in pairs(list) do
             -- No zombies!!!
             if not listeners[event] or not listeners[event][callback] then
                 continue

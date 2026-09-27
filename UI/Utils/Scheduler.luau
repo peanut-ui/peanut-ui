@@ -181,9 +181,16 @@ end
 local function scheduleAt<A...>(stage: TypeFuncs.KeyOf<Elements>, phase: TypeFuncs.KeyOf<Phases>, fn: (A...) -> (), ...: A...): thread
     local co = coroutine.create(fn)
 
-    local args = table.pack(... :: any)
-    local function execute()
-        task.spawn(co, table.unpack(args, 1, args.n))
+    local execute
+    if select("#", ...) == 0 then
+        execute = function()
+            task.spawn(co)
+        end
+    else
+        local args = table.pack(... :: any)
+        execute = function()
+            task.spawn(co, table.unpack(args, 1, args.n))
+        end
     end
 
     local stageScheduled = scheduled[phase]

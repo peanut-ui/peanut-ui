@@ -8,6 +8,7 @@ local logger = Logging.getLogger("PeanutUI.Utils.ComponentContext")
 
 export type NoContext = false
 
+local currentBucket: Utils.Bucket | NoContext? = nil
 local stack: {Utils.Bucket | NoContext} = {}
 local Module = {}
 
@@ -96,35 +97,35 @@ local function createBucket<State>(name: string?, customState: State?): Utils.Bu
 end
 
 local function getCurrentBucket(): Utils.Bucket?
-    if #stack == 0 then
+    if currentBucket == false then
         return nil
     end
 
-    local current = stack[#stack]
-    if current == false then
-        return nil
-    end
-
-    return current
+    return currentBucket
 end
 
 Module.getCurrentBucket = getCurrentBucket
 Module.createBucket = createBucket
 
 function Module.push(name: string?)
-    table.insert(stack, createBucket(name))
+    local bucket = createBucket(name)
+    table.insert(stack, bucket)
+    currentBucket = bucket
 end
 
 function Module.pushBucket(bucket: Utils.Bucket)
     table.insert(stack, bucket)
+    currentBucket = bucket
 end
 
 function Module.pushNoContext()
     table.insert(stack, false :: NoContext)
+    currentBucket = false
 end
 
 function Module.pop(): Utils.Bucket?
     local last = table.remove(stack)
+    currentBucket = stack[#stack]
 
     if last == false then
         return nil

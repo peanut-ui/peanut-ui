@@ -340,10 +340,8 @@ local function createModifier(
     local function redraw()
         ensureNotDestroyed()
 
-        for _, ref in pairs(propertiesRefs) do
-            for rbxKey, _ in pairs(linkedProperties) do
-                dirtyKeys[rbxKey] = true
-            end
+        for rbxKey, _ in pairs(linkedProperties) do
+            dirtyKeys[rbxKey] = true
         end
 
         for _, modifier in pairs(modifierComponents) do

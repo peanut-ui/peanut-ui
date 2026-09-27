@@ -77,13 +77,13 @@ return function(
     end
 
     local function syncRbxProperty(key: string)
-        local object = instance.getObject()
-        if not object then
+        local rbxKey = rbxLinkedProperties[key]
+        if not rbxKey then
             return
         end
 
-        local rbxKey = rbxLinkedProperties[key]
-        if not rbxKey then
+        local object = instance.getObject()
+        if not object then
             return
         end
 
@@ -209,13 +209,14 @@ return function(
     function instance.getProperty(key: any): any
         ensureNotDestroyed()
 
-        local object = instance.getObject()
-
         local ref = propertiesRefs[key]
         if not ref then
             local rbxKey = rbxLinkedProperties[key]
-            if object and rbxKey then
-                return (object :: any)[rbxKey]
+            if rbxKey then
+                local object = instance.getObject()
+                if object then
+                    return (object :: any)[rbxKey]
+                end
             end
 
             return nil
@@ -232,11 +233,6 @@ return function(
     end
 
     local function checkRbxPropertyEvent(key: string)
-        local object = instance.getObject()
-        if not object then
-            return
-        end
-
         local rbxKey = rbxLinkedProperties[key]
         if not rbxKey then
             return
@@ -257,6 +253,11 @@ return function(
                 syncRbxProperty(key)
             end
         elseif not rbxPropertyEvent[key] then
+            local object = instance.getObject()
+            if not object then
+                return
+            end
+
             rbxPropertyEvent[key] = object:GetPropertyChangedSignal(rbxLinkedProperties[key]):Connect(function(value)
                 if transitions and object and transitions[key] and transitions[key].isRunning(object, rbxKey) then
                     return

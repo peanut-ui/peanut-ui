@@ -117,7 +117,7 @@ export type SpaceLike<Object = any> = WidgetLike & {
 export type PropertiesFeature = {
     setProperty: (key: string, value: any | Utils.Ref<any>) -> (),
     getProperty: (key: string) -> any,
-    observe: (key: string, callback: (newValue: any) -> boolean?) -> (() -> ()),
+    observe: (key: string, callback: (newValue: any) -> ...boolean?) -> (() -> ()),
 
     _linkProperty: (
         name: string, object: string,

@@ -147,28 +147,33 @@ local function defaultSetup(widget: Widget.BaseInterface)
             setProperty(key, value)
         end
 
+        local function scaleObject(v: any)
+            local space = widget.getSpace()
+            if not space then
+                return v
+            end
+
+            return space.scaleObject(v, true)
+        end
+
+        local function scaleUnit2(v: Utils.Size | Utils.Position | UDim2)
+            local space = widget.getSpace()
+            if not space then
+                return Units.ToUDim2(v)
+            end
+
+            return space.scaleObject(Units.ToUDim2(v))
+        end
+
+
         link("name", "Name")
         link("visible", "Visible")
         link("layoutOrder", "LayoutOrder")
         link("zIndex", "ZIndex")
         link("clipsDescendants", "ClipsDescendants")
         link("rotation", "Rotation")
-        link("size", "Size", function(value)
-            local space = widget.getSpace()
-            if not space then
-                return Units.ToUDim2(value)
-            end
-
-            return space.scaleObject(Units.ToUDim2(value))
-        end, nil, nil, {"ScaleChanged"})
-        link("position", "Position", function(value)
-            local space = widget.getSpace()
-            if not space then
-                return Units.ToUDim2(value)
-            end
-
-            return space.scaleObject(Units.ToUDim2(value))
-        end, nil, nil, {"ScaleChanged"})
+        link("size", "Size", scaleUnit2, nil, nil, {"ScaleChanged"})
+        link("position", "Position", scaleUnit2, nil, nil, {"ScaleChanged"})
         link("anchorPoint", "AnchorPoint")
         link("backgroundColor", "BackgroundColor3")
         link("backgroundTransparency", "BackgroundTransparency")
@@ -187,34 +192,13 @@ local function defaultSetup(widget: Widget.BaseInterface)
         link("inputSink", "InputSink")
         link("borderColor", "BorderColor3")
         link("borderMode", "BorderMode")
-        link("borderSizePx", "BorderSizePixel", function(v)
-            local space = widget.getSpace()
-            if not space then
-                return v
-            end
-
-            return space.scaleObject(v, true)
-        end, nil, nil, {"ScaleChanged"})
+        link("borderSizePx", "BorderSizePixel", scaleObject, nil, nil, {"ScaleChanged"})
 
         link("interactable", "Interactable")
         link("active", "Active")
 
-        link("absoluteSize", "AbsoluteSize", nil, function(v)
-            local space = widget.getSpace()
-            if not space then
-                return v
-            end
-
-            return space.scaleObject(v, true)
-        end, true, {"ScaleChanged"})
-        link("absolutePosition", "AbsolutePosition", nil, function(v)
-            local space = widget.getSpace()
-            if not space then
-                return v
-            end
-
-            return space.scaleObject(v, true)
-        end, true, {"ScaleChanged"})
+        link("absoluteSize", "AbsoluteSize", nil, scaleObject, true, {"ScaleChanged"})
+        link("absolutePosition", "AbsolutePosition", nil, scaleObject, true, {"ScaleChanged"})
         link("absoluteRotation", "AbsoluteRotation", nil, nil, true)
 
         setProperty("layoutOrder", widget._propertiesRefs.autoLayoutOrder or 0)
@@ -223,8 +207,6 @@ local function defaultSetup(widget: Widget.BaseInterface)
             if not widget.getObject() and newValue then
                 widget._createObject()
             end
-
-            return nil
         end)
     end
 

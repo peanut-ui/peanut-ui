@@ -39,7 +39,7 @@ function SignalsClass.new(): Utils.Signals
                     continue
                 end
 
-                for callback, _ in pairs(table.clone(list)) do
+                for callback, _ in pairs(list) do
                     -- Skipping zombies
                     if not listeners[signal] or not listeners[signal][callback] then
                         continue
