@@ -3,6 +3,7 @@
 const Animations = require(script.Parent.Parent.Types.Animations)
 const Modifier = require(script.Parent.Parent.Types.Modifier)
 const Utils = require(script.Parent.Parent.Types.Utils)
+const Context = require(script.Parent.Parent.Utils.Context)
 const Helpers = require(script.Parent.Parent.Utils.Helpers)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Utils.Ref)
@@ -40,6 +41,8 @@ local function createModifier(
     local rbxPropertyEvent: {[string]: RBXScriptConnection} = {}
     local rbxPropertyWatching: {[string]: number} = {}
     local rbxPropertyTransform: {[string]: RbxTransformFn} = rbxLinkBackTransform_ or {}
+
+    local bucket = Context.createBucket("modifier")
 
     local modifier = {}
     modifier._typeName = "modifier"
@@ -90,10 +93,6 @@ local function createModifier(
             end
         end
 
-        for _, ref in pairs(propertiesRefs) do
-            ref.destroy()
-        end
-
         for _, modifier in pairs(modifierComponents) do
             modifier.destroy()
         end
@@ -106,6 +105,8 @@ local function createModifier(
             object:Destroy()
             object = nil
         end
+
+        bucket.stop()
 
         freezeAndClear(cleanups)
         freezeAndClear(transitions)
@@ -154,7 +155,7 @@ local function createModifier(
 
         local ref = propertiesRefs[key]
         if not ref then
-            propertiesRefs[key] = Ref.new(nil)
+            propertiesRefs[key] = Ref.new(nil, nil, bucket)
             ref = propertiesRefs[key]
         end
 
@@ -207,7 +208,7 @@ local function createModifier(
 
         local ref = propertiesRefs[key]
         if not ref then
-            propertiesRefs[key] = Ref.new(value)
+            propertiesRefs[key] = Ref.new(value, nil, bucket)
         else
             ref.setValue(value)
         end
@@ -219,9 +220,9 @@ local function createModifier(
     local function observe(key: string, callback: (newValue: any) -> ...boolean?): () -> ()
         ensureNotDestroyed()
 
-        local ref = propertiesRefs[key]
+        local ref = propertiesRefs[key] :: Utils.Ref<any>
         if not ref then
-            ref = Ref.new(nil)
+            ref = Ref.new(nil, nil, bucket) :: Utils.Ref<any>
             propertiesRefs[key] = ref
         end
 
@@ -232,17 +233,9 @@ local function createModifier(
             checkRbxPropertyEvent(key)
         end
 
-        local unwatch, id = ref.watch(callback)
-        table.insert(cleanups, unwatch)
+        local unwatch, id = ref.watch(callback, { bucket = bucket })
 
         local function onUnwatch()
-            local index = table.find(cleanups, unwatch)
-            if index then
-                -- Swap and pop :3
-                cleanups[index] = cleanups[#cleanups]
-                cleanups[#cleanups] = nil
-            end
-
             if rbxLinkBack[key] then
                 local counter = rbxPropertyWatching[key] or 0
                 rbxPropertyWatching[key] = counter - 1
@@ -262,11 +255,11 @@ local function createModifier(
 
         local ref = propertiesRefs[key]
         if not ref then
-            ref = Ref.new(nil) :: Utils.Ref<any>
+            ref = Ref.new(nil, nil, bucket) :: Utils.Ref<any>
             propertiesRefs[key] = ref
         end
 
-        local onWatch: () -> ()? = nil
+        local onWatch: (...any) -> ()? = nil
         local onUnwatch: () -> ()? = nil
         if rbxLinkBack[key] then
             onWatch = function()

@@ -7,7 +7,6 @@ const WidgetType = require(script.Parent.Parent.Parent.Types.Widget)
 const Helpers = require(script.Parent.Parent.Parent.Utils.Helpers)
 const Logging = require(script.Parent.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Parent.Utils.Ref)
-const Scheduler = require(script.Parent.Parent.Parent.Utils.Scheduler)
 const Undefined = require(script.Parent.Parent.Parent.Utils.Undefined)
 
 local logger = Logging.getLogger("PeanutUI.Classes.WidgetFeatures.Properties")
@@ -18,8 +17,8 @@ return function(
     widget: any,
     ensureNotDestroyed: () -> (),
     transitions: {[string]: Animations.Transition}?,
-    cleanups: {RBXScriptConnection | () -> ()},
     hooks: Utils.Hooks,
+    bucket: Utils.Bucket,
     events: Utils.Events,
     setProperties: {[string]: any}?
 )
@@ -51,7 +50,7 @@ return function(
         local ref = propertiesRefs[key]
 
         if not ref then
-            propertiesRefs[key] = Ref.new(nil)
+            propertiesRefs[key] = Ref.new(nil, nil, bucket)
             ref = propertiesRefs[key]
         end
 
@@ -188,7 +187,7 @@ return function(
         end
 
         linkedPropertiesUpdate[name] = update
-        table.insert(cleanups, (ref.watch(update)))
+        ref.watch(update, { bucket = bucket })
 
         if redrawOnHooks then
             for _, hook in ipairs(redrawOnHooks) do
@@ -273,17 +272,9 @@ return function(
             checkRbxPropertyEvent(key)
         end
 
-        local unwatch, id = ref.watch(callback)
-        table.insert(cleanups, unwatch)
+        local unwatch, id = ref.watch(callback, { bucket = bucket })
 
         local function onUnwatch()
-            local index = table.find(cleanups, unwatch)
-            if index then
-                -- Swap and pop :3
-                cleanups[index] = cleanups[#cleanups]
-                cleanups[#cleanups] = nil
-            end
-
             if rbxLinkedProperties[key] then
                 local counter = rbxPropertyWatching[key] or 0
                 rbxPropertyWatching[key] = counter - 1
@@ -302,7 +293,7 @@ return function(
 
         local ref = ensureRef(key)
 
-        local onWatch: () -> ()? = nil
+        local onWatch: (...any) -> ()? = nil
         local onUnwatch: () -> ()? = nil
         if rbxLinkedProperties[key] then
             onWatch = function()
@@ -342,13 +333,9 @@ return function(
         end
     end)
 
-    table.insert(cleanups, function()
+    bucket.addCleanup(function()
         for key, signal in pairs(rbxPropertyEvent) do
             signal:Disconnect()
-        end
-
-        for _, ref in pairs(propertiesRefs) do
-            ref.destroy()
         end
 
         freezeAndClear(propertiesRefs)

@@ -8,6 +8,7 @@ const Logging = require(script.Parent.Parent.Utils.Logging)
 const Events = require(script.Parent.Parent.Utils.Events)
 const Widget = require(script.Parent.Parent.Types.Widget)
 const State = require(script.Parent.Parent.State)
+const Context = require(script.Parent.Parent.Utils.Context)
 const Helpers = require(script.Parent.Parent.Utils.Helpers)
 const Hooks = require(script.Parent.Parent.Utils.Hooks)
 const Units = require(script.Parent.Parent.Utils.Units)
@@ -322,8 +323,10 @@ function WidgetClass.new<C>(
 
     local hooks = Hooks.new()
 
+    local bucket = Context.createBucket("widget")
+
     local object: Instance? = nil
-    local objectRef: Utils.Ref<Instance?> = Ref.new(nil) :: any
+    local objectRef: Utils.Ref<Instance?> = Ref.new(nil, nil, bucket) :: any
     local cleanups: { RBXScriptConnection | () -> () } = {}
 
     local linkedEvents: {[string]: string} = {}
@@ -405,12 +408,13 @@ function WidgetClass.new<C>(
             fire("ObjectDestroying", object)
             object:Destroy()
             setObject(nil)
-            objectRef.destroy()
         end
 
         freezeAndClear(linkedEvents)
         freezeAndClear(linkedEventListener)
         freezeAndClear(cleanups)
+
+        bucket.stop()
 
         logger.debug("[%s %d] destroyed", instance._widgetName, id)
         fire("Destroyed", object)
@@ -615,8 +619,8 @@ function WidgetClass.new<C>(
             instance,
             ensureNotDestroyed,
             transitions,
-            cleanups,
             hooks,
+            bucket,
             events,
             args and args.properties :: {[string]: any}
         )
@@ -630,6 +634,7 @@ function WidgetClass.new<C>(
             instance,
             ensureNotDestroyed,
             hooks,
+            bucket,
             args and args.modifiers
         )
     end
@@ -642,7 +647,8 @@ function WidgetClass.new<C>(
             instance,
             ensureNotDestroyed,
             hooks,
-            events
+            events,
+            bucket
         )
     end
     -- feature: children -- end --
@@ -655,7 +661,8 @@ function WidgetClass.new<C>(
             children,
             modifierComponents,
             events,
-            hooks
+            hooks,
+            bucket
         )
     end
     -- feature: parenting -- end --
@@ -666,6 +673,7 @@ function WidgetClass.new<C>(
             instance,
             ensureNotDestroyed,
             hooks,
+            bucket,
             transitions,
             animatedProperty,
             linkedProperties,
@@ -680,6 +688,7 @@ function WidgetClass.new<C>(
             instance,
             ensureNotDestroyed,
             hooks,
+            bucket,
             animatedProperty,
             linkedProperties,
             linkedPropertiesMap,

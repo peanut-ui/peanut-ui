@@ -9,6 +9,8 @@ const Undefined = require(script.Parent.Undefined)
 
 const logger = Logging.getLogger("PeanutUI.Utils.Ref")
 
+local freezeAndClear = Helpers.freezeAndClear
+
 type ComputedInternal = {
     invalidate: () -> (),
     watch: (fn: () -> ...boolean?) -> (() -> ()),
@@ -48,8 +50,8 @@ local function isInContext()
     return getComputedBucket() ~= nil
 end
 
-local function errorOnSideEffect()
-    if getComputedBucket() ~= nil then
+local function errorOnSideEffect(bucket: Utils.Bucket?)
+    if getComputedBucket(bucket) ~= nil then
         logger.error("Side effects are not allowed here!")
     end
 end
@@ -244,7 +246,7 @@ end
 --- Also provides watch and unwatch functions for some cool functional
 local function makeProtected<T>(
     ref: Utils.Ref<T> | Utils.ProtectedRef<T>,
-    onWatch: () -> ()?,
+    onWatch: (unwatch: () -> ()) -> ()?,
     onUnwatch: () -> ()?,
     getValue: (() -> T)?,
     allowDestroy: boolean?
@@ -283,24 +285,23 @@ local function makeProtected<T>(
         end
     end
 
-    function newProtectedRef.watch(fn: Utils.RefWatchFn<any>, onUnwatchFn: () -> ()?, isSync: boolean?): any
-        if onUnwatch then
-            if onUnwatchFn then
-                local originalOnUnwatchFn = onUnwatchFn
-                onUnwatchFn = function()
+    function newProtectedRef.watch(fn: Utils.RefWatchFn<any>, params: Utils.WatchParams?): any
+        if params and params.onUnwatch then
+            params = table.clone(params)
+            if params.onUnwatch then
+                local originalOnUnwatchFn = params.onUnwatch
+                params.onUnwatch = function()
                     originalOnUnwatchFn()
                     if onUnwatch then
                         onUnwatch()
                     end
                 end
-            else
-                onUnwatchFn = onUnwatch
             end
         end
 
-        local unwatch = ref.watch(fn, onUnwatchFn, isSync)
+        local unwatch = ref.watch(fn, params)
         if onWatch then
-            onWatch()
+            onWatch(unwatch)
         end
 
         return unwatch
@@ -333,7 +334,7 @@ end
 --- Before `refs` scheduler stage is fully drained (empty) it will be running watchers.
 ---
 --- @param value Any primitive value or ref, any ref or reactive table is gonna be watched automatically
---- @param beforeGetValue Internal parameter for calling function before get (used in computed)
+--- @param beforeGetValue (internal) Calls function before get (used in computed)
 --- @param bucket_ (internal) To which bucket register Ref, put Undefined to make its ownership global
 --- @return Reactive value
 ---
@@ -365,7 +366,6 @@ function Ref.new<T>(
     bucket_: (Utils.Bucket | Utils.Undefined)?
 ): Utils.Ref<T>
     errorOnSideEffect()
-
     if not bucket_ then
         bucket_ = Context.getCurrentBucket()
     end
@@ -396,7 +396,7 @@ function Ref.new<T>(
         local watcherClone = table.clone(watchers)
         for id, watcher in pairs(watcherClone) do
             if not watchers[id] then
-                return
+                continue
             end
 
             local ok, result = Context.withNoContext(watcher :: any, currentValue)
@@ -475,7 +475,7 @@ function Ref.new<T>(
             local originalRef = proxyToRefMap[newValue]
             stopWatchingFunc = originalRef.watch(function(value)
                 notifyWatchers()
-            end, nil, true)
+            end, { flush = "sync", bucket = bucket })
         elseif typeof(newValue) == "table" and newValue._typeName == "ref" then
             local value = (newValue :: Utils.Gettable<T>).getValue()
             assertType(currentValue, value)
@@ -484,7 +484,7 @@ function Ref.new<T>(
             stopWatchingFunc = (newValue :: Utils.Watchable<T>).watch(function(value)
                 currentValue = value
                 notifyWatchers()
-            end, nil, true)
+            end, { flush = "sync", bucket = bucket })
         else
             assertType(currentValue, newValue)
             currentValue = newValue
@@ -493,9 +493,12 @@ function Ref.new<T>(
         notifyWatchers()
     end
 
-    function ref.watch(fn: Utils.RefWatchFn<T>, onUnwatch: () -> ()?, isSync: boolean?): (() -> (), number)
+    function ref.watch(fn: Utils.RefWatchFn<T>, params: Utils.WatchParams): (() -> (), number)
         ensureNotDestroyed()
         errorOnSideEffect()
+
+        local onUnwatch = params and params.onUnwatch
+        local isSync = params and params.flush == "sync"
 
         counter += 1
         local id = counter
@@ -523,7 +526,7 @@ function Ref.new<T>(
             end
         end
 
-        bucket = Context.getCurrentBucket()
+        bucket = params and params.bucket or Context.getCurrentBucket()
         if bucket then
             bucketCleanupId = bucket.addCleanup(function()
                 if isDestroyed then return end
@@ -542,6 +545,7 @@ function Ref.new<T>(
     end
 
     function ref.setOnUnwatch(id: number, onUnwatch: () -> ()?)
+        ensureNotDestroyed()
         if not watchers[id] and not syncWatchers[id] then
             return
         end
@@ -558,17 +562,21 @@ function Ref.new<T>(
             stopWatchingFunc = nil
         end
 
-        table.clear(watchers)
-        table.clear(syncWatchers)
+        freezeAndClear(watchers)
+        freezeAndClear(syncWatchers)
+        for _, fn in watchersOnUnwatch do
+            fn()
+        end
         currentValue = nil :: any
 
         for _, fn in ipairs(cleanups) do
             fn()
         end
-        table.clear(cleanups)
+        freezeAndClear(cleanups)
     end
 
     function ref._addCleanup(fn: () -> ())
+        ensureNotDestroyed()
         table.insert(cleanups, fn)
     end
 
@@ -601,37 +609,6 @@ function Ref.new<T>(
     table.freeze(ref)
 
     return ref :: any
-end
-
---- Transformed Ref
----
---- Useful for situations when you need simple transformation of Ref.
----
---- @param originalRef Ref you want to transform
---- @param transformFn Function that will make new value out of original Ref's value
---- @return New Ref that will contain result from `transformFn`
----
---- ### Example
---- ```
---- -- Ref.new is the same as PeanutUI.ref()
---- local clickCount = Ref.new(0)
---- local clickCountString = Ref.transform(clickCount, function(value: number)
----     return `Click count: {value}`
---- end)
---- -- Somewhere in the code:
---- clickCount.value += 1
---- -- Now `clickCountString` is "Click count: 1"
---- ```
-function Ref.transform<T, R>(originalRef: Utils.SimpleRef<T>, transformFn: (value: T) -> R): Utils.Ref<R>
-    local newRef = Ref.new(transformFn(originalRef.getValue()))
-
-    local unwatch = originalRef.watch(function(value)
-        newRef.setValue(transformFn(value))
-    end, nil, true)
-
-    newRef._addCleanup(unwatch)
-
-    return newRef
 end
 
 --- Check if object is Ref
@@ -679,6 +656,8 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
     local counter = 0
     local watchers: {[number]: () -> ...boolean?} = {}
 
+    local dependents: {[number]: () -> ...boolean?} = {}
+
     local lastComputeRefs: {[Utils.SimpleRef<any>]: () -> ()} = {}
 
     local watchingCounter = 0
@@ -690,10 +669,10 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
         counter += 1
         local id = counter
 
-        watchers[id] = fn
+        dependents[id] = fn
 
         return function()
-            watchers[id] = nil
+            dependents[id] = nil
         end
     end
 
@@ -703,12 +682,28 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
         local watcherClone = table.clone(watchers)
         for id, watcher in pairs(watcherClone) do
             if not watchers[id] then
-                return
+                continue
             end
 
             local ok, result = Context.withNoContext(watcher :: any)
             if not ok or result == true then
                 watchers[id] = nil
+            end
+        end
+    end
+
+    local function notifyDependents()
+        if next(dependents) == nil then return end
+
+        local dependentClone = table.clone(dependents)
+        for id, dependent in pairs(dependentClone) do
+            if not dependents[id] then
+                continue
+            end
+
+            local ok, result = Context.withNoContext(dependent :: any)
+            if not ok or result == true then
+                dependents[id] = nil
             end
         end
     end
@@ -754,7 +749,7 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
                     if internal then
                         lastComputeRefs[ref] = internal.watch(invalidate)
                     else
-                        lastComputeRefs[ref] = ref.watch(invalidate, nil, true)
+                        lastComputeRefs[ref] = ref.watch(invalidate, { flush = "sync" })
                     end
                 end
             end
@@ -784,6 +779,8 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
         if isDirty then return end
         isDirty = true
 
+        notifyDependents()
+
         if watchingCounter > 0 and not scheduled then
             scheduled = true
             Scheduler.schedule("watchers", function()
@@ -791,10 +788,9 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
                 if isDirty then
                     computeNewValue()
                 end
+                notify()
             end)
         end
-
-        notify()
     end
 
     newRef._addCleanup(function()
@@ -803,6 +799,9 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
         end
 
         table.clear(lastComputeRefs)
+        if previousBucket then
+            previousBucket.stop()
+        end
     end)
 
     protectedRef = makeProtected(

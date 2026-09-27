@@ -3,6 +3,7 @@
 const State = require(script.Parent.Parent.State)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const WidgetType = require(script.Parent.Parent.Types.Widget)
+const Context = require(script.Parent.Parent.Utils.Context)
 const Events = require(script.Parent.Parent.Utils.Events)
 const Helpers = require(script.Parent.Parent.Utils.Helpers)
 const Hooks = require(script.Parent.Parent.Utils.Hooks)
@@ -30,6 +31,8 @@ function Box.new(): WidgetType.Box
     box._features["children"] = true
     box._features["events"] = true
 
+    local bucket = Context.createBucket("widget")
+
     local hooks = Hooks.new()
     local events = Events.new()
 
@@ -39,7 +42,7 @@ function Box.new(): WidgetType.Box
     local cleanups: {RBXScriptConnection | () -> ()} = {}
     local isDestroyed = false
 
-    local objectRef = Ref.new(nil) :: Utils.Ref<Instance?>
+    local objectRef = Ref.new(nil, nil, bucket) :: Utils.Ref<Instance?>
 
     -- box: main -- start --
     local function ensureNotDestroyed()
@@ -68,7 +71,7 @@ function Box.new(): WidgetType.Box
 
         freezeAndClear(cleanups)
 
-        objectRef.destroy()
+        bucket.stop()
 
         fire("Destroyed")
         events.destroy()
@@ -111,6 +114,7 @@ function Box.new(): WidgetType.Box
     end
 
     function box._redraw()
+        ensureNotDestroyed()
         for _, child in box.children do
             if not child.isImplemented("_redraw") then
                 continue
@@ -131,7 +135,8 @@ function Box.new(): WidgetType.Box
         box,
         ensureNotDestroyed,
         hooks,
-        events
+        events,
+        bucket
     )
 
     Parenting(
@@ -140,7 +145,8 @@ function Box.new(): WidgetType.Box
         children,
         nil,
         events,
-        hooks
+        hooks,
+        bucket
     )
     -- features: all -- end --
 

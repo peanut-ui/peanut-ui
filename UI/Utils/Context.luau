@@ -12,11 +12,21 @@ local stack: {Utils.Bucket | NoContext} = {}
 local Module = {}
 
 local disableYielding = Helpers.disableYielding
+local freezeAndClear = Helpers.freezeAndClear
+
+type CleanupNode = {
+    id: number,
+    callback: () -> (),
+    previous: CleanupNode?,
+    next: CleanupNode?,
+}
 
 local counter = 0
 local function createBucket<State>(name: string?, customState: State?): Utils.Bucket<State>
     local stopped = false
-    local cleanups = {}
+    local cleanups: {[number]: () -> ()} = {}
+    local nodes: {[number]: CleanupNode} = {}
+    local tail: CleanupNode? = nil
 
     return {
         cleanups = cleanups,
@@ -27,27 +37,61 @@ local function createBucket<State>(name: string?, customState: State?): Utils.Bu
             if stopped then
                 logger.error("Tried to access Bucket after it was stopped")
             end
+
             counter += 1
             local id = counter
+            local node: CleanupNode = {
+                id = id,
+                callback = callback,
+                previous = tail,
+                next = nil,
+            }
+
+            if tail then
+                tail.next = node
+            end
+
+            tail = node
             cleanups[id] = callback
+            nodes[id] = node
             return id
         end,
 
         removeCleanup = function(id: number)
             if stopped then return end
+
+            local node = nodes[id]
+            if not node then return end
+
+            if node.previous then
+                node.previous.next = node.next
+            end
+
+            if node.next then
+                node.next.previous = node.previous
+            else
+                tail = node.previous
+            end
+
             cleanups[id] = nil
+            nodes[id] = nil
         end,
 
         stop = function()
             if stopped then return end
             stopped = true
-            local toCleanup = cleanups
-            cleanups = nil :: any
 
-            for id, fn in toCleanup do
-                fn()
+            local node = tail
+            freezeAndClear(cleanups)
+            freezeAndClear(nodes)
+            tail = nil
+
+            while node do
+                local previous = node.previous
+                node.callback()
+                node = previous
             end
-        end
+        end,
     }
 end
 

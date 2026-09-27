@@ -16,13 +16,13 @@ return function(
     widget: any,
     ensureNotDestroyed: () -> (),
     hooks: Utils.Hooks,
+    bucket: Utils.Bucket,
     animatedProperty: {[string]: string}?,
     linkedProperties: {[string]: string}?,
     linkedPropertiesMap: {[string]: string}?,
     ensureRef: ((string) -> Utils.Ref<any>)?,
     setAnimations: {[string]: Animations.Animation}?
 )
-    WidgetFeatures.requireField(logger, widget, "_addCleanup")
     WidgetFeatures.requireField(logger, widget, "getObject")
     WidgetFeatures.requireFeature(logger, widget, "properties")
 
@@ -195,11 +195,11 @@ return function(
                         propertyAnimation.animate(object)
                     end)
                 end
-            end)
+            end, { bucket = bucket })
         end
     end
 
-    instance._addCleanup(function()
+    bucket.addCleanup(function()
         local object = instance.getObject()
         if object then
             for _, animation in animations do

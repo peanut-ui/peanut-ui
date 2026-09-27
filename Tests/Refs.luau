@@ -23,7 +23,7 @@ Tests.run("Watch & release", function()
 
     const unwatch = r.watch(function(val)
         receivedValue = val
-    end, nil, true)
+    end, { flush = "sync" })
 
     r.value = "world"
     Tests.expectValue("Watch saw update", receivedValue, "world")
@@ -40,23 +40,11 @@ Tests.run("Once only", function()
     r.watch(function(val)
         count += 1
         return true
-    end, nil, true)
+    end, { flush = "sync" })
 
     r.value = 2
     r.value = 3
     Tests.expectValue("One fire", count, 1)
-end)
-
-Tests.run("Transform", function()
-    const count = Ref.new(5)
-    const strRef = Ref.transform(count, function(val: number)
-        return tostring(val * 2)
-    end)
-
-    Tests.expectValue("Transform start", strRef.value, "10")
-
-    count.value = 8
-    Tests.expectValue("Transform after change", strRef.value, "16")
 end)
 
 Tests.run("Computed", function()
@@ -172,5 +160,46 @@ Tests.run("Complicated computed behavior", function()
     Tests.expectValue("Auto compute when there's a watcher", computedTimes, 4)
     Tests.expectValue("Watcher got last value", watcherGotValue, d.value)
 end)
+
+Tests.run("Computed diamond shape", function()
+    const a = Ref.new(0)
+
+    const b = Ref.computed(function()
+        return a.value * 2
+    end)
+    const c = Ref.computed(function()
+        return a.value * 3
+    end)
+
+    local computedTimes = 0
+    const d = Ref.computed(function()
+        computedTimes += 1
+        return b.value + c.value
+    end)
+
+    Tests.expectValue("Lazy compute", computedTimes, 0)
+
+    d.getValue()
+    Tests.expectValue("Compute once on get", computedTimes, 1)
+
+    a.value += 1
+    Tests.expectValue("Lazy compute on dependency change", computedTimes, 1)
+
+    d.getValue()
+    Tests.expectValue("Compute once on get when dirty", computedTimes, 2)
+
+    local watcherGotValue = -1
+    a.value += 1
+    d.watch(function(value)
+        watcherGotValue = value
+    end)
+    Tests.expectValue("Compute once on watch when dirty", computedTimes, 3)
+
+    a.value += 1
+    Scheduler.waitFor("watchers", "after")
+    Tests.expectValue("Auto compute when there's a watcher", computedTimes, 4)
+    Tests.expectValue("Watcher got last value", watcherGotValue, d.value)
+end)
+
 
 return {}

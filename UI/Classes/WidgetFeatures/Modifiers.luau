@@ -16,10 +16,10 @@ return function(
     widget: any,
     ensureNotDestroyed: () -> (),
     hooks: Utils.Hooks,
+    bucket: Utils.Bucket,
     modifiers: Modifier.Modifiers?
 ): {[string]: Modifier.Component}
     WidgetFeatures.requireField(logger, widget, "getObject")
-    WidgetFeatures.requireField(logger, widget, "_addCleanup")
 
     local modifierComponents: {[string]: Modifier.Component} = {}
     local instance = widget :: WidgetType.BaseInterface
@@ -110,7 +110,7 @@ return function(
         return modifierComponents[`{name}_{index or 1}`]
     end
 
-    instance._addCleanup(function()
+    bucket.addCleanup(function()
         freezeAndClear(modifierComponents)
     end)
 

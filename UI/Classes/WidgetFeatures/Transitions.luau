@@ -12,6 +12,7 @@ return function(
     widget: any,
     ensureNotDestroyed: () -> (),
     hooks: Utils.Hooks,
+    bucket: Utils.Bucket,
     transitions: {[string]: Animations.Transition}?,
     animatedProperty: {[string]: string}?,
     linkedProperties: {[string]: string}?,
@@ -73,7 +74,7 @@ return function(
         transitions[key] = cachedTransition
     end
 
-    instance._addCleanup(function()
+    bucket.addCleanup(function()
         local object = instance.getObject()
 
         if object then

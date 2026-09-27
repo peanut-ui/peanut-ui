@@ -131,11 +131,7 @@ function ControlFlow.If<Props...>(
 
             box._addCleanup(function()
                 unwatch()
-
-                if oldWidget then
-                    oldWidget.destroy()
-                    oldWidget = nil
-                end
+                oldWidget = nil
 
                 branch.destroy()
             end)

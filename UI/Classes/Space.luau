@@ -8,6 +8,7 @@ const SpaceType = require(script.Parent.Parent.Types.Space)
 const TypeFuncs = require(script.Parent.Parent.Types.TypeFuncs)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const WidgetType = require(script.Parent.Parent.Types.Widget)
+const Context = require(script.Parent.Parent.Utils.Context)
 const Events = require(script.Parent.Parent.Utils.Events)
 const Helpers = require(script.Parent.Parent.Utils.Helpers)
 const Hooks = require(script.Parent.Parent.Utils.Hooks)
@@ -491,8 +492,10 @@ local function createStorySpace(target: Frame): WidgetType.SpaceLike
     local fire = events.fire
     local fireHook = hooks.fire
 
+    local bucket = Context.createBucket("space")
+
     local cleanups: {RBXScriptConnection | () -> ()} = {}
-    local objectRef = Ref.new(target)
+    local objectRef = Ref.new(target, nil, bucket)
 
     -- box: main -- start --
     local function ensureNotDestroyed()
@@ -526,6 +529,7 @@ local function createStorySpace(target: Frame): WidgetType.SpaceLike
         fire("Destroyed")
         events.destroy()
         hooks.clear()
+        bucket.stop()
 
         State.removeWidget(space :: any)
     end
@@ -582,7 +586,8 @@ local function createStorySpace(target: Frame): WidgetType.SpaceLike
         space,
         ensureNotDestroyed,
         hooks,
-        events
+        events,
+        bucket
     )
     -- features: all -- end --
 

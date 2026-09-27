@@ -74,7 +74,6 @@ return table.freeze {
     -- Ref shortcuts
     ref = Ref.new,
     computed = Ref.computed,
-    transform = Ref.transform,
     getRef = Ref.getRef,
     toRef = Ref.toRef,
     isRef = Ref.isRef,

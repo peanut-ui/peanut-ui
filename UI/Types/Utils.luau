@@ -1,5 +1,11 @@
 --!strict
 
+export type WatchParams = {
+    flush: "sync" | "deferred"?,
+    onUnwatch: () -> ()?,
+    bucket: Bucket?
+}
+
 export type RefWatchFn<T> = (value: T) -> ...boolean?
 export type Ref<T> = {
     read _typeName: "ref",
@@ -8,7 +14,7 @@ export type Ref<T> = {
     read setValue: (value: T | Ref<T> | ProtectedRef<T>) -> (),
     read increaseValue: (number) -> (),
     read notifyChanged: () -> (),
-    read watch: (fn: RefWatchFn<T>, onUnwatch: () -> ()?, isSync: boolean?) -> (() -> (), number),
+    read watch: (fn: RefWatchFn<T>, params: WatchParams?) -> (() -> (), number),
     read setOnUnwatch: (id: number, onUnwatch: () -> ()?) -> (),
     read destroy: () -> (),
 
@@ -23,13 +29,13 @@ export type Gettable<T> = {
 }
 
 export type Watchable<T> = {
-    read watch: (fn: RefWatchFn<T>, onUnwatch: () -> ()?, isSync: boolean?) -> (() -> (), number),
+    read watch: (fn: RefWatchFn<T>, params: WatchParams?) -> (() -> (), number),
 }
 
 export type SimpleRef<T> = {
     read _typeName: "ref",
     read getValue: () -> T,
-    read watch: (fn: RefWatchFn<T>, onUnwatch: () -> ()?, isSync: boolean?) -> (() -> (), number),
+    read watch: (fn: RefWatchFn<T>, params: WatchParams?) -> (() -> (), number),
 }
 
 export type ProtectedRef<T> = {
@@ -37,7 +43,7 @@ export type ProtectedRef<T> = {
     read _isProtected: true,
     read getValue: () -> T,
     read notifyChanged: () -> (),
-    read watch: (fn: RefWatchFn<T>, onUnwatch: () -> ()?, isSync: boolean?) -> (() -> (), number),
+    read watch: (fn: RefWatchFn<T>, params: WatchParams?) -> (() -> (), number),
     read value: T,
     read destroy: () -> (),
 }

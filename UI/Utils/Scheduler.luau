@@ -133,9 +133,9 @@ local function step()
     execute("redraw")
     execute("settled")
 
-    scheduled.before.stepRan = {} :: any
-    scheduled.schedule.stepRan = {} :: any
-    scheduled.after.stepRan = {} :: any
+    table.clear(scheduled.before.stepRan)
+    table.clear(scheduled.schedule.stepRan)
+    table.clear(scheduled.after.stepRan)
     currentStage = "sync"
     currentStagePhase = "sync"
 end
