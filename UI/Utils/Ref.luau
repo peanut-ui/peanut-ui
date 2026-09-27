@@ -374,6 +374,12 @@ function Ref.new<T>(
     end
     local bucket = Helpers.removeUndefined(bucket_) :: Utils.Bucket?
 
+    local isMyBucket = false
+    if not bucket then
+        isMyBucket = true
+        bucket = Context.createBucket("ref")
+    end
+
     local ref = {}
     ref._typeName = "ref" :: "ref"
 
@@ -575,6 +581,11 @@ function Ref.new<T>(
             fn()
         end
         freezeAndClear(cleanups)
+
+        if isMyBucket and bucket then
+            bucket.stop()
+        end
+        bucket = nil
     end
 
     function ref._addCleanup(fn: () -> ())
