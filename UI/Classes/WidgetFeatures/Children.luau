@@ -57,11 +57,8 @@ return function(
 
         if child.isImplemented("properties", true) then
             -- Yummy auto order
-            local currentOrder = child.getProperty("layoutOrder")
-            if not currentOrder or currentOrder == 0 then
-                child.setProperty("layoutOrder", nextLayoutOrder)
-                nextLayoutOrder += 1
-            end
+            child.setProperty("autoLayoutOrder", nextLayoutOrder)
+            nextLayoutOrder += 1
         end
 
         child._setParent(instance :: any)
