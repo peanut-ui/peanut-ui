@@ -165,7 +165,6 @@ local function defaultSetup(widget: Widget.BaseInterface)
             return space.scaleObject(Units.ToUDim2(v))
         end
 
-
         link("name", "Name")
         link("visible", "Visible")
         link("layoutOrder", "LayoutOrder")
