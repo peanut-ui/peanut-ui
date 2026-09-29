@@ -1,6 +1,5 @@
 --!strict
 --!optimize 2
-const WidgetFeatures = require(script.Parent)
 const Modifier = require(script.Parent.Parent.Parent.Types.Modifier)
 const Utils = require(script.Parent.Parent.Parent.Types.Utils)
 const WidgetType = require(script.Parent.Parent.Parent.Types.Widget)
@@ -21,7 +20,6 @@ return function(
     hooks: Utils.Hooks,
     bucket: Utils.Bucket
 )
-    WidgetFeatures.requireField(logger, widget, "_addCleanup")
     local fire = events.fire
     local hooksFire = hooks.fire
     local instance = widget :: WidgetType.BaseInterface
