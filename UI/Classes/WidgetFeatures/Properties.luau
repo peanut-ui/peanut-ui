@@ -211,14 +211,6 @@ return function(
 
         local ref = propertiesRefs[key]
         if not ref then
-            local rbxKey = rbxLinkedProperties[key]
-            if rbxKey then
-                local object = instance.getObject()
-                if object then
-                    return (object :: any)[rbxKey]
-                end
-            end
-
             return nil
         else
             if rbxLinkedProperties[key] then
