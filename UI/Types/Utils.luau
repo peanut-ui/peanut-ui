@@ -10,7 +10,7 @@ export type RefWatchFn<T> = (value: T) -> ...boolean?
 export type Ref<T> = {
     read _typeName: "ref",
     read _isProtected: nil,
-    read getValue: () -> T,
+    read getValue: (...any?) -> T,
     read setValue: (value: T | Ref<T> | ProtectedRef<T>) -> (),
     read increaseValue: (number) -> (),
     read notifyChanged: () -> (),

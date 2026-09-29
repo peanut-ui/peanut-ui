@@ -132,6 +132,24 @@ local defaultProperties: Widget.DefaultProperties = {
 
 table.freeze(defaultProperties)
 
+local function scaleObject(widget: any, v: any)
+    local space = widget.getSpace()
+    if not space then
+        return v
+    end
+
+    return space.scaleObject(v, true)
+end
+
+local function scaleUnit2(widget: any, v: Utils.Size | Utils.Position | UDim2)
+    local space = widget.getSpace()
+    if not space then
+        return Units.ToUDim2(v)
+    end
+
+    return space.scaleObject(Units.ToUDim2(v))
+end
+
 local function defaultSetup(widget: Widget.BaseInterface)
     if widget.isImplemented("properties", true) then
         local link = widget._linkProperty
@@ -145,24 +163,6 @@ local function defaultSetup(widget: Widget.BaseInterface)
             end
 
             setProperty(key, value)
-        end
-
-        local function scaleObject(v: any)
-            local space = widget.getSpace()
-            if not space then
-                return v
-            end
-
-            return space.scaleObject(v, true)
-        end
-
-        local function scaleUnit2(v: Utils.Size | Utils.Position | UDim2)
-            local space = widget.getSpace()
-            if not space then
-                return Units.ToUDim2(v)
-            end
-
-            return space.scaleObject(Units.ToUDim2(v))
         end
 
         link("name", "Name")

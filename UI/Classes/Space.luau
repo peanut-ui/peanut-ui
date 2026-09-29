@@ -25,8 +25,8 @@ local Space = {}
 local function linkProperties(
     widget: SpaceType.InternalInterface,
     properties: {[string]: string},
-    transformFn: {[string]: (any) -> any}?,
-    syncWithObject: {[string]: (boolean | (any) -> any)?}?,
+    transformFn: {[string]: (WidgetType.WidgetLike, any) -> any}?,
+    syncWithObject: {[string]: (boolean | (WidgetType.WidgetLike, any) -> any)?}?,
     readonly: {[string]: boolean?}?
 )
     local link = widget._linkProperty
@@ -191,10 +191,10 @@ local function newSpace(
             link("name", "Name")
             link("visible", "Enabled")
             link("zIndexBehavior", "ZIndexBehavior")
-            link("absoluteSize", "AbsoluteSize", nil, function(v)
+            link("absoluteSize", "AbsoluteSize", nil, function(_, v)
                 return scaleObject(v, true)
             end, true)
-            link("absolutePosition", "AbsolutePosition", nil, function(v)
+            link("absolutePosition", "AbsolutePosition", nil, function(_, v)
                 return scaleObject(v, true)
             end, true)
             link("absoluteRotation" :: "absoluteRotation", "AbsoluteRotation", nil, nil, true)
@@ -374,7 +374,9 @@ Space.createBillboardSpace = createConstructor(
     },
     defaultBillboardProperties,
     { -- transform
-        size = Units.ToUDim2
+        size = function(_, v)
+            return Units.ToUDim2(v)
+        end
     },
     { -- sync
         currentDistance = true
@@ -605,9 +607,9 @@ local function createStorySpace(target: Frame): WidgetType.SpaceLike
     end
 
     if uiScale then
-        uiScale:GetPropertyChangedSignal("Scale"):Connect(function(...)
+        table.insert(cleanups, uiScale:GetPropertyChangedSignal("Scale"):Connect(function(...)
             signals.fire("ScaleChanged")
-        end)
+        end))
     end
 
     function space.scaleObject(obj: any, getOriginal: boolean?): any

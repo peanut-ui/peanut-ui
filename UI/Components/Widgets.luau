@@ -4,8 +4,10 @@ const Widget = require(script.Parent.Parent.Classes.Widget)
 const WidgetClass = require(script.Parent.Parent.Types.Widget)
 const RobloxTypes = require(script.Parent.Parent.Types.RobloxTypes)
 const TypeFuncs = require(script.Parent.Parent.Types.TypeFuncs)
+const Utils = require(script.Parent.Parent.Types.Utils)
 const Helpers = require(script.Parent.Parent.Utils.Helpers)
 const Undefined = require(script.Parent.Parent.Utils.Undefined)
+const Units = require(script.Parent.Parent.Utils.Units)
 
 export type Flatten<Table> = TypeFuncs.Flatten<Table>
 local defaultFontFace = Font.new("rbxasset://fonts/families/Roboto.json")
@@ -23,7 +25,7 @@ export type ImageProps = Flatten<{
     scaleType: Enum.ScaleType,
     sliceCenter: Rect,
     sliceScale: number,
-    tileSize: UDim2,
+    tileSize: Utils.Size,
     imageRectOffset: Vector2,
     imageRectSize: Vector2,
     isLoaded: boolean,
@@ -73,7 +75,7 @@ export type TextBoxProps = Flatten<{
 
 export type ScrollingFrameProps = Flatten<{
     canvasPosition: Vector2,
-    canvasSize: UDim2,
+    canvasSize: Utils.Size,
     automaticCanvasSize: Enum.AutomaticSize,
     scrollingDirection: Enum.ScrollingDirection,
     scrollingEnabled: boolean,
@@ -140,54 +142,65 @@ export type ViewportFrameArgs = WidgetClass.Args<ViewportFrameProps, ViewportFra
 export type VideoFrame = WidgetClass.Interface<VideoFrameProps, RobloxTypes.VideoFrameObject>
 export type VideoFrameArgs = WidgetClass.Args<VideoFrameProps, VideoFrame>
 
+type Converter = {
+    toUDim2: (any) -> UDim2,
+    fromUDim2: (any) -> any,
+}
+type ScaleType = "scale" | "scaleToUDim2" | "scaleToSize" | "scaleToPos"
+
+local converters: {[ScaleType]: Converter} = {
+    scale = {
+        toUDim2 = function(v) return v end,
+        fromUDim2 = function(v) return v end,
+    },
+    scaleToUDim2 = {
+        toUDim2 = Units.ToUDim2,
+        fromUDim2 = function(v) return v end,
+    },
+    scaleToSize = {
+        toUDim2 = Units.ToUDim2,
+        fromUDim2 = Units.SizeFromUDim2,
+    },
+    scaleToPos = {
+        toUDim2 = Units.ToUDim2,
+        fromUDim2 = Units.PositionFromUDim2,
+    },
+}
+
+
+local function makeScale(type: ScaleType, getOriginal: boolean?)
+    local converter = converters[type]
+    if not converter then
+        error(`Unknown scale type, got: {type}`, 2)
+    end
+
+    return function(widget: WidgetClass.Interface, value: any): any
+        local space = widget.getSpace()
+        if not space then
+            return converter.fromUDim2(converter.toUDim2(value))
+        end
+
+        return converter.fromUDim2(space.scaleObject(converter.toUDim2(value), getOriginal))
+    end
+end
+
 local function linkProperties(
     widget: WidgetClass.Interface,
     properties: {[string]: string},
-    transformFn: {[string]: ((any) -> any) | "scale"}?,
-    syncWithObject: {[string]: (boolean | "scale" | (any) -> any)?}?,
+    transformFn: {[string]: ((WidgetClass.WidgetLike, any) -> any)}?,
+    syncWithObject: {[string]: (boolean | (WidgetClass.WidgetLike, any) -> any)?}?,
     readonly: {[string]: boolean?}?,
     redrawOnHooks: {[string]: {string}}?
 )
     local link = (widget :: WidgetClass.InternalInterface)._linkProperty
     for name, property in properties do
-        local transform = transformFn and transformFn[name]
-        local sync = syncWithObject and syncWithObject[name]
-        local hooks = redrawOnHooks and table.clone(redrawOnHooks[name])
-
-        if transform == "scale" then
-            transform = function(value: any): any
-                local space = widget.getSpace()
-                if not space then
-                    return value
-                end
-
-                return space.scaleObject(value)
-            end
-            if not hooks then
-                hooks = {"ScaleChanged"}
-            else
-                table.insert(hooks, "ScaleChanged")
-            end
-        end
-
-        if sync == "scale" then
-            sync = function(value: any): any
-                local space = widget.getSpace()
-                if not space then
-                    return value
-                end
-
-                return space.scaleObject(value, true)
-            end
-        end
-
         link(
             name :: any,
             property,
-            transform :: (any) -> any,
-            sync :: boolean | (any) -> any,
+            transformFn and transformFn[name],
+            syncWithObject and syncWithObject[name],
             readonly and readonly[name],
-            hooks
+            redrawOnHooks and redrawOnHooks[name]
         )
     end
 end
@@ -196,14 +209,45 @@ local function freeze(obj: {[any]: any}?)
     if obj then table.freeze(obj) end
 end
 
+-- Idk what name to choose
+local function constructSyncList(
+    transform: {[any]: any},
+    transformNew: {[any]: any},
+    redrawOnHooksNew: {[any]: any},
+    getOriginal: boolean?
+)
+    if transform then
+        for name, obj in transform do
+            if typeof(obj) ~= "string" then
+                transformNew[name] = obj
+                continue
+            end
+
+            local converter = converters[obj]
+            if converter then
+                transformNew[name] = makeScale(obj :: ScaleType, getOriginal)
+                if not redrawOnHooksNew then
+                    redrawOnHooksNew = {[name] = {"ScaleChanged"}}
+                else
+                    if not redrawOnHooksNew[name] then
+                        redrawOnHooksNew[name] = {"ScaleChanged"}
+                    elseif not table.find(redrawOnHooksNew[name], "ScaleChanged") then
+                        table.insert(redrawOnHooksNew[name], "ScaleChanged")
+                    end
+                end
+            end
+        end
+    end
+end
+
 local function createBasicObject<T>(
     widgetName: string,
     defaultProperties: T & {[string]: any},
     createFn: () -> any,
     linkedProperties: {[string]: string}?,
     linkEvents: {string}?,
-    transformFn: {[string]: ((any) -> any) | "scale"}?,
-    syncWithObject: {[string]: (boolean | "scale" | (any) -> any)?}?,
+    transformFn: {[string]: ((WidgetClass.WidgetLike, any) -> any) | ScaleType}?,
+    syncWithObject: {[string]: (boolean | ScaleType | (WidgetClass.WidgetLike, any) -> any)?}?,
     readonly: {[string]: boolean?}?,
     redrawOnHooks: {[string]: {string}}?,
     setupFn: (any) -> ()?
@@ -216,6 +260,18 @@ local function createBasicObject<T>(
     freeze(readonly)
     freeze(redrawOnHooks)
 
+    -- Process them here so linkProperties is kept small
+    local transformFnNew: {[string]: ((any) -> any)} = {}
+    local syncWithObjectNew: {[string]: (boolean | (any) -> any)?} = {}
+    local redrawOnHooksNew = redrawOnHooks and table.clone(redrawOnHooks) or {}
+
+    constructSyncList(transformFn, transformFnNew, redrawOnHooksNew)
+    constructSyncList(syncWithObject, syncWithObjectNew, redrawOnHooksNew, true)
+
+    table.freeze(syncWithObjectNew)
+    table.freeze(transformFnNew)
+    table.freeze(redrawOnHooksNew)
+
     return function(args)
         local argsCopy = table.clone(args)
 
@@ -227,10 +283,10 @@ local function createBasicObject<T>(
                 linkProperties(
                     widget,
                     linkedProperties,
-                    transformFn,
-                    syncWithObject,
+                    transformFnNew,
+                    syncWithObjectNew,
                     readonly,
-                    redrawOnHooks
+                    redrawOnHooksNew
                 )
             end
             if setupFn then
@@ -302,7 +358,7 @@ return {
             imageColor = Color3.new(1, 1, 1),
             imageRectOffset = Vector2.zero,
             imageRectSize = Vector2.zero,
-            tileSize = UDim2.new(1, 0, 1, 0),
+            tileSize = Units.Size(0, 0, 1, 1),
             imageTransparency = 0,
             resampleMode = Enum.ResamplerMode.Default,
             scaleType = Enum.ScaleType.Stretch,
@@ -327,7 +383,7 @@ return {
             isLoaded = "IsLoaded",
         },
         nil,
-        { tileSize = "scale"},
+        { tileSize = "scaleToUDim2"},
         { isLoaded = true },
         { isLoaded = true }
     ) :: (ImageLabelArgs) -> ImageLabel,
@@ -342,7 +398,7 @@ return {
             scaleType = Enum.ScaleType.Stretch,
             sliceCenter = Rect.new(0, 0, 0, 0),
             sliceScale = 1,
-            tileSize = UDim2.new(1, 0, 1, 0),
+            tileSize = Units.Size(0, 0, 1, 1),
             imageRectOffset = Vector2.zero,
             imageRectSize = Vector2.zero,
             hoverImage = "",
@@ -378,7 +434,7 @@ return {
         },
         {"Activated", "SecondaryActivated"},
         {
-            tileSize = "scale"
+            tileSize = "scaleToUDim2"
         },
         { selected = true, isLoaded = true },
         { selected = true, isLoaded = true }
@@ -388,7 +444,7 @@ return {
         {
             name = "ScrollingFrame",
             canvasPosition = Vector2.zero,
-            canvasSize = UDim2.new(1, 0, 1, 0),
+            canvasSize = Units.Size(0, 0, 1, 1),
             automaticCanvasSize = Enum.AutomaticSize.None,
             scrollingDirection = Enum.ScrollingDirection.Y,
             scrollingEnabled = true,
@@ -416,7 +472,10 @@ return {
             elasticBehavior = "ElasticBehavior",
         },
         nil,
-        nil,
+        {
+            canvasSize = "scaleToUDim2",
+            canvasPosition = "scale"
+        },
         {
             canvasPosition = "scale"
         }

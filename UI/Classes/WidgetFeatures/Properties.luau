@@ -7,6 +7,7 @@ const WidgetType = require(script.Parent.Parent.Parent.Types.Widget)
 const Helpers = require(script.Parent.Parent.Parent.Utils.Helpers)
 const Logging = require(script.Parent.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Parent.Utils.Ref)
+const Scheduler = require(script.Parent.Parent.Parent.Utils.Scheduler)
 const Undefined = require(script.Parent.Parent.Parent.Utils.Undefined)
 
 local logger = Logging.getLogger("PeanutUI.Classes.WidgetFeatures.Properties")
@@ -29,11 +30,12 @@ return function(
     local id = instance._uniqueId
 
     local inRedrawMode = false
+    local stopped = false
 
     local propertiesRefs: {[string]: Utils.Ref<any>} = {}
 
     local linkedProperties: {[string]: string} = {}
-    local linkedPropertiesUpdate: {[string]: (value: any) -> ()} = {}
+    local linkedPropertiesUpdate: {[string]: () -> ()} = {}
     local linkedPropertiesMap: {[string]: string} = {}
 
     local readonlyProperties: {[string]: boolean} = {}
@@ -42,7 +44,7 @@ return function(
     local rbxPropertyEvent: {[string]: RBXScriptConnection} = {}
     local rbxPropertyLocked: {[string]: boolean} = {}
     local rbxPropertyWatching: {[string]: number} = {}
-    local rbxPropertyTransform: {[string]: (any) -> any} = {}
+    local rbxPropertyTransform: {[string]: (WidgetType.WidgetLike, any) -> any} = {}
 
     instance._propertiesRefs = propertiesRefs
 
@@ -94,11 +96,14 @@ return function(
 
         local transformFn = rbxPropertyTransform[key]
         if transformFn then
-            value = transformFn(value)
+            value = transformFn(instance, value)
         end
 
-        ref.setValue(value)
-        fire("PropertyChanged", key, value)
+        local old = ref.getValue()
+        if old ~= value then
+            ref.setValue(value)
+            fire("PropertyChanged", key, value)
+        end
 
         rbxPropertyLocked[key] = nil
     end
@@ -106,8 +111,8 @@ return function(
     function instance._linkProperty(
         name: string,
         property: string,
-        transformFn: ((any) -> any)?,
-        syncWithObject: (boolean | (any) -> any)?,
+        transformFn: ((WidgetType.WidgetLike, any) -> any)?,
+        syncWithObject: (boolean | (WidgetType.WidgetLike, any) -> any)?,
         readonly: boolean?,
         redrawOnHooks: {string}?
     )
@@ -153,6 +158,7 @@ return function(
         end
 
         local function update()
+            if stopped then return end
             if rbxPropertyLocked[name] == true then
                 logger.debug("[%s %d] Skipped update of %s cause it's locked", instance._widgetName, id, name)
                 return
@@ -166,7 +172,7 @@ return function(
                 end
 
                 if transformFn then
-                    value = transformFn(value)
+                    value = transformFn(instance, value)
                 end
 
                 local oldValue = (object :: any)[property]
@@ -192,8 +198,26 @@ return function(
             end
         end
 
+        local scheduled = false
+        local function scheduledUpdate()
+            if rbxPropertyLocked[name] == true then
+                logger.debug("[%s %d] Skipped scheduled update of %s cause it's locked", instance._widgetName, id, name)
+                return
+            end
+
+            if scheduled then return end
+            scheduled = true
+
+            Scheduler.schedule("redraw", function()
+                scheduled = false
+                update()
+            end)
+        end
+
         linkedPropertiesUpdate[name] = update
-        ref.watch(update, { bucket = bucket })
+        ref.watch(
+            scheduledUpdate, { bucket = bucket, flush = "sync" }
+        )
 
         if redrawOnHooks then
             for _, hook in ipairs(redrawOnHooks) do
@@ -333,6 +357,7 @@ return function(
     end)
 
     bucket.addCleanup(function()
+        stopped = true
         for key, signal in pairs(rbxPropertyEvent) do
             signal:Disconnect()
         end

@@ -120,9 +120,10 @@ export type PropertiesFeature = {
     observe: (key: string, callback: (newValue: any) -> ...boolean?) -> (() -> ()),
 
     _linkProperty: (
-        name: string, object: string,
-        transformFn: ((value: any) -> any)?,
-        syncWithObject: (boolean | (any) -> any)?,
+        name: string,
+        object: string,
+        transformFn: ((widget: WidgetLike, value: any) -> any)?,
+        syncWithObject: (boolean | (widget: WidgetLike, value: any) -> any)?,
         readonly: boolean?,
         redrawOnHooks: {string}?
     ) -> (),
@@ -269,8 +270,8 @@ export type InternalFunctions<Props = DefaultProperties, Object = GuiObject, Eve
     _setCreateObject: (() -> Object?) -> (),
     _linkProperty: <K>(
         name: K & KeyOf<Props>, object: string,
-        transformFn: ((value: Resolve<Props, K>) -> any)?,
-        syncWithObject: (boolean | (any) -> any)?,
+        transformFn: ((widget: WidgetLike, value: Resolve<Props, K>) -> any)?,
+        syncWithObject: (boolean | (widget: WidgetLike, value: any) -> any)?,
         readonly: boolean?,
         redrawOnHooks: {string}?
     ) -> (),

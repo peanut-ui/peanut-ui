@@ -251,7 +251,6 @@ local function makeProtected<T>(
     ref: Utils.Ref<T> | Utils.ProtectedRef<T>,
     onWatch: (unwatch: () -> ()) -> ()?,
     onUnwatch: () -> ()?,
-    getValue: (() -> T)?,
     allowDestroy: boolean?
 ): Utils.ProtectedRef<T>
     if ref._isProtected == true then
@@ -266,14 +265,8 @@ local function makeProtected<T>(
     newProtectedRef._typeName = "ref"
     newProtectedRef._isProtected = true
 
-    if not getValue then
-        function newProtectedRef.getValue(): any
-            return ref.getValue()
-        end
-    else
-        function newProtectedRef.getValue(): any
-            return getValue()
-        end
+    function newProtectedRef.getValue(): any
+        return ref.getValue(newProtectedRef)
     end
 
     function newProtectedRef.notifyChanged(): any
@@ -441,10 +434,10 @@ function Ref.new<T>(
         end
     end
 
-    function ref.getValue(): T
+    function ref.getValue(trackRef: Utils.SimpleRef<any>?): T
         ensureNotDestroyed()
         if beforeGetValue then beforeGetValue() end
-        track(proxyToRefMap[currentValue] or ref :: any)
+        track(trackRef or ref :: any)
         return currentValue :: T
     end
 
@@ -829,7 +822,6 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
                 watchingCounter = 0
             end
         end,
-        nil,
         true
     )
 

@@ -96,9 +96,11 @@ function Units.ToUDim2(obj: Utils.Size | Utils.Position | UDim2): UDim2
                 obj.yScale,
                 obj.y
             )
+        else
+            error(`Unknown type, got: {type(obj)} _typeName: {obj._typeName}`, 2)
         end
     end
-    error("Unknown type", 2)
+    error(`Unknown type, got: {type(obj)}`, 2)
 end
 
 function Units.ToUDim(obj: Utils.Unit | UDim): UDim
@@ -112,9 +114,11 @@ function Units.ToUDim(obj: Utils.Unit | UDim): UDim
                 obj.scale,
                 obj.px
             )
+        else
+            error(`Unknown type, got: {type(obj)} _typeName: {obj._typeName}`, 2)
         end
     end
-    error("Unknown type", 2)
+    error(`Unknown type, got: {type(obj)}`, 2)
 end
 
 return table.freeze(Units)
