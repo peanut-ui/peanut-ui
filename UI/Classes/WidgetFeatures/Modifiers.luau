@@ -122,7 +122,7 @@ return function(
 
     hooks.add("ScaleChanged", function()
         for _, modifier in pairs(modifierComponents) do
-            modifier._redraw()
+            modifier._redrawScale()
         end
     end)
 

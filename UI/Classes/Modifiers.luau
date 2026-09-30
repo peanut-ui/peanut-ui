@@ -32,7 +32,8 @@ local function createModifier(
     propertyCalcFn: {[string]: TransformFn},
     setupFn: (Modifier.Component) -> ()?,
     rbxLinkBack_: {[string]: string}?,
-    rbxLinkBackTransform_: {[string]: RbxTransformFn}?
+    rbxLinkBackTransform_: {[string]: RbxTransformFn}?,
+    scaleDependant: {string}?
 ): Modifier.Component
     counter += 1
     local id = counter
@@ -353,6 +354,18 @@ local function createModifier(
 
     modifier._redraw = redraw
 
+    function modifier._redrawScale()
+        ensureNotDestroyed()
+
+        if not scaleDependant then return end
+
+        for _, rbxKey in ipairs(scaleDependant) do
+            dirtyKeys[rbxKey] = true
+        end
+
+        flush()
+    end
+
     function modifier.mountTo(to: Instance)
         if typeof(to) ~= "Instance" then
             logger.error("Object has to be Instance!")
@@ -538,6 +551,7 @@ local function createConstructor(
     defaultProperties: {[string]: any},
     linkedProperties: {[string]: {string} | string},
     propertyCalcFn: {[string]: (component: Modifier.Component, getProp: (string) -> any) -> any},
+    scaleDependant: {string}?,
     setupFn: (Modifier.Component) -> ()?,
     robloxLinkBack: {[string]: string}?,
     robloxLinkBackTransform: {[string]: (any) -> any}?
@@ -561,7 +575,8 @@ local function createConstructor(
             propertyCalcFn,
             setupFn,
             robloxLinkBack,
-            robloxLinkBackTransform
+            robloxLinkBackTransform,
+            scaleDependant
         )
     end
 end
@@ -574,13 +589,15 @@ end
 
 local function useUDim2(property: string)
     return function(c: Modifier.Component)
-        return Units.ToUDim2(c.getProperty(property) :: any)
+        local scaleFn = c.getScaleObjectFn()
+        return scaleFn(Units.ToUDim2(c.getProperty(property) :: any))
     end
 end
 
 local function _useUDim(property: string)
     return function(c: Modifier.Component)
-        return Units.ToUDim(c.getProperty(property) :: any)
+        local scaleFn = c.getScaleObjectFn()
+        return scaleFn(Units.ToUDim(c.getProperty(property) :: any))
     end
 end
 
@@ -591,7 +608,7 @@ local function scale(property: string)
 end
 
 local function rbxScale(c: Modifier.Component, value: any)
-    return c.getScaleObjectFn()(value)
+    return c.getScaleObjectFn()(value, true)
 end
 
 Modifiers.createModifier = createModifier
@@ -659,6 +676,10 @@ Modifiers.components = {
                     scale(getProp("topRightPx") or getProp("px"))
                 )
             end
+        },
+        {  -- Scale dependant
+            "BottomLeftRadius", "BottomRightRadius",
+            "TopLeftRadius", "TopRightRadius"
         }
     ),
     padding = createConstructor(
@@ -703,6 +724,10 @@ Modifiers.components = {
                     scale(getProp("bottomPx") or getProp("px"))
                 )
             end
+        },
+        {  -- Scale dependant
+            "PaddingLeft", "PaddingRight",
+            "PaddingTop", "PaddingBottom"
         }
     ),
     stroke = createConstructor(
@@ -743,6 +768,9 @@ Modifiers.components = {
             ApplyStrokeMode = useEnum(Enum.ApplyStrokeMode, "strokeMode"),
             BorderStrokePosition = useEnum(Enum.BorderStrokePosition, "borderPosition"),
             LineJoinMode = useEnum(Enum.LineJoinMode, "lineJoinMode"),
+        },
+        { -- Scale dependant!
+            "BorderOffset", "Thickness"
         }
     ),
     strokes = "stroke",
@@ -802,6 +830,9 @@ Modifiers.components = {
             end,
             Offset = useUDim2("offset"),
             Spread = useUDim2("spread")
+        },
+        {  -- Scale dependant :3
+            "BlurRadius", "Offset", "Spread"
         }
     ),
     shadows = "shadow",
@@ -848,11 +879,14 @@ Modifiers.components = {
                 return if c.getProperty("horizontal") then Enum.FillDirection.Horizontal else Enum.FillDirection.Vertical
             end
         },
+        {  -- Scale dependant!!!!
+            "Padding"
+        },
         nil,
-        {
+        {  -- Link back
             absoluteContentSize = "AbsoluteContentSize"
         },
-        {
+        {  -- Scale
             absoluteContentSize = rbxScale
         }
     ),
@@ -911,6 +945,9 @@ Modifiers.components = {
                 return if c.getProperty("sortByName") then Enum.SortOrder.Name else Enum.SortOrder.LayoutOrder
             end
         },
+        {  -- Scale dependant!!!
+            "CellPadding", "CellSize"
+        },
         nil,
         {
             absoluteContentSize = "AbsoluteContentSize"
@@ -960,11 +997,14 @@ Modifiers.components = {
                 return if c.getProperty("sortByName") then Enum.SortOrder.Name else Enum.SortOrder.LayoutOrder
             end
         },
+        {  -- Scale dependant, again
+            "CellPadding"
+        },
         nil,
-        {
+        {  -- Sync back
             absoluteContentSize = "AbsoluteContentSize"
         },
-        {
+        {  -- Sync back transform
             absoluteContentSize = rbxScale
         }
     ),
@@ -1000,6 +1040,9 @@ Modifiers.components = {
         {
             MaxSize = scale("max"),
             MinSize = scale("min")
+        },
+        {  -- Scale dependant kaboom
+            "MaxSize", "MinSize"
         }
     ),
     textSizeConstraint = createConstructor(
@@ -1016,6 +1059,9 @@ Modifiers.components = {
         {
             MaxTextSize = scale("max"),
             MinTextSize = scale("min")
+        },
+        {  -- This is scale dependant, isn't this crazy?
+            "MaxTextSize", "MinTextSize"
         }
     ),
     scale = createConstructor(

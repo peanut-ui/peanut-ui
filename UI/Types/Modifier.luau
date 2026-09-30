@@ -165,6 +165,7 @@ export type Component<Props = JustList> = {
     read getScaleObjectFn: () -> (<T>(value: T, getOriginal: boolean?) -> T),
     read setScaleObjectFn: ((<T>(value: T, getOriginal: boolean?) -> T)?) -> (),
 
+    read _redrawScale: () -> (),
     read _redraw: () -> (),
     read _addCleanup: (RBXScriptConnection | () -> ()) -> (),
 
