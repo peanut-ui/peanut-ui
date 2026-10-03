@@ -462,7 +462,8 @@ function Ref.new<T>(
         ensureNotDestroyed()
         errorOnSideEffect()
 
-        if newValue == currentValue then
+        local oldValue = currentValue
+        if newValue == oldValue then
             return
         end
         if stopWatchingFunc then
@@ -499,7 +500,9 @@ function Ref.new<T>(
             currentValue = newValue
         end
 
-        notifyWatchers()
+        if oldValue ~= newValue then
+            notifyWatchers()
+        end
     end
 
     function ref.watch(fn: Utils.RefWatchFn<T>, params: Utils.WatchParams): (() -> (), number)
