@@ -311,8 +311,13 @@ return function(
         return unwatch
     end
 
+    local protectedRefs: {[string]: Utils.ProtectedRef<any>} = {}
     function instance.getRef(key: string): Utils.ProtectedRef<any>
         ensureNotDestroyed()
+
+        if protectedRefs[key] then
+            return protectedRefs[key]
+        end
 
         local ref = ensureRef(key)
 
@@ -333,7 +338,10 @@ return function(
             end
         end
 
-        return Ref.makeProtected(ref, onWatch, onUnwatch)
+        local protectedRef = Ref.makeProtected(ref, onWatch, onUnwatch)
+        protectedRefs[key] = protectedRef
+
+        return protectedRef
     end
 
     hooks.add("OnRedraw", function()
@@ -372,6 +380,7 @@ return function(
         freezeAndClear(rbxPropertyLocked)
         freezeAndClear(rbxPropertyWatching)
         freezeAndClear(rbxPropertyTransform)
+        freezeAndClear(protectedRefs)
     end)
 
     if setProperties then
