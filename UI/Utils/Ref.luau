@@ -696,16 +696,27 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
     local function notify()
         if next(watchers) == nil then return end
 
-        for id, watcher in pairs(watchers) do
-            if not watchers[id] then
-                continue
+        Context.withNoContext(function()
+            for id, watcher in pairs(watchers) do
+                if not watchers[id] then
+                    continue
+                end
+
+                local ok, result = xpcall(watcher :: any, function(msg)
+                    return debug.traceback(tostring(msg))
+                end)
+
+                if not ok then
+                    logger.warn("There was an error in watcher: %s", result)
+                end
+
+                if not ok or result == true then
+                    watchers[id] = nil
+                end
             end
 
-            local ok, result = Context.withNoContext(watcher :: any)
-            if not ok or result == true then
-                watchers[id] = nil
-            end
-        end
+            return nil
+        end)
     end
 
     local function notifyDependents()
