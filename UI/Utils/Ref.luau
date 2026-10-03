@@ -265,12 +265,16 @@ local function makeProtected<T>(
     newProtectedRef._typeName = "ref"
     newProtectedRef._isProtected = true
 
+    local refGetValue = ref.getValue
+    local refNotify = ref.notifyChanged
+    local refWatch = ref.watch
+
     function newProtectedRef.getValue(): any
-        return ref.getValue(newProtectedRef)
+        return refGetValue(newProtectedRef)
     end
 
     function newProtectedRef.notifyChanged(): any
-        return ref.notifyChanged()
+        return refNotify()
     end
 
     function newProtectedRef.destroy()
@@ -295,7 +299,7 @@ local function makeProtected<T>(
             end
         end
 
-        local unwatch = ref.watch(fn, params)
+        local unwatch = refWatch(fn, params)
         if onWatch then
             onWatch(unwatch)
         end
@@ -306,7 +310,7 @@ local function makeProtected<T>(
     setmetatable(newProtectedRef, {
         __index = function(_, key): T?
             if key == "value" or key == "Value" then
-                return newProtectedRef.getValue()
+                return refGetValue(newProtectedRef)
             end
             return nil
         end,
@@ -476,7 +480,9 @@ function Ref.new<T>(
             local originalRef = proxyToRefMap[newValue]
             stopWatchingFunc = originalRef.watch(function(value)
                 notifyWatchers()
-            end, { flush = "sync", bucket = bucket })
+            end, { flush = "sync", bucket = bucket, onUnwatch = function()
+                stopWatchingFunc = nil
+            end})
         elseif typeof(newValue) == "table" and newValue._typeName == "ref" then
             local value = (newValue :: Utils.Gettable<T>).getValue()
             assertType(currentValue, value)
@@ -485,7 +491,9 @@ function Ref.new<T>(
             stopWatchingFunc = (newValue :: Utils.Watchable<T>).watch(function(value)
                 currentValue = value
                 notifyWatchers()
-            end, { flush = "sync", bucket = bucket })
+            end, { flush = "sync", bucket = bucket, onUnwatch = function()
+                stopWatchingFunc = nil
+            end })
         else
             assertType(currentValue, newValue)
             currentValue = newValue
