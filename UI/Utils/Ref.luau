@@ -445,7 +445,7 @@ function Ref.new<T>(
         return currentValue :: T
     end
 
-    function ref.increaseValue(amount: number)
+    function ref.increaseValue(amount: number?)
         ensureNotDestroyed()
         errorOnSideEffect()
 
@@ -454,7 +454,11 @@ function Ref.new<T>(
             error("")
         end
 
-        currentValue += amount
+        if amount and typeof(amount) ~= "number" then
+            logger.error("The 'amount' argument has to be a number!")
+        end
+
+        currentValue += amount or 1
         notifyWatchers()
     end
 
