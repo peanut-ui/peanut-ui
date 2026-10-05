@@ -78,8 +78,6 @@ return table.freeze {
     toRef = Ref.toRef,
     isRef = Ref.isRef,
     reactive = Ref.reactive,
-    swap = Ref.swap,
-    deepSwap = Ref.deepSwap,
 
     -- Scheduler shortcuts
     defer = Scheduler.defer,

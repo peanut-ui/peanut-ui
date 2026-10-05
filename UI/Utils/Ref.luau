@@ -17,16 +17,14 @@ type ComputedInternal = {
 }
 
 type Table = {[any]: any}
-local proxyToRefMap: {[any]: Utils.Ref<any>} = setmetatable({}, { __mode = "k" })
-local proxyCache: {[Table]: Table} = setmetatable({}, { __mode = "k" })
 
-local proxyIsShallow: {[Table]: boolean} = setmetatable({}, { __mode = "k" })
-
-local proxySwap: {[Table]: (Table, boolean?) -> ()} = setmetatable({}, { __mode = "k" })
-local proxyGetRef: {[Table]: (string) -> Utils.Ref<any>} = setmetatable({}, { __mode = "k" })
-
-local proxyChildWatchers: {[Table]: {[any]: () -> ()}} = setmetatable({}, { __mode = "k" })
 local rawCache: {[Table]: Table} = setmetatable({}, { __mode = "k" })
+local proxyCacheDeep: {[Table]: Table} = setmetatable({}, { __mode = "k" })
+local proxyCacheShallow: {[Table]: Table} = setmetatable({}, { __mode = "k" })
+
+local proxyToRefMap: {[any]: Utils.Ref<any>} = setmetatable({}, { __mode = "k" })
+local proxyIsShallow: {[Table]: boolean} = setmetatable({}, { __mode = "k" })
+local proxyGetRef: {[Table]: (string) -> Utils.Ref<any>} = setmetatable({}, { __mode = "k" })
 
 local computeInternal: {[any]: ComputedInternal} = setmetatable({}, { __mode = "k" })
 
@@ -65,20 +63,17 @@ local function track(ref: Utils.Ref<any>)
     bucket.customState[ref] = true
 end
 
+local alwaysFrozen = table.freeze({}) :: {read [any]: any}
 local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
     if rawCache[rawTarget] then
-        if proxyIsShallow[rawTarget] ~= (isShallow == true) then
-            logger.error("Proxy modes (shallow vs deep) mismatch between different places")
-        end
         return rawTarget
     end
 
-    if proxyCache[rawTarget] then
-        local proxy = proxyCache[rawTarget]
-        if proxyIsShallow[proxy] ~= (isShallow == true) then
-            logger.error("Proxy modes (shallow vs deep) mismatch between different places")
-        end
-        return proxy
+    local proxyCache = isShallow and proxyCacheShallow or proxyCacheDeep
+    local proxyCacheAlt = isShallow and proxyCacheDeep or proxyCacheShallow
+
+    if not isShallow and proxyCache[rawTarget] then
+        return proxyCache[rawTarget]
     end
 
     local proxy = {}
@@ -91,24 +86,26 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
 
     local valueRefs: {[any]: Utils.Ref<any>} = {}
 
-    local childWatchers: {[any]: () -> ()} = {}
-    proxyChildWatchers[proxy] = childWatchers
+    local childWatchers: {[any]: () -> ()} = if isShallow ~= true then {} else alwaysFrozen
 
-    local function watchChild(key: any, childRaw: any)
-        local ok, err = Context.withNoContext(function()
-            if type(childRaw) == "table" then
-                local childProxy = createReactiveProxy(childRaw, nil)
-                local childRef = proxyToRefMap[childProxy]
+    local watchChild
+    if isShallow ~= true then
+        function watchChild(key: any, childRaw: any)
+            local ok, err = Context.withNoContext(function()
+                if type(childRaw) == "table" then
+                    local childProxy = createReactiveProxy(childRaw, nil)
+                    local childRef = proxyToRefMap[childProxy]
 
-                childWatchers[key] = childRef.watch(function()
-                    myRef.notifyChanged()
-                end)
+                    childWatchers[key] = childRef.watch(function()
+                        myRef.notifyChanged()
+                    end)
+                end
+
+                return nil
+            end)
+            if not ok then
+                logger.error("Couldn't watch child:\n%s", tostring(err))
             end
-
-            return nil
-        end)
-        if not ok then
-            logger.error("Couldn't watch child:\n%s", tostring(err))
         end
     end
 
@@ -130,35 +127,10 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
     end
     proxyGetRef[proxy] = getRef
 
-    local function swap(newTarget: Table, suppressEvent: boolean?)
-        local oldTarget = rawTarget
-        rawTarget = newTarget
-
-        proxyCache[oldTarget] = nil
-        proxyCache[newTarget] = proxy
-        rawCache[proxy] = newTarget
-
-        for k, unwatch in pairs(childWatchers) do
-            unwatch()
-        end
-        table.clear(childWatchers)
-
+    if isShallow ~= true and watchChild then
         for k, v in pairs(rawTarget) do
             watchChild(k, v)
         end
-
-        for key, ref in valueRefs do
-            ref.setValue(newTarget[key])
-        end
-
-        if not suppressEvent then
-            myRef.notifyChanged()
-        end
-    end
-    proxySwap[proxy] = swap
-
-    for k, v in pairs(rawTarget) do
-        watchChild(k, v)
     end
 
     local meta = {
@@ -204,6 +176,12 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
                 valueRef.setValue(cleanVal)
             end
             myRef.notifyChanged()
+
+            local altProxy = proxyCacheAlt[rawTarget]
+            if altProxy then
+                local altRef = proxyToRefMap[altProxy]
+                altRef.notifyChanged()
+            end
         end,
 
         __len = function(_)
@@ -221,7 +199,13 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
                 end
 
                 if isShallow ~= true and type(value) == "table" then
-                    value = createReactiveProxy(value, nil)
+                    local ok, result = Context.withNoContext(function()
+                        value = createReactiveProxy(value, nil)
+                        return nil
+                    end)
+                    if not ok then
+                        logger.error("Couldn't create sub-proxy:\n%s", tostring(result))
+                    end
                 end
 
                 return nextKey, value
@@ -890,7 +874,7 @@ end
 --- local proxy = Ref.reactive({ a = 1 })
 --- local refObj = Ref.getRef(proxy)
 --- ```
-function Ref.getRef<T>(proxy: T): Utils.Ref<T>?
+function Ref.getRef<T>(proxy: T): Utils.Ref<T>
     return proxyToRefMap[proxy]
 end
 
@@ -917,86 +901,6 @@ function Ref.toRef<T, K>(tbl: T & Table, key: keyof<T> & K): Utils.Ref<index<T, 
     return getRef(key)
 end
 
---- Swap Table
----
---- Replaces the underlying raw target of a reactive proxy with a new table, updating all existing fields.
----
---- @param proxy Reactive proxy table
---- @param newTable New table data to swap in
----
---- ### Example
---- ```
---- local proxy = Ref.reactive({ a = 1 })
---- Ref.swap(proxy, { a = 2 })
---- ```
-function Ref.swap<T>(proxy: T, newTable: T & Table)
-    errorOnSideEffect()
-    local swap = proxySwap[proxy]
-    if not swap then
-        logger.error("Ref.swap can be used only on reactive proxy (see Ref.reactive)")
-    end
-
-    swap(newTable)
-end
-
-local function deepSwap(proxy: any, newTable: Table, seen_: {[any]: boolean}?)
-    if type(proxy) ~= "table" or type(newTable) ~= "table" then
-        return
-    end
-
-    local oldTable = rawCache[proxy]
-    if not oldTable or oldTable == newTable then
-        return
-    end
-
-    local seen = seen_ or {}
-    if seen[proxy] then return end
-    seen[proxy] = true
-
-    local childWatchers = proxyChildWatchers[proxy]
-
-    if childWatchers then
-        for key, _ in pairs(childWatchers) do
-            local oldVal = oldTable[key]
-            local newVal = newTable[key]
-
-            if type(oldVal) == "table" and type(newVal) == "table" then
-                local childProxy = proxyCache[oldVal]
-                if childProxy then
-                    deepSwap(childProxy, newVal, seen)
-                end
-            end
-        end
-    end
-
-    local swap = proxySwap[proxy]
-    if swap then
-        swap(newTable)
-    end
-end
-
---- Deep Swap Table
----
---- Recursively replaces underlying tables across nested reactive proxies and their child proxies.
----
---- @param proxy Reactive proxy table
---- @param newTable New nested table data to swap in
----
---- ### Example
---- ```
---- local proxy = Ref.reactive({ nested = { a = 1 } })
---- Ref.deepSwap(proxy, { nested = { a = 5 } })
---- ```
-function Ref.deepSwap<T>(proxy: T, newTable: T & Table)
-    errorOnSideEffect()
-    local swap = proxySwap[proxy]
-    if not swap then
-        logger.error("Ref.deepSwap can be used only on reactive proxy (see Ref.reactive)")
-    end
-
-    deepSwap(proxy, newTable)
-end
-
 --- Reactive Proxy
 ---
 --- Wraps a table into a deep reactive proxy that automatically tracks property accesses and mutations.
@@ -1012,6 +916,10 @@ end
 --- ```
 function Ref.reactive<T>(initialTable: T, isShallow: boolean?): T
     return createReactiveProxy(initialTable, isShallow)
+end
+
+function Ref.isShallow(proxy: Table): boolean
+    return proxyIsShallow[proxy] == true
 end
 
 Ref.makeProtected = makeProtected
