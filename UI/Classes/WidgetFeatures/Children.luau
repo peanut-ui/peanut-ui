@@ -18,7 +18,8 @@ return function(
     ensureNotDestroyed: () -> (),
     hooks: Utils.Hooks,
     events: Utils.Events,
-    bucket: Utils.Bucket
+    bucket: Utils.Bucket,
+    addChildren: {WidgetType.WidgetLike?}?
 ): {WidgetType.InternalInterface}
     local fire = events.fire
     local hooksFire = hooks.fire
@@ -34,6 +35,8 @@ return function(
 
     function instance.addChild(child_: WidgetType.WidgetLike)
         ensureNotDestroyed()
+        if not child_ then return end
+
         local child = child_ :: WidgetType.InternalInterface
 
         if not isWidget(child) then
@@ -138,6 +141,14 @@ return function(
     hooks.add("ObjectCreateScheduled", function()
         for _, child in ipairs(children) do
             child._createObject()
+        end
+    end)
+
+    hooks.add("OnSetup", function()
+        if addChildren then
+            for _, child in ipairs(addChildren) do
+                widget.addChild(child)
+            end
         end
     end)
 

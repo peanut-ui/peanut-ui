@@ -629,7 +629,8 @@ function WidgetClass.new<C>(
             ensureNotDestroyed,
             hooks,
             events,
-            bucket
+            bucket,
+            args and args.children
         )
     end
     -- feature: children -- end --
@@ -694,12 +695,6 @@ function WidgetClass.new<C>(
         if args.events then
             for key, callback in pairs(args.events :: {[string]: any}) do
                 listen(key, callback)
-            end
-        end
-
-        if features.children and args.children then
-            for _, child in ipairs(args.children) do
-                (instance :: Widget.BaseInterface).addChild(child)
             end
         end
 
