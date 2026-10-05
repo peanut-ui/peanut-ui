@@ -13,7 +13,7 @@ local ControlFlow = {}
 
 export type ConditionOrRef = boolean | Utils.SimpleRef<boolean>
 export type Materialize = {
-    build: () -> Widget.Box
+    End: () -> Widget.Box
 }
 export type IfFlow = {
     ElseIf: <Props...>(
@@ -60,19 +60,15 @@ function ControlFlow.If<Props...>(
     flow = {
         ElseIf = function(conditionOrRef, widgetFn, ...)
             addBranch(branches, conditionOrRef, widgetFn, ...)
-            return {
-                ElseIf = flow.ElseIf,
-                Else = flow.Else,
-                build = flow.build
-            }
+            return flow
         end,
         Else = function(widgetFn, ...)
             addBranch(branches, true, widgetFn, ...)
             return {
-                build = flow.build
+                End = flow.End
             }
         end,
-        build = function()
+        End = function()
             local box = Box.new()
             box._boxName = "if"
 
@@ -142,6 +138,73 @@ function ControlFlow.If<Props...>(
     }
 
     return flow
+end
+
+--- Static for loop
+function ControlFlow.For<K, V>(
+    array: {[K]: V},
+    createFn: (value: V, index: K) -> Widget.WidgetLike
+): Widget.Box
+    local box = Box.new()
+    box._boxName = "for"
+
+    for i, item in array do
+        box.addChild(createFn(item, i))
+    end
+
+    return box
+end
+
+function ControlFlow.ReactiveFor<K, V>(
+    array: {[K]: V},
+    createFn: (value: V) -> Widget.WidgetLike,
+    keyFn: ((value: V, index: K) -> any)
+)
+    local arrayRef = Ref.getRef(array)
+    if not arrayRef then
+        logger.error("Cannot do ReactiveFor on plain table. HINT: Use simple For for static tables, or wrap table in reactive.")
+    end
+
+    if not Ref.isShallow(array) then
+        logger.warn("It's generally recommended to use shallow reactive for ReactiveFor so nested tables don't cause recalculations.")
+    end
+
+    local box = Box.new()
+    box._boxName = "reactiveFor"
+
+    local widgets: {[any]: Widget.WidgetLike} = {}
+
+    local function populate()
+        -- Key from keyFn -> array value
+        local newKeys: {[any]: any} = {}
+        for key, value in arrayRef.value do
+            local k = keyFn(value, key)
+            if newKeys[k] then
+                logger.warn("")
+            end
+            newKeys[k] = value
+        end
+
+        for key, value in newKeys do
+            if not widgets[key] then
+                local widget = createFn(value)
+                widgets[key] = widget
+                box.addChild(widget)
+            end
+        end
+
+        for key, widget in widgets do
+            if not newKeys[key] then
+                widgets[key] = nil
+                box.removeChild(widget, true)
+            end
+        end
+    end
+    populate()
+
+    arrayRef.watch(populate)
+
+    return box
 end
 
 return table.freeze(ControlFlow)
