@@ -3,6 +3,7 @@
 const Component = require(script.Components.Component)
 const ControlFlow = require(script.Components.ControlFlow)
 const Widgets = require(script.Components.Widgets)
+const State = require(script.State)
 const Modifier = require(script.Types.Modifier)
 const Utils = require(script.Types.Utils)
 const WidgetType = require(script.Types.Widget)
@@ -72,6 +73,12 @@ return table.freeze {
     Ref = Ref,
     Units = require(script.Utils.Units),
     State = require(script.State),
+
+    -- Info
+    version = State.Version,
+    versionString = State.VersionString,
+    preferredInput = State.preferredInput,
+    globalSignals = State.signals,
 
     -- Ref shortcuts
     ref = Ref.new,

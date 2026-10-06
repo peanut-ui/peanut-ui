@@ -150,6 +150,9 @@ export type Component<Props = JustList> = {
     read destroy: () -> (),
     read isDestroyed: () -> boolean,
 
+    read setAnimation: (name: string | number, animation: Animations.MaybeResolvedAnimation?) -> (),
+    read getAnimationControl: (name: string | number) -> Animations.AnimationControl,
+
     read setTransition: <K>(key: K & KeyOf<Props>, transition: Animations.Transition?) -> (),
 
     read getRef: <K>(key: K & KeyOf<Props>) -> Utils.ProtectedRef<Resolve<Props, K>>,

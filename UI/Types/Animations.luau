@@ -20,6 +20,8 @@ export type Animation = {
     read properties: {string}
 }
 
+export type MaybeResolvedAnimation = Animation | UnresolvedAnimation
+
 -- May change in the future
 -- currently only for mapping properties like "backgroundColor" to "BackgroundColor3"
 export type UnresolvedAnimation = {

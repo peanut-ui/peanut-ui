@@ -9,7 +9,7 @@ local logger = Logging.getLogger("PeanutUI.Components.Animations")
 
 local Animations = {}
 
-function makeAnimation(step: AnimationsType.AnimationStep, properties: {string}, createState: ((any) -> any)?, expectType: string?): AnimationsType.Animation
+local function makeAnimation(step: AnimationsType.AnimationStep, properties: {string}, createState: ((any) -> any)?, expectType: string?): AnimationsType.Animation
     local animation = {}
     animation._typeName = "animation" :: "animation"
 
@@ -44,7 +44,7 @@ function makeAnimation(step: AnimationsType.AnimationStep, properties: {string},
     return animation
 end
 
-function makeUnresolved<A...>(
+local function makeUnresolved<A...>(
     properties: {string},
     fn: ({string}, A...) -> AnimationsType.Animation,
     ...: A...

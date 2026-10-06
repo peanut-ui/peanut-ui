@@ -31,15 +31,16 @@ return function(
     assert(animatedProperty ~= nil, "animatedProperty cannot be nil")
     assert(ensureRef ~= nil, "animatedProperty cannot be nil")
 
-    local animations: {[string]: Animations.Animation} = {}
-    local propertyToAnimation: {[string]: Animations.Animation} = {}
+    local animationsToPlay: {[any]: boolean} = {}
+    local animations: {[any]: Animations.Animation} = {}
+    local propertyToAnimation: {[any]: Animations.Animation} = {}
 
     local instance = widget :: WidgetType.BaseInterface
 
-    local unwatchKeys: {[string]: () -> ()} = {}
-    local animationControlCache: {[string]: Animations.AnimationControl} = {}
+    local unwatchKeys: {[any]: () -> ()} = {}
+    local animationControlCache: {[any]: Animations.AnimationControl} = {}
 
-    function instance.getAnimation(name: string): Animations.AnimationControl?
+    function instance.getAnimationControl(name: any): Animations.AnimationControl
         ensureNotDestroyed()
         do
             local cached = animationControlCache[name]
@@ -50,27 +51,34 @@ return function(
 
         local animation = animations[name]
         if not animation then
-            return nil
+            return nil :: any
         end
 
         local animationControl = {}
         animationControl._typeName = "animationControl"
 
         function animationControl.animate()
+            ensureNotDestroyed()
             local object = instance.getObject()
             if object then
                 animation.animate(object)
+                animationsToPlay[name] = nil
+            else
+                animationsToPlay[name] = true
             end
         end
 
         function animationControl.stop()
+            ensureNotDestroyed()
             local object = instance.getObject()
+            animationsToPlay[name] = nil
             if object then
                 animation.stop(object)
             end
         end
 
         function animationControl.isRunning()
+            ensureNotDestroyed()
             local object = instance.getObject()
             if object then
                 return animation.isRunning(object)
@@ -79,13 +87,16 @@ return function(
         end
 
         function animationControl.pause()
+            ensureNotDestroyed()
             local object = instance.getObject()
+            animationsToPlay[name] = nil
             if object then
                 animation.pause(object)
             end
         end
 
         function animationControl.continue()
+            ensureNotDestroyed()
             local object = instance.getObject()
             if object then
                 animation.continue(object)
@@ -97,7 +108,7 @@ return function(
         return animationControl
     end
 
-    function instance.setAnimation(name: string, animation_: (Animations.Animation | Animations.UnresolvedAnimation)?)
+    function instance.setAnimation(name: any, animation_: Animations.MaybeResolvedAnimation?, disableAutoPlay: boolean?)
         ensureNotDestroyed()
         local object = instance.getObject()
 
@@ -109,6 +120,8 @@ return function(
         else
             animation = animation_.resolve(linkedProperties)
         end
+
+        animationsToPlay[name] = nil
 
         if animation then
             for _, key in animation.properties do
@@ -157,8 +170,12 @@ return function(
         end
 
         animations[name] = animation
-        if object then
-            animation.animate(object)
+        if disableAutoPlay ~= true then
+            if object then
+                animation.animate(object)
+            else
+                animationsToPlay[name] = true
+            end
         end
 
         local restartScheduled = false
@@ -209,11 +226,16 @@ return function(
 
         freezeAndClear(animations)
         freezeAndClear(propertyToAnimation)
+        freezeAndClear(animationsToPlay)
     end)
 
     hooks.add("AfterRedraw", function(object: GuiObject)
-        for _, animation in pairs(animations) do
-            animation.animate(object)
+        for name, _ in animationsToPlay do
+            local animation = animations[name]
+            if animation then
+                animation.animate(object)
+                animationsToPlay[name] = nil
+            end
         end
     end)
 

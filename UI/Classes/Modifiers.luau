@@ -58,6 +58,10 @@ local function createModifier(
     local propertiesRefs: {[string]: Utils.Ref<any>} = {}
     local transitions: {[string]: Animations.Transition} = {}
 
+    local animationsToPlay: {[any]: boolean} = {}
+    local animations: {[any]: Animations.Animation} = {}
+    local animationControlCache: {[any]: Animations.AnimationControl} = {}
+
     local cleanups: { RBXScriptConnection | () -> () } = {}
 
     local destroyed = false
@@ -109,6 +113,16 @@ local function createModifier(
 
         bucket.stop()
 
+        if object then
+            for _, animation in animations do
+                animation.stop(object)
+            end
+        end
+
+        freezeAndClear(animations)
+        freezeAndClear(animationsToPlay)
+        freezeAndClear(animationControlCache)
+
         freezeAndClear(cleanups)
         freezeAndClear(transitions)
         freezeAndClear(rbxKeysMap)
@@ -120,7 +134,106 @@ local function createModifier(
         return destroyed
     end
 
-    function modifier.setTransition(key: string, transition: Animations.Transition?)
+    function modifier.getAnimationControl(name: any): Animations.AnimationControl
+        ensureNotDestroyed()
+        do
+            local cached = animationControlCache[name]
+            if cached then
+                return cached
+            end
+        end
+
+        local animation = animations[name]
+        if not animation then
+            return nil :: any
+        end
+
+        local animationControl = {}
+        animationControl._typeName = "animationControl"
+
+        function animationControl.animate()
+            ensureNotDestroyed()
+            if object then
+                animation.animate(object)
+                animationsToPlay[name] = nil
+            else
+                animationsToPlay[name] = true
+            end
+        end
+
+        function animationControl.stop()
+            ensureNotDestroyed()
+            animationsToPlay[name] = nil
+            if object then
+                animation.stop(object)
+            end
+        end
+
+        function animationControl.isRunning()
+            ensureNotDestroyed()
+            if object then
+                return animation.isRunning(object)
+            end
+            return false
+        end
+
+        function animationControl.pause()
+            ensureNotDestroyed()
+            if object then
+                animation.pause(object)
+                animationsToPlay[name] = nil
+            end
+        end
+
+        function animationControl.continue()
+            ensureNotDestroyed()
+            if object then
+                animation.continue(object)
+            end
+        end
+
+        table.freeze(animationControl)
+        animationControlCache[name] = animationControl
+        return animationControl
+    end
+
+    local function setAnimation(name: any, animation: Animations.Animation?, disableAutoPlay: boolean?)
+        ensureNotDestroyed()
+
+        if not animation then
+            -- Hi
+        elseif animation._typeName == "animation" then
+            animation = animation
+        else
+            logger.error("Not animation was passed.")
+        end
+
+        animationsToPlay[name] = nil
+        local oldAnimation = animations[name]
+        if oldAnimation then
+            if object and oldAnimation.isRunning(object) then
+                oldAnimation.stop(object)
+            end
+
+            animations[name] = nil
+        end
+
+        if not animation then
+            return
+        end
+
+        animations[name] = animation
+        if disableAutoPlay ~= true then
+            if object then
+                animation.animate(object)
+            else
+                animationsToPlay[name] = true
+            end
+        end
+    end
+    modifier.setAnimation = setAnimation
+
+    local function setTransition(key: string, transition: Animations.Transition?)
         ensureNotDestroyed()
 
         local rbxKeys = rbxKeysMap[key]
@@ -137,6 +250,7 @@ local function createModifier(
             transitions[rbxKey] = transition
         end
     end
+    modifier.setTransition = setTransition
 
     local function getProperty(key: any): any
         ensureNotDestroyed()
@@ -296,6 +410,14 @@ local function createModifier(
 
         local keysToFlush = dirtyKeys
         dirtyKeys = {}
+
+        for name, _ in animationsToPlay do
+            local animation = animations[name]
+            if animation then
+                animation.animate(object)
+                animationsToPlay[name] = nil
+            end
+        end
 
         for rbxKey, _ in pairs(keysToFlush) do
             local newValue
@@ -516,6 +638,20 @@ local function createModifier(
 
         if key == "gradient" then
             setModifier("gradient", value)
+            continue
+        end
+
+        if key == "transitions" then
+            for property, transition in value do
+                setTransition(property, transition)
+            end
+            continue
+        end
+
+        if key == "animations" then
+            for name, animation in value do
+                setAnimation(name, animation)
+            end
             continue
         end
 
