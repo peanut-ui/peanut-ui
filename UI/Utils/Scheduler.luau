@@ -187,11 +187,13 @@ local function scheduleAt<A...>(stage: TypeFuncs.KeyOf<Elements>, phase: TypeFun
     local execute
     if select("#", ...) == 0 then
         execute = function()
+            if coroutine.status(co) == "dead" then return end
             task.spawn(co)
         end
     else
         local args = table.pack(... :: any)
         execute = function()
+            if coroutine.status(co) == "dead" then return end
             task.spawn(co, table.unpack(args, 1, args.n))
         end
     end
