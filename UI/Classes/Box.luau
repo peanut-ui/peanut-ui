@@ -1,6 +1,5 @@
 --!strict
 --!optimize 2
-const State = require(script.Parent.Parent.State)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const WidgetType = require(script.Parent.Parent.Types.Widget)
 const Context = require(script.Parent.Parent.Utils.Context)
@@ -76,8 +75,6 @@ function Box.new(): WidgetType.Box
         fire("Destroyed")
         events.destroy()
         hooks.clear()
-
-        State.removeWidget(box :: any)
     end
 
     function box.isDestroyed()

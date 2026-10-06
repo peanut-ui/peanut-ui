@@ -7,7 +7,6 @@ const Utils = require(script.Parent.Parent.Types.Utils)
 const Logging = require(script.Parent.Parent.Utils.Logging)
 const Events = require(script.Parent.Parent.Utils.Events)
 const Widget = require(script.Parent.Parent.Types.Widget)
-const State = require(script.Parent.Parent.State)
 const Context = require(script.Parent.Parent.Utils.Context)
 const Helpers = require(script.Parent.Parent.Utils.Helpers)
 const Hooks = require(script.Parent.Parent.Utils.Hooks)
@@ -255,8 +254,6 @@ local function createEmptyWidget(): Widget.BaseInterface
         )
     end
 
-    State.addWidget(newWidget :: any)
-
     return newWidget
 end
 
@@ -401,7 +398,6 @@ function WidgetClass.new<C>(
         fire("Destroyed", object)
         hooks.clear()
         events.destroy()
-        State.removeWidget(instance :: any)
         table.freeze(instance)
     end
 
