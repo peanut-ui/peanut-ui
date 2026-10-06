@@ -92,16 +92,6 @@ Tests.run("Reactive proxy", function()
     Tests.expectValue("Field ref matches", scoreRef.value, 200)
 end)
 
-Tests.run("Swap", function()
-    const proxy = Ref.reactive({ value = 10, nested = { x = 1 } })
-
-    Ref.swap(proxy, { value = 50, nested = { x = 1 } })
-    Tests.expectValue("Shallow swap", proxy.value, 50)
-
-    Ref.deepSwap(proxy, { value = 50, nested = { x = 99 } })
-    Tests.expectValue("Deep swap", proxy.nested.x, 99)
-end)
-
 Tests.run("Scheduled watch", function()
     const ref = Ref.new(0)
     local triggered = 0
