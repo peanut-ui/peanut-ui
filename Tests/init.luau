@@ -14,6 +14,7 @@ return {
             require(script.Boxes)
             require(script.Engines)
             require(script.Components)
+            require(script.ControlFlow)
             require(script.CoreUI)
             require(script.Ownership)
         end)

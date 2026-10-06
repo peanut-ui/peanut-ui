@@ -1,12 +1,9 @@
 --!strict
 --!optimize 2
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
-const Box = require(ReplicatedStorage.PeanutUI.Classes.Box)
-const ControlFlow = require(ReplicatedStorage.PeanutUI.Components.ControlFlow)
 const Logging = require(ReplicatedStorage.PeanutUI.Utils.Logging)
 const Scheduler = require(ReplicatedStorage.PeanutUI.Utils.Scheduler)
 const Tests = require(ReplicatedStorage.PeanutUI.Utils.Tests)
-const Ref = require(ReplicatedStorage.PeanutUI.Utils.Ref)
 const Widgets = require(ReplicatedStorage.PeanutUI.Components.Widgets)
 const WidgetFeatures = require(ReplicatedStorage.PeanutUI.Classes.WidgetFeatures)
 
@@ -71,38 +68,6 @@ Tests.run("Widget feature validation", function()
         WidgetFeatures.requireField(logger, widget, "not-a-field")
     end)
     widget.destroy()
-end)
-
-Tests.run("ControlFlow.If reactive branch replacement", function()
-    Scheduler.stop()
-    Tests.finally(function()
-        Scheduler.start()
-    end)
-
-    const condition = Ref.new(true)
-    local firstCreated = 0
-    local secondCreated = 0
-    const flow = ControlFlow.If(condition, function()
-        firstCreated += 1
-        return Box.new()
-    end).Else(function()
-        secondCreated += 1
-        return Box.new()
-    end)
-
-    const root = flow.build()
-    const firstChild = root.children[1]
-    Tests.expectValue("True condition creates first branch", firstCreated, 1)
-    Tests.expectValue("Only first branch is mounted", #root.children, 1)
-
-    condition.value = false
-    Scheduler.step()
-
-    Tests.expectValue("False condition creates else branch", secondCreated, 1)
-    Tests.expectValue("Branch replacement keeps one child", #root.children, 1)
-    Tests.expectTrue("Previous branch is destroyed", firstChild.isDestroyed())
-    root.destroy()
-    condition.destroy()
 end)
 
 return {}
