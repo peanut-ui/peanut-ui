@@ -51,6 +51,8 @@ local Components = table.freeze({
     onBeforeDestroyed = Component.onBeforeDestroyed,
     onDestroyed = Component.onDestroyed,
     If = ControlFlow.If,
+    For = ControlFlow.For,
+    ReactiveFor = ControlFlow.ReactiveFor,
     makeStory = require(script.Components.Stories).makeStory,
 })
 
