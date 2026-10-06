@@ -103,9 +103,13 @@ function Units.ToUDim2(obj: Utils.Size | Utils.Position | UDim2): UDim2
     error(`Unknown type, got: {type(obj)}`, 2)
 end
 
-function Units.ToUDim(obj: Utils.Unit | UDim): UDim
+function Units.ToUDim(obj: Utils.Unit | UDim | number?): UDim
     if typeof(obj) == "UDim" then
         return obj
+    end
+
+    if obj == nil or type(obj) == "number" then
+        return UDim.new(0, obj)
     end
 
     if type(obj) == "table" then
