@@ -104,7 +104,7 @@ function Scaling.simpleScale(
             end)
     end
 
-    if typeof(onSpace) == "table" and onSpace._isSpaceLike == true then
+    if typeof(onSpace) == "table" and onSpace._spaceLike == true then
         local newObject = onSpace.getObject()
 
         if newObject:IsA("GuiBase") then

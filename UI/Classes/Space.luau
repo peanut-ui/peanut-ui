@@ -142,7 +142,7 @@ local function newSpace(
             widget._widgetLike = true
             widget._widgetName = name
             widget._spaceName = name
-            widget._isSpaceLike = true
+            widget._spaceLike = true
 
             widget._createObject = function()
                 return
@@ -477,7 +477,7 @@ local function createStorySpace(target: Frame): WidgetType.SpaceLike
     local space = Widget.createEmptyWidget() :: any
     space._typeName = "storySpace"
     space._widgetLike = true
-    space._isSpaceLike = true
+    space._spaceLike = true
     space._widgetName = "storySpace"
     space._features["children"] = true
     space._features["events"] = true

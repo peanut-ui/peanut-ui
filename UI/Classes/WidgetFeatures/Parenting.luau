@@ -96,7 +96,7 @@ return function(
 
         parent = newParent :: any
 
-        if parent and parent._isSpaceLike then
+        if parent and parent._spaceLike then
             instance._setSpace(parent :: any)
         elseif parent and parent.isImplemented("getSpace") then
             local parentSpace = parent.getSpace()

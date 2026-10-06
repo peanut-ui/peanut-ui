@@ -103,7 +103,7 @@ export type ScaleFn = ScaleCallback | {
 }
 
 export type SpaceLike<Object = any> = WidgetLike & {
-    _isSpaceLike: true,
+    _spaceLike: true,
     signals: Utils.Signals,
 
     scaleObject: <T>(value: T, getOriginal: boolean?) -> T,
