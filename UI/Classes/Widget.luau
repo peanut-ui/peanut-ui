@@ -94,14 +94,14 @@ local defaultWidget = {
 }
 table.freeze(defaultWidget)
 
-local defaultProperties: Widget.DefaultProperties = {
+local defaultProperties: {[string]: any | () -> any} = {
     visible = true,
     zIndex = 0,
     clipsDescendants = false,
     backgroundColor = Color3.new(1, 1, 1),
     backgroundTransparency = 0,
-    size = Units.Size(),
-    position = Units.Position(),
+    size = function() return Units.Size() end,
+    position = function() return Units.Position() end,
     anchorPoint = Vector2.new(0, 0),
     layoutOrder = 0,
     autoLayoutOrder = 0,
@@ -156,11 +156,14 @@ local function defaultSetup(widget: Widget.BaseInterface)
         local setProperty = widget.setProperty
         local propertiesRefs = widget._propertiesRefs
 
-        for key, value in pairs(defaultProperties) do
+        for key, value in defaultProperties do
             if propertiesRefs[key] and propertiesRefs[key].getValue() ~= nil then
                 continue
             end
 
+            if type(value) == "function" then
+                value = (value :: () -> any)()
+            end
             setProperty(key, value)
         end
 

@@ -240,9 +240,9 @@ local function constructSyncList(
     end
 end
 
-local function createBasicObject<T>(
+local function createBasicObject(
     widgetName: string,
-    defaultProperties: T & {[string]: any},
+    defaultProperties: {[string]: any | () -> any},
     createFn: () -> any,
     linkedProperties: {[string]: string}?,
     linkEvents: {string}?,
@@ -317,6 +317,12 @@ local function createBasicObject<T>(
             end
         end
 
+        for key, value in properties do
+            if type(value) == "function" then
+                properties[key] = (value :: () -> any)()
+            end
+        end
+
         argsCopy.properties = properties
         if not argsCopy.widgetName then
             argsCopy.widgetName = widgetName
@@ -358,7 +364,7 @@ return {
             imageColor = Color3.new(1, 1, 1),
             imageRectOffset = Vector2.zero,
             imageRectSize = Vector2.zero,
-            tileSize = Units.Size(0, 0, 1, 1),
+            tileSize = function() return Units.Size(0, 0, 1, 1) end,
             imageTransparency = 0,
             resampleMode = Enum.ResamplerMode.Default,
             scaleType = Enum.ScaleType.Stretch,
@@ -398,7 +404,7 @@ return {
             scaleType = Enum.ScaleType.Stretch,
             sliceCenter = Rect.new(0, 0, 0, 0),
             sliceScale = 1,
-            tileSize = Units.Size(0, 0, 1, 1),
+            tileSize = function() return Units.Size(0, 0, 1, 1) end,
             imageRectOffset = Vector2.zero,
             imageRectSize = Vector2.zero,
             hoverImage = "",
@@ -444,7 +450,7 @@ return {
         {
             name = "ScrollingFrame",
             canvasPosition = Vector2.zero,
-            canvasSize = Units.Size(0, 0, 1, 1),
+            canvasSize = function() return Units.Size(0, 0, 1, 1) end,
             automaticCanvasSize = Enum.AutomaticSize.None,
             scrollingDirection = Enum.ScrollingDirection.Y,
             scrollingEnabled = true,
