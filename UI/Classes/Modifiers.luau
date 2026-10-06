@@ -9,7 +9,6 @@ const Logging = require(script.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Utils.Ref)
 const Scheduler = require(script.Parent.Parent.Utils.Scheduler)
 const Undefined = require(script.Parent.Parent.Utils.Undefined)
-const Units = require(script.Parent.Parent.Utils.Units)
 
 local logger = Logging.getLogger("PeanutUI.Classes.Modifiers")
 
@@ -723,20 +722,6 @@ local function useEnum(enum: Enum, property: string)
     end
 end
 
-local function useUDim2(property: string)
-    return function(c: Modifier.Component)
-        local scaleFn = c.getScaleObjectFn()
-        return scaleFn(Units.ToUDim2(c.getProperty(property) :: any))
-    end
-end
-
-local function _useUDim(property: string)
-    return function(c: Modifier.Component)
-        local scaleFn = c.getScaleObjectFn()
-        return scaleFn(Units.ToUDim(c.getProperty(property) :: any))
-    end
-end
-
 local function scale(property: string)
     return function(c: Modifier.Component)
         return c.getScaleObjectFn()(c.getProperty(property) :: Vector2)
@@ -943,8 +928,10 @@ Modifiers.components = {
             blurRadiusPx = 0,
             blurRadiusScale = 0,
             color = Color3.new(0, 0, 0),
-            offset = Units.Position(),
-            spread = Units.Size(),
+            offsetPx = Vector2.zero,
+            offsetScale = Vector2.zero,
+            spreadPx = Vector2.zero,
+            spreadScale = Vector2.zero,
             transparency = 0,
             zIndex = 0
         },
@@ -952,8 +939,8 @@ Modifiers.components = {
             Enabled = "enabled",
             BlurRadius = {"blurRadiusPx", "blurRadiusScale"},
             Color = "color",
-            Offset = "offset",
-            Spread = "spread",
+            Offset = {"offsetPx", "offsetScale"},
+            Spread = {"spreadPx", "spreadScale"},
             Transparency = "transparency",
             ZIndex = "zIndex"
         },
@@ -964,8 +951,24 @@ Modifiers.components = {
                     comp.getScaleObjectFn()(getProp("blurRadiusPx"))
                 )
             end,
-            Offset = useUDim2("offset"),
-            Spread = useUDim2("spread")
+            Offset = function(comp: Modifier.Component, getProp)
+                local scale = comp.getScaleObjectFn()
+                return UDim2.new(
+                    getProp("offsetScale").X,
+                    scale(getProp("offsetPx").X),
+                    getProp("offsetScale").Y,
+                    scale(getProp("offsetPx").Y)
+                )
+            end,
+            Spread = function(comp: Modifier.Component, getProp)
+                local scale = comp.getScaleObjectFn()
+                return UDim2.new(
+                    getProp("spreadScale").X,
+                    scale(getProp("spreadPx").X),
+                    getProp("spreadScale").Y,
+                    scale(getProp("spreadPx").Y)
+                )
+            end
         },
         {  -- Scale dependant :3
             "BlurRadius", "Offset", "Spread"
@@ -1030,8 +1033,8 @@ Modifiers.components = {
         "grid",
         "UIGridLayout",
         {
-            cellGapPx = Vector2.zero,
-            cellGapScale = Vector2.zero,
+            gapPx = Vector2.zero,
+            gapScale = Vector2.zero,
             cellSizePx = Vector2.zero,
             cellSizeScale = Vector2.zero,
             horizontal = false,
@@ -1043,7 +1046,7 @@ Modifiers.components = {
             absoluteContentSize = Vector2.zero
         },
         {
-            CellPadding = {"cellGapPx", "cellGapScale"},
+            CellPadding = {"gapPx", "gapScale"},
             CellSize = {"cellSizePx", "cellSizeScale"},
             FillDirection = "horizontal",
             SortOrder = "sortByName",
@@ -1056,10 +1059,10 @@ Modifiers.components = {
             CellPadding = function(comp: Modifier.Component, getProp)
                 local scale = comp.getScaleObjectFn()
                 return UDim2.new(
-                    getProp("cellGapScale").X,
-                    scale(getProp("cellGapPx").X),
-                    getProp("cellGapScale").Y,
-                    scale(getProp("cellGapPx").Y)
+                    getProp("gapScale").X,
+                    scale(getProp("gapPx").X),
+                    getProp("gapScale").Y,
+                    scale(getProp("gapPx").Y)
                 )
             end,
             CellSize = function(comp: Modifier.Component, getProp)

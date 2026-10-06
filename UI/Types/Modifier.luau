@@ -71,8 +71,10 @@ export type Shadow = {
     blurRadiusPx: number,
     blurRadiusScale: number,
     color: Color3,
-    offset: Utils.Position,
-    spread: Utils.Size,
+    offsetPx: Vector2,
+    offsetScale: Vector2,
+    spreadPx: Vector2,
+    spreadScale: Vector2,
     transparency: number,
     zIndex: number
 }
@@ -92,8 +94,8 @@ export type List = {
 }
 
 export type Grid = {
-    cellGapPx: Vector2,
-    cellGapScale: Vector2,
+    gapPx: Vector2,
+    gapScale: Vector2,
     cellSizePx: Vector2,
     cellSizeScale: Vector2,
     horizontal: boolean,
