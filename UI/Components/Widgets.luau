@@ -318,7 +318,7 @@ local function createBasicObject(
         end
 
         for key, value in properties do
-            if type(value) == "function" then
+            if type(value) == "function" and value == defaultProperties[key] then
                 properties[key] = (value :: () -> any)()
             end
         end
