@@ -9,6 +9,7 @@ const Logging = require(script.Parent.Parent.Utils.Logging)
 const Ref = require(script.Parent.Parent.Utils.Ref)
 const Scheduler = require(script.Parent.Parent.Utils.Scheduler)
 const Undefined = require(script.Parent.Parent.Utils.Undefined)
+const Units = require(script.Parent.Parent.Utils.Units)
 
 local logger = Logging.getLogger("PeanutUI.Classes.Modifiers")
 
@@ -702,6 +703,12 @@ local function createConstructor(
             newProperties[key] = value
         end
 
+        for key, value in pairs(newProperties) do
+            if type(value) == "function" and value == defaultProperties[key] then
+                newProperties[key] = (value :: () -> any)()
+            end
+        end
+
         return createModifier(
             name,
             className,
@@ -715,6 +722,22 @@ local function createConstructor(
         )
     end
 end
+
+
+local function useUDim2(property: string)
+    return function(c: Modifier.Component)
+        local scaleFn = c.getScaleObjectFn()
+        return scaleFn(Units.ToUDim2(c.getProperty(property) :: any))
+    end
+end
+
+local function useUDim(property: string)
+    return function(c: Modifier.Component)
+        local scaleFn = c.getScaleObjectFn()
+        return scaleFn(Units.ToUDim(c.getProperty(property) :: any))
+    end
+end
+
 
 local function useEnum(enum: Enum, property: string)
     return function(c: Modifier.Component)
@@ -759,43 +782,38 @@ Modifiers.components = {
         "cornerRadius",
         "UICorner",
         {
-            px = 0,
-            scale = 0
+            all = function() return Units.Unit() end
         },
         {
-            BottomLeftRadius = {"bottomLeftScale", "bottomLeftPx", "px", "scale"},
-            BottomRightRadius = {"bottomRightScale", "bottomRightPx", "px", "scale"},
-            TopLeftRadius = {"topLeftScale", "topLeftPx", "px", "scale"},
-            TopRightRadius = {"topRightScale", "topRightPx", "px", "scale"},
+            BottomLeftRadius = {"bottomLeft", "all"},
+            BottomRightRadius = {"bottomRight", "all"},
+            TopLeftRadius = {"topLeft", "all"},
+            TopRightRadius = {"topRight", "all"},
         },
         {
             BottomLeftRadius = function(comp: Modifier.Component, getProp)
                 local scale = comp.getScaleObjectFn()
-                return UDim.new(
-                    getProp("bottomLeftScale") or getProp("scale"),
-                    scale(getProp("bottomLeftPx") or getProp("px"))
-                )
+                return scale(Units.ToUDim(
+                    getProp("bottomLeft") or getProp("all")
+                ))
             end,
             BottomRightRadius = function(comp: Modifier.Component, getProp)
                 local scale = comp.getScaleObjectFn()
-                return UDim.new(
-                    getProp("bottomRightScale") or getProp("scale"),
-                    scale(getProp("bottomRightPx") or getProp("px"))
-                )
+                return scale(Units.ToUDim(
+                    getProp("bottomRight") or getProp("all")
+                ))
             end,
             TopLeftRadius = function(comp: Modifier.Component, getProp)
                 local scale = comp.getScaleObjectFn()
-                return UDim.new(
-                    getProp("topLeftScale") or getProp("scale"),
-                    scale(getProp("topLeftPx") or getProp("px"))
-                )
+                return scale(Units.ToUDim(
+                    getProp("topLeft") or getProp("all")
+                ))
             end,
             TopRightRadius = function(comp: Modifier.Component, getProp)
                 local scale = comp.getScaleObjectFn()
-                return UDim.new(
-                    getProp("topRightScale") or getProp("scale"),
-                    scale(getProp("topRightPx") or getProp("px"))
-                )
+                return scale(Units.ToUDim(
+                    getProp("topRight") or getProp("all")
+                ))
             end
         },
         {  -- Scale dependant
@@ -807,43 +825,38 @@ Modifiers.components = {
         "padding",
         "UIPadding",
         {
-            px = 0,
-            scale = 0
+            all = function() return Units.Unit() end
         },
         {
-            PaddingLeft = {"leftScale", "leftPx", "px", "scale"},
-            PaddingRight = {"rightScale", "rightPx", "px", "scale"},
-            PaddingTop = {"topScale", "topPx", "px", "scale"},
-            PaddingBottom = {"bottomScale", "bottomPx", "px", "scale"},
+            PaddingLeft = {"left", "all"},
+            PaddingRight = {"right", "all"},
+            PaddingTop = {"top", "all"},
+            PaddingBottom = {"bottom", "all"},
         },
         {
             PaddingLeft = function(comp: Modifier.Component, getProp)
                 local scale = comp.getScaleObjectFn()
-                return UDim.new(
-                    getProp("leftScale") or getProp("scale"),
-                    scale(getProp("leftPx") or getProp("px"))
-                )
+                return scale(Units.ToUDim(
+                    getProp("left") or getProp("all")
+                ))
             end,
             PaddingRight = function(comp: Modifier.Component, getProp)
                 local scale = comp.getScaleObjectFn()
-                return UDim.new(
-                    getProp("rightScale") or getProp("scale"),
-                    scale(getProp("rightPx") or getProp("px"))
-                )
+                return scale(Units.ToUDim(
+                    getProp("right") or getProp("all")
+                ))
             end,
             PaddingTop = function(comp: Modifier.Component, getProp)
                 local scale = comp.getScaleObjectFn()
-                return UDim.new(
-                    getProp("topScale") or getProp("scale"),
-                    scale(getProp("topPx") or getProp("px"))
-                )
+                return scale(Units.ToUDim(
+                    getProp("top") or getProp("all")
+                ))
             end,
             PaddingBottom = function(comp: Modifier.Component, getProp)
                 local scale = comp.getScaleObjectFn()
-                return UDim.new(
-                    getProp("bottomScale") or getProp("scale"),
-                    scale(getProp("bottomPx") or getProp("px"))
-                )
+                return scale(Units.ToUDim(
+                    getProp("bottom") or getProp("all")
+                ))
             end
         },
         {  -- Scale dependant
@@ -859,9 +872,8 @@ Modifiers.components = {
             zIndex = 0,
             transparency = 0,
             color = Color3.new(1, 1, 1),
-            thicknessPx = 1,
-            borderOffsetScale = 0,
-            borderOffsetPx = 0,
+            thickness = 1,
+            borderOffset = function() return Units.Unit() end,
             strokeMode = "Border",
             borderPosition = "Outer",
             lineJoinMode = "Round"
@@ -871,21 +883,15 @@ Modifiers.components = {
             ZIndex = "zIndex",
             Color = "color",
             Transparency = "transparency",
-            Thickness = "thicknessPx",
-            BorderOffset = {"borderOffsetScale", "borderOffsetPx"},
+            Thickness = "thickness",
+            BorderOffset = "borderOffset",
             ApplyStrokeMode = "strokeMode",
             BorderStrokePosition = "borderPosition",
             LineJoinMode = "lineJoinMode"
         },
         {
-            BorderOffset = function(c: Modifier.Component, getProp)
-                local scale = c.getScaleObjectFn()
-                return UDim.new(
-                    getProp("borderOffsetScale"),
-                    scale(getProp("borderOffsetPx"))
-                )
-            end,
-            Thickness = scale("thicknessPx"),
+            BorderOffset = useUDim("borderOffset"),
+            Thickness = scale("thickness"),
             ApplyStrokeMode = useEnum(Enum.ApplyStrokeMode, "strokeMode"),
             BorderStrokePosition = useEnum(Enum.BorderStrokePosition, "borderPosition"),
             LineJoinMode = useEnum(Enum.LineJoinMode, "lineJoinMode"),
@@ -925,50 +931,26 @@ Modifiers.components = {
         "UIShadow",
         {
             enabled = true,
-            blurRadiusPx = 0,
-            blurRadiusScale = 0,
+            blurRadius = function() return Units.Unit() end,
             color = Color3.new(0, 0, 0),
-            offsetPx = Vector2.zero,
-            offsetScale = Vector2.zero,
-            spreadPx = Vector2.zero,
-            spreadScale = Vector2.zero,
+            offset = function() return Units.Position() end,
+            spread = function() return Units.Size() end,
             transparency = 0,
             zIndex = 0
         },
         {
             Enabled = "enabled",
-            BlurRadius = {"blurRadiusPx", "blurRadiusScale"},
+            BlurRadius = "blurRadius",
             Color = "color",
-            Offset = {"offsetPx", "offsetScale"},
-            Spread = {"spreadPx", "spreadScale"},
+            Offset = "offset",
+            Spread = "spread",
             Transparency = "transparency",
             ZIndex = "zIndex"
         },
         {
-            BlurRadius = function(comp: Modifier.Component, getProp)
-                return UDim.new(
-                    getProp("blurRadiusScale"),
-                    comp.getScaleObjectFn()(getProp("blurRadiusPx"))
-                )
-            end,
-            Offset = function(comp: Modifier.Component, getProp)
-                local scale = comp.getScaleObjectFn()
-                return UDim2.new(
-                    getProp("offsetScale").X,
-                    scale(getProp("offsetPx").X),
-                    getProp("offsetScale").Y,
-                    scale(getProp("offsetPx").Y)
-                )
-            end,
-            Spread = function(comp: Modifier.Component, getProp)
-                local scale = comp.getScaleObjectFn()
-                return UDim2.new(
-                    getProp("spreadScale").X,
-                    scale(getProp("spreadPx").X),
-                    getProp("spreadScale").Y,
-                    scale(getProp("spreadPx").Y)
-                )
-            end
+            BlurRadius = useUDim("blurRadius"),
+            Offset = useUDim2("offset"),
+            Spread = useUDim2("spread")
         },
         {  -- Scale dependant :3
             "BlurRadius", "Offset", "Spread"
@@ -979,8 +961,7 @@ Modifiers.components = {
         "list",
         "UIListLayout",
         {
-            gapPx = 0,
-            gapScale = 0,
+            gap = function() return Units.Unit() end,
             horizontal = false,
             sortByName = false,
             wraps = false,
@@ -991,7 +972,7 @@ Modifiers.components = {
             absoluteContentSize = Vector2.zero
         },
         {
-            Padding = {"gapPx", "gapScale"},
+            Padding = "gap",
             FillDirection = "horizontal",
             SortOrder = "sortByName",
             Wraps = "wraps",
@@ -1001,12 +982,7 @@ Modifiers.components = {
             ItemLineAlignment = "lineAlignment"
         },
         {
-            Padding = function(comp: Modifier.Component, getProp)
-                return UDim.new(
-                    getProp("gapScale"),
-                    comp.getScaleObjectFn()(getProp("gapPx"))
-                )
-            end,
+            Padding = useUDim("gap"),
             HorizontalAlignment = useEnum(Enum.HorizontalAlignment, "horizontalAlign"),
             VerticalAlignment = useEnum(Enum.VerticalAlignment, "verticalAlign"),
             HorizontalFlex = useEnum(Enum.UIFlexAlignment, "horizontalFlex"),
@@ -1033,10 +1009,8 @@ Modifiers.components = {
         "grid",
         "UIGridLayout",
         {
-            gapPx = Vector2.zero,
-            gapScale = Vector2.zero,
-            cellSizePx = Vector2.zero,
-            cellSizeScale = Vector2.zero,
+            gap = function() return Units.Size() end,
+            cellSize = function() return Units.Size() end,
             horizontal = false,
             sortByName = false,
             fillDirectionMaxCells = 0,
@@ -1046,8 +1020,8 @@ Modifiers.components = {
             absoluteContentSize = Vector2.zero
         },
         {
-            CellPadding = {"gapPx", "gapScale"},
-            CellSize = {"cellSizePx", "cellSizeScale"},
+            CellPadding = "gap",
+            CellSize = "cellSize",
             FillDirection = "horizontal",
             SortOrder = "sortByName",
             FillDirectionMaxCells = "fillDirectionMaxCells",
@@ -1056,24 +1030,8 @@ Modifiers.components = {
             StartCorner = "startCorner"
         },
         {
-            CellPadding = function(comp: Modifier.Component, getProp)
-                local scale = comp.getScaleObjectFn()
-                return UDim2.new(
-                    getProp("gapScale").X,
-                    scale(getProp("gapPx").X),
-                    getProp("gapScale").Y,
-                    scale(getProp("gapPx").Y)
-                )
-            end,
-            CellSize = function(comp: Modifier.Component, getProp)
-                local scale = comp.getScaleObjectFn()
-                return UDim2.new(
-                    getProp("cellSizeScale").X,
-                    scale(getProp("cellSizePx").X),
-                    getProp("cellSizeScale").Y,
-                    scale(getProp("cellSizePx").Y)
-                )
-            end,
+            CellPadding = useUDim2("gap"),
+            CellSize = useUDim2("cellSize"),
             HorizontalAlignment = useEnum(Enum.HorizontalAlignment, "horizontalAlign"),
             VerticalAlignment = useEnum(Enum.VerticalAlignment, "verticalAlign"),
             StartCorner = useEnum(Enum.StartCorner, "startCorner"),
@@ -1104,8 +1062,7 @@ Modifiers.components = {
             horizontalAlign = "Left",
             verticalAlign = "Top",
             majorAxis = "RowMajor",
-            gapPx = Vector2.zero,
-            gapScale = Vector2.zero,
+            gap = function() return Units.Size() end,
             absoluteContentSize = Vector2.zero
         },
         {
@@ -1114,21 +1071,13 @@ Modifiers.components = {
             HorizontalAlignment = "horizontalAlign",
             VerticalAlignment = "verticalAlign",
             MajorAxis = "majorAxis",
-            CellPadding = {"gapPx", "gapScale"}
+            CellPadding = "gap"
         },
         {
             HorizontalAlignment = useEnum(Enum.HorizontalAlignment, "horizontalAlign"),
             VerticalAlignment = useEnum(Enum.VerticalAlignment, "verticalAlign"),
             MajorAxis = useEnum(Enum.TableMajorAxis, "majorAxis"),
-            CellPadding = function(comp: Modifier.Component, getProp)
-                local scale = comp.getScaleObjectFn()
-                return UDim2.new(
-                    getProp("gapScale").X,
-                    scale(getProp("gapPx").X),
-                    getProp("gapScale").Y,
-                    scale(getProp("gapPx").Y)
-                )
-            end,
+            CellPadding = useUDim2("gap"),
             FillDirection = function(c)
                 return if c.getProperty("horizontal") then Enum.FillDirection.Horizontal else Enum.FillDirection.Vertical
             end,

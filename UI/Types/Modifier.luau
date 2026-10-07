@@ -17,29 +17,19 @@ export type Flex = {
 }
 
 export type CornerRadius = {
-    topLeftScale: number?,
-    topRightScale: number?,
-    bottomLeftScale: number?,
-    bottomRightScale: number?,
-    topLeftPx: number?,
-    topRightPx: number?,
-    bottomLeftPx: number?,
-    bottomRightPx: number?,
-    px: number,
-    scale: number
+    topLeft: Utils.Unit?,
+    topRight: Utils.Unit?,
+    bottomLeft: Utils.Unit?,
+    bottomRight: Utils.Unit?,
+    all: Utils.Unit
 }
 
 export type Padding = {
-    leftScale: number?,
-    rightScale: number?,
-    topScale: number?,
-    bottomScale: number?,
-    topPx: number?,
-    bottomPx: number?,
-    leftPx: number?,
-    rightPx: number?,
-    px: number,
-    scale: number
+    left: Utils.Unit?,
+    right: Utils.Unit?,
+    top: Utils.Unit?,
+    bottom: Utils.Unit?,
+    all: Utils.Unit,
 }
 
 export type Stroke = {
@@ -47,9 +37,8 @@ export type Stroke = {
     zIndex: number,
     color: Color3,
     transparency: number,
-    thicknessPx: number,
-    borderOffsetScale: number,
-    borderOffsetPx: number,
+    thickness: number,
+    borderOffset: Utils.Unit,
     strokeMode: "Border" | "Contextual",
     borderPosition: "Center" | "Inner" | "Outer",
     lineJoinMode: "Bevel" | "Miter" | "Round"
@@ -68,21 +57,17 @@ export type Gradient = {
 
 export type Shadow = {
     enabled: boolean,
-    blurRadiusPx: number,
-    blurRadiusScale: number,
+    blurRadius: Utils.Unit,
     color: Color3,
-    offsetPx: Vector2,
-    offsetScale: Vector2,
-    spreadPx: Vector2,
-    spreadScale: Vector2,
+    offset: Utils.Position,
+    spread: Utils.Size,
     transparency: number,
     zIndex: number
 }
 
 -- Layouts
 export type List = {
-    gapPx: number,
-    gapScale: number,
+    gap: Utils.Unit,
     horizontal: boolean,
     sortByName: boolean,
     wraps: boolean,
@@ -94,10 +79,8 @@ export type List = {
 }
 
 export type Grid = {
-    gapPx: Vector2,
-    gapScale: Vector2,
-    cellSizePx: Vector2,
-    cellSizeScale: Vector2,
+    gap: Utils.Size,
+    cellSize: Utils.Size,
     horizontal: boolean,
     sortByName: boolean,
     fillDirectionMaxCells: number,
@@ -114,8 +97,7 @@ export type Table = {
     horizontalAlign: "Left" | "Center" | "Right",
     verticalAlign: "Top" | "Center" | "Bottom",
     majorAxis: "RowMajor" | "ColumnMajor",
-    gapPx: Vector2,
-    gapScale: Vector2
+    gap: Utils.Size
 }
 
 -- Constraints
@@ -178,29 +160,33 @@ export type Component<Props = JustList> = {
     read getComponent: () -> UIComponent?
 }
 
+type Setup<Modifier> = Partial<Modifier> & {
+    transitions: {[KeyOf<Modifier>]: Animations.Transition}?,
+    animations: {[any]: Animations.Animation}?
+}
 export type Modifiers = {
     [string]: any?,
 
     -- Styling
-    flex: Partial<Flex>?,
-    cornerRadius: Partial<CornerRadius>?,
-    padding: Partial<Padding>?,
-    stroke: (Partial<Stroke> & { gradient: Partial<Gradient>? })?,
-    strokes: {Partial<Stroke> & { gradient: Partial<Gradient>? }}?,
-    gradient: Partial<Gradient>?,
-    shadow: Partial<Shadow>?,
-    shadows: { Partial<Shadow> }?,
+    flex: Setup<Flex>?,
+    cornerRadius: Setup<CornerRadius>?,
+    padding: Setup<Padding>?,
+    stroke: (Setup<Stroke> & { gradient: Setup<Gradient>? })?,
+    strokes: {Setup<Stroke> & { gradient: Setup<Gradient>? }}?,
+    gradient: Setup<Gradient>?,
+    shadow: Setup<Shadow>?,
+    shadows: { Setup<Shadow> }?,
 
     -- Layouts
-    list: Partial<List>?,
-    grid: Partial<Grid>?,
-    table: Partial<Table>?,
+    list: Setup<List>?,
+    grid: Setup<Grid>?,
+    table: Setup<Table>?,
 
     -- Constraints
-    aspectRatio: Partial<AspectRatio>?,
-    sizeConstraint: Partial<SizeConstraint>?,
-    textSizeConstraint: Partial<TextSizeConstraint>?,
-    scale: Partial<Scale>?,
+    aspectRatio: Setup<AspectRatio>?,
+    sizeConstraint: Setup<SizeConstraint>?,
+    textSizeConstraint: Setup<TextSizeConstraint>?,
+    scale: Setup<Scale>?,
 }
 
 export type FlexComponent = Component<Flex>
