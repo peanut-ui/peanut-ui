@@ -87,6 +87,7 @@ return table.freeze {
     toRef = Ref.toRef,
     isRef = Ref.isRef,
     reactive = Ref.reactive,
+    isEqual = Ref.isEqual,
 
     -- Scheduler shortcuts
     defer = Scheduler.defer,

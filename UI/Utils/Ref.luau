@@ -918,6 +918,39 @@ function Ref.reactive<T>(initialTable: T, isShallow: boolean?): T
     return createReactiveProxy(initialTable, isShallow)
 end
 
+--- Equality Ref
+---
+--- Creates a reactive boolean that is true while `ref` equals `value`.
+--- `value` may be a plain value or another Ref, in which case both are compared reactively.
+---
+--- Shortcut for:
+--- ```
+--- Ref.computed(function()
+---     return ref.value == value
+--- end)
+--- ```
+---
+--- @param ref Ref to compare
+--- @param value Value or Ref to compare against
+--- @return ProtectedRef that is true when both are equal
+---
+--- ### Example
+--- ```
+--- local isTouch = Ref.isEqual(State.preferredInput, "touch")
+--- print(isTouch.value) -- true when preferred input is touch
+--- ```
+function Ref.isEqual(ref: Utils.Ref<any>, value: any | Utils.Ref<any>): Utils.ProtectedRef<boolean>
+    if Ref.isRef(value) then
+        return Ref.computed(function()
+            return ref.value == (value :: Utils.Ref<any>).value
+        end)
+    else
+        return Ref.computed(function()
+            return ref.value == value
+        end)
+    end
+end
+
 function Ref.isShallow(proxy: Table): boolean
     return proxyIsShallow[proxy] == true
 end
