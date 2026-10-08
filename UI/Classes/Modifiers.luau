@@ -134,6 +134,11 @@ local function createModifier(
         return destroyed
     end
 
+    -- For animations
+    local function scale(value: any, getOriginal: boolean?): any
+        return scaleFn(value, getOriginal)
+    end
+
     function modifier.getAnimationControl(name: any): Animations.AnimationControl
         ensureNotDestroyed()
         do
@@ -154,7 +159,7 @@ local function createModifier(
         function animationControl.animate()
             ensureNotDestroyed()
             if object then
-                animation.animate(object)
+                animation.animate(object, scale)
                 animationsToPlay[name] = nil
             else
                 animationsToPlay[name] = true
@@ -225,7 +230,7 @@ local function createModifier(
         animations[name] = animation
         if disableAutoPlay ~= true then
             if object then
-                animation.animate(object)
+                animation.animate(object, scale)
             else
                 animationsToPlay[name] = true
             end
@@ -414,7 +419,7 @@ local function createModifier(
         for name, _ in animationsToPlay do
             local animation = animations[name]
             if animation then
-                animation.animate(object)
+                animation.animate(object, scale)
                 animationsToPlay[name] = nil
             end
         end

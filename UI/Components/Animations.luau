@@ -9,16 +9,21 @@ local logger = Logging.getLogger("PeanutUI.Components.Animations")
 
 local Animations = {}
 
-local function makeAnimation(step: AnimationsType.AnimationStep, properties: {string}, createState: ((any) -> any)?, expectType: string?): AnimationsType.Animation
+local function makeAnimation(
+    step: AnimationsType.AnimationStep,
+    properties: {string},
+    createState: ((object: any, scale: ((value: any, getOriginal: boolean?) -> any)?) -> any)?,
+    expectType: string?
+): AnimationsType.Animation
     local animation = {}
     animation._typeName = "animation" :: "animation"
 
-    function animation.animate(object: Instance)
+    function animation.animate(object: Instance, scale: ((any, boolean?) -> any)?)
         if expectType and (typeof(object) ~= "Instance" or not object:IsA(expectType)) then
             logger.error("Got unexpected type")
         end
 
-        Animation.start(object, step, createState and createState(object))
+        Animation.start(object, step, createState and createState(object, scale))
     end
 
     function animation.stop(object: Instance)
@@ -82,26 +87,33 @@ function Animations.Spin(degreePerSecond: number): AnimationsType.Animation
     return makeAnimation(step, {"Rotation"}, createState, "GuiObject")
 end
 
-function Animations.Float(distance: number, cyclesPerSecond: number): AnimationsType.Animation
-    type State = { phase: number, position: UDim2 }
+function Animations.Float(distancePx: number, cyclesPerSecond: number): AnimationsType.Animation
+    type State = { phase: number, position: UDim2, scale: ((any) -> any)? }
 
     local function step(object: GuiObject, dt: number, state: State)
         state.phase += cyclesPerSecond * math.pi * 2 * dt
-        local offset = math.sin(state.phase) * distance
+        local offset = math.sin(state.phase) * distancePx
         local base = state.position
 
-        object.Position = UDim2.new(
+        local pos = UDim2.new(
             base.X.Scale,
             base.X.Offset,
-            base.Y.Scale + offset,
-            base.Y.Offset
+            base.Y.Scale,
+            base.Y.Offset + offset
         )
+
+        if state.scale then
+            pos = state.scale(pos)
+        end
+
+        object.Position = pos
     end
 
-    local function createState(object: GuiObject): State
+    local function createState(object: GuiObject, scale: (any) -> any): State
         return {
             phase = 0,
             position = object.Position,
+            scale = scale
         }
     end
 

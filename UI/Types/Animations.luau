@@ -12,7 +12,7 @@ export type Transition = {
 export type Animation = {
     read _typeName: "animation",
 
-    read animate: (obj: Instance) -> (),
+    read animate: (obj: Instance, scale: ((any, boolean?) -> any)?) -> (),
     read stop: (obj: Instance) -> (),
     read isRunning: (obj: Instance) -> boolean,
     read pause: (obj: Instance) -> (),

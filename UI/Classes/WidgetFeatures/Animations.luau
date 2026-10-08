@@ -40,6 +40,29 @@ return function(
     local unwatchKeys: {[any]: () -> ()} = {}
     local animationControlCache: {[any]: Animations.AnimationControl} = {}
 
+    local scaleFnCached: ((any, boolean?) -> any)? = nil
+
+    local function scale(value: any, getOriginal: boolean?): any
+        if scaleFnCached then
+            return scaleFnCached(value, getOriginal)
+        end
+
+        return value
+    end
+
+    local function updateScale()
+        if not instance.isImplemented("getSpace") then
+            return
+        end
+
+        local space = instance.getSpace()
+        if not space then
+            return
+        end
+
+        scaleFnCached = space.scaleObject
+    end
+
     function instance.getAnimationControl(name: any): Animations.AnimationControl
         ensureNotDestroyed()
         do
@@ -61,7 +84,7 @@ return function(
             ensureNotDestroyed()
             local object = instance.getObject()
             if object then
-                animation.animate(object)
+                animation.animate(object, scale)
                 animationsToPlay[name] = nil
             else
                 animationsToPlay[name] = true
@@ -172,7 +195,7 @@ return function(
         animations[name] = animation
         if disableAutoPlay ~= true then
             if object then
-                animation.animate(object)
+                animation.animate(object, scale)
             else
                 animationsToPlay[name] = true
             end
@@ -209,7 +232,7 @@ return function(
                             return
                         end
 
-                        propertyAnimation.animate(object)
+                        propertyAnimation.animate(object, scale)
                     end)
                 end
             end, { bucket = bucket })
@@ -230,13 +253,23 @@ return function(
     end)
 
     hooks.add("AfterRedraw", function(object: GuiObject)
+        updateScale()
+
         for name, _ in animationsToPlay do
             local animation = animations[name]
             if animation then
-                animation.animate(object)
+                animation.animate(object, scale)
                 animationsToPlay[name] = nil
             end
         end
+    end)
+
+    hooks.add("SpaceChanged", function(...)
+        updateScale()
+    end)
+
+    hooks.add("ScaleChanged", function(...)
+        updateScale()
     end)
 
     hooks.add("OnSetup", function()
