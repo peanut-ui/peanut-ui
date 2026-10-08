@@ -115,6 +115,16 @@ export type ButtonEvents = Flatten<{
     SecondaryActivated: (obj: InputObject) -> ()
 } & WidgetClass.DefaultEvents>
 
+-- {"DidLoop", "Ended", "Loaded", "Paused", "Played"},
+type VideoFrameEvent = (video: string) -> ...boolean?
+export type VideoFrameEvents = Flatten<{
+    DidLoop: VideoFrameEvent,
+    Ended: VideoFrameEvent,
+    Loaded: VideoFrameEvent,
+    Paused: VideoFrameEvent,
+    Played: VideoFrameEvent
+} & WidgetClass.DefaultEvents>
+
 export type Frame = WidgetClass.Interface<WidgetClass.DefaultProperties, RobloxTypes.FrameObject>
 export type FrameArgs = WidgetClass.Args<WidgetClass.DefaultProperties, Frame>
 
@@ -142,8 +152,8 @@ export type ScrollingFrameArgs = WidgetClass.Args<ScrollingFrameProps, Scrolling
 export type ViewportFrame = WidgetClass.Interface<ViewportFrameProps, RobloxTypes.ViewportFrameObject>
 export type ViewportFrameArgs = WidgetClass.Args<ViewportFrameProps, ViewportFrame>
 
-export type VideoFrame = WidgetClass.Interface<VideoFrameProps, RobloxTypes.VideoFrameObject>
-export type VideoFrameArgs = WidgetClass.Args<VideoFrameProps, VideoFrame>
+export type VideoFrame = WidgetClass.Interface<VideoFrameProps, RobloxTypes.VideoFrameObject, VideoFrameEvents>
+export type VideoFrameArgs = WidgetClass.Args<VideoFrameProps, VideoFrame, VideoFrameEvents>
 
 export type Children = {WidgetClass.WidgetLike}
 
@@ -710,7 +720,7 @@ return {
             imageColor = "ImageColor3",
             imageTransparency = "ImageTransparency",
         },
-        nil,
+        {"DidLoop", "Ended", "Loaded", "Paused", "Played"},
         nil,
         {
             playing = true,
