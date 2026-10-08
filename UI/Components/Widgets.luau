@@ -6,8 +6,11 @@ const RobloxTypes = require(script.Parent.Parent.Types.RobloxTypes)
 const TypeFuncs = require(script.Parent.Parent.Types.TypeFuncs)
 const Utils = require(script.Parent.Parent.Types.Utils)
 const Helpers = require(script.Parent.Parent.Utils.Helpers)
+const Logging = require(script.Parent.Parent.Utils.Logging)
 const Undefined = require(script.Parent.Parent.Utils.Undefined)
 const Units = require(script.Parent.Parent.Utils.Units)
+
+local logger = Logging.getLogger("PeanutUI.Components.Widget")
 
 export type Flatten<Table> = TypeFuncs.Flatten<Table>
 local defaultFontFace = Font.new("rbxasset://fonts/families/Roboto.json")
@@ -142,6 +145,8 @@ export type ViewportFrameArgs = WidgetClass.Args<ViewportFrameProps, ViewportFra
 export type VideoFrame = WidgetClass.Interface<VideoFrameProps, RobloxTypes.VideoFrameObject>
 export type VideoFrameArgs = WidgetClass.Args<VideoFrameProps, VideoFrame>
 
+export type Children = {WidgetClass.WidgetLike}
+
 type Converter = {
     toUDim2: (any) -> UDim2,
     fromUDim2: (any) -> any,
@@ -251,7 +256,7 @@ local function createBasicObject(
     readonly: {[string]: boolean?}?,
     redrawOnHooks: {[string]: {string}}?,
     setupFn: (any) -> ()?
-): (WidgetClass.Args) -> WidgetClass.Interface
+): (WidgetClass.Args?, Children?) -> WidgetClass.Interface
     table.freeze(defaultProperties)
     freeze(linkedProperties)
     freeze(linkEvents)
@@ -272,8 +277,14 @@ local function createBasicObject(
     table.freeze(transformFnNew)
     table.freeze(redrawOnHooksNew)
 
-    return function(args)
-        local argsCopy = table.clone(args)
+    return function(args, children)
+        local argsCopy: WidgetClass.Args = args and table.clone(args) or {}
+        if children then
+            if argsCopy.children then
+                logger.error("Cannot have args.children and children as second argument at the same time")
+            end
+            argsCopy.children = children
+        end
 
         local function setup(widget: any, defaultSetup)
             defaultSetup(widget)
@@ -341,7 +352,7 @@ return {
         function()
             return Instance.new("Frame")
         end
-    ) :: (FrameArgs) -> Frame,
+    ) :: (FrameArgs?, Children?) -> Frame,
     CanvasGroup = createBasicObject(
         "canvasGroup",
         {
@@ -355,7 +366,7 @@ return {
             groupColor = "GroupColor",
             groupTransparency = "GroupTransparency",
         }
-    ) :: (CanvasGroupArgs) -> CanvasGroup,
+    ) :: (CanvasGroupArgs?, Children?) -> CanvasGroup,
     ImageLabel = createBasicObject(
         "imageLabel",
         {
@@ -392,7 +403,7 @@ return {
         { tileSize = "scaleToUDim2"},
         { isLoaded = true },
         { isLoaded = true }
-    ) :: (ImageLabelArgs) -> ImageLabel,
+    ) :: (ImageLabelArgs?, Children?) -> ImageLabel,
     ImageButton = createBasicObject(
         "imageButton",
         {
@@ -444,7 +455,7 @@ return {
         },
         { selected = true, isLoaded = true },
         { selected = true, isLoaded = true }
-    ) :: (ImageButtonArgs) -> ImageButton,
+    ) :: (ImageButtonArgs?, Children?) -> ImageButton,
     ScrollingFrame = createBasicObject(
         "scrollingFrame",
         {
@@ -485,7 +496,7 @@ return {
         {
             canvasPosition = "scale"
         }
-    ) :: (ScrollingFrameArgs) -> ScrollingFrame,
+    ) :: (ScrollingFrameArgs?, Children?) -> ScrollingFrame,
     TextLabel = createBasicObject(
         "textLabel",
         {
@@ -530,7 +541,7 @@ return {
         {
             textSize = "scale",
         }
-    ) :: (TextLabelArgs) -> TextLabel,
+    ) :: (TextLabelArgs?, Children?) -> TextLabel,
     TextButton = createBasicObject(
         "textButton",
         {
@@ -586,7 +597,7 @@ return {
         {
             textSize = "scale",
         }
-    ) :: (TextButtonArgs) -> TextButton,
+    ) :: (TextButtonArgs?, Children?) -> TextButton,
     TextBox = createBasicObject(
         "textBox",
         {
@@ -649,7 +660,7 @@ return {
             cursorPosition = true,
             selectionStart = true
         }
-    ) :: (TextBoxArgs) -> TextBox,
+    ) :: (TextBoxArgs?, Children?) -> TextBox,
     ViewportFrame = createBasicObject(
         "viewportFrame",
         {
@@ -672,7 +683,7 @@ return {
             lightColor = "LightColor",
             lightDirection = "LightDirection",
         }
-    ) :: (ViewportFrameArgs) -> ViewportFrame,
+    ) :: (ViewportFrameArgs?, Children?) -> ViewportFrame,
     VideoFrame = createBasicObject(
         "videoFrame",
         {
@@ -705,5 +716,5 @@ return {
             playing = true,
             timePosition = true
         }
-    ) :: (VideoFrameArgs) -> VideoFrame,
+    ) :: (VideoFrameArgs?, Children?) -> VideoFrame,
 }
