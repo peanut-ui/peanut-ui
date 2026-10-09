@@ -49,8 +49,6 @@ local PeanutUI = require(ReplicatedStorage.Packages.PeanutUI)
 ## Quick start
 
 ```luau
-local PeanutUI = require(ReplicatedStorage.PeanutUI)
-
 local Component = PeanutUI.Component
 local Space = PeanutUI.Space
 local Widgets = PeanutUI.Widgets
