@@ -20,6 +20,7 @@ Most Roblox UI code is imperative: create an instance, set a property, listen fo
 - **Declarative widgets** — compose UI with callable constructors like `Widgets.Frame { ... }`. No manual instance wiring.
 - **Reactive by default** — refs, computed values, and reactive tables drive your UI. Changes flow through the Scheduler, not straight to instances.
 - **Reactive units** — `Units.Size`, `Units.Position`, and `Units.Unit` replace `UDim2` and `UDim` with per-component scaling and ref-driven updates.
+- **Lazy instance creation** — widgets are created immediately, but their Roblox `Instance` is deferred. An invisible or unparented widget never builds its instance until it becomes visible and attached.
 - **Responsive scaling** — declare a reference resolution once and `Scaling` keeps the whole tree proportional on every screen.
 - **Animations & transitions** — continuous animations and on-change transitions, with a full library of easing curves and spring physics.
 - **Stable API** — the public surface avoids breaking changes where possible; features are deprecated rather than removed.
