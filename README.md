@@ -2,8 +2,6 @@
 
 A declarative, reactive UI framework for Roblox, written in Luau.
 
-Peanut-sized API, production-sized UI.
-
 > **Status:** early development. PeanutUI is not yet published for public use and is unfinished — expect bugs and incomplete features.
 
 ## Why PeanutUI
