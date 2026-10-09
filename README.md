@@ -6,6 +6,15 @@ Peanut-sized API, production-sized UI.
 
 > **Status:** early development. PeanutUI is not yet published for public use and is unfinished — expect bugs and incomplete features.
 
+## Why PeanutUI
+
+Most Roblox UI code is imperative: create an instance, set a property, listen for a change, set it again. PeanutUI keeps that power but flips the default — you declare the UI, and reactivity keeps it in sync.
+
+- **Declarative and imperative are the same thing.** `Widgets.Frame { properties = { ... } }` is exactly equivalent to creating the widget and calling `setProperty` for each field. Use whichever reads better.
+- **Reactive by default.** Reading a ref subscribes; writing one schedules dependents. You never wire up change listeners by hand.
+- **Deferred, not immediate.** Mutations flow through the Scheduler's stages instead of hitting instances synchronously, so updates batch cleanly.
+- **Stable by design.** The public API avoids breaking changes; features are deprecated, not removed.
+
 ## Features
 
 - **Declarative widgets** — compose UI with callable constructors like `Widgets.Frame { ... }`. No manual instance wiring.
