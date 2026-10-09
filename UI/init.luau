@@ -2,6 +2,7 @@
 --!optimize 2
 const Component = require(script.Components.Component)
 const ControlFlow = require(script.Components.ControlFlow)
+const Scaling = require(script.Components.Scaling)
 const Widgets = require(script.Components.Widgets)
 const State = require(script.State)
 const Modifier = require(script.Types.Modifier)
@@ -59,6 +60,7 @@ local Components = table.freeze({
 
 return table.freeze {
     Logging = require(script.Utils.Logging),
+    Scheduler = require(script.Utils.Scheduler),
 
     Widgets = Widgets,
     Space = require(script.Classes.Space),
@@ -68,6 +70,7 @@ return table.freeze {
     Animations = require(script.Components.Animations),
     Transitions = require(script.Components.Transitions),
 
+    Scaling = Scaling,
     Undefined = require(script.Utils.Undefined),
 
     Ref = Ref,
