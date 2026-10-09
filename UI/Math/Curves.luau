@@ -76,7 +76,7 @@ function Curves.EaseOutQuint(t: number): number
     return 1 - (1 - t) ^ 5
 end
 
-function Curves.QuintInOut(t: number): number
+function Curves.EaseInOutQuint(t: number): number
     if t < 0.5 then
         return 16 * t ^ 5
     end
@@ -90,11 +90,11 @@ function Curves.EaseInSine(t: number): number
     return 1 - math.cos(t * HALF_PI)
 end
 
-function Curves.SineOut(t: number): number
+function Curves.EaseOutSine(t: number): number
     return math.sin(t * HALF_PI)
 end
 
-function Curves.SineInOut(t: number): number
+function Curves.EaseInOutSine(t: number): number
     return -(math.cos(PI * t) - 1) / 2
 end
 
