@@ -1,5 +1,11 @@
 # PeanutUI
 
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/peanut-ui/peanut-ui?style=for-the-badge&labelColor=%23424242&color=%23B2FF59)
+![GitHub repo size](https://img.shields.io/github/repo-size/peanut-ui/peanut-ui?style=for-the-badge&labelColor=%23424242&color=%2384FFFF)
+![GitHub Repo stars](https://img.shields.io/github/stars/peanut-ui/peanut-ui?style=for-the-badge&labelColor=%23424242&color=%23B9F6CA)
+![GitHub contributors](https://img.shields.io/github/contributors/peanut-ui/peanut-ui?style=for-the-badge&labelColor=%23424242&color=%23FFAB40)
+![GitHub License](https://img.shields.io/github/license/peanut-ui/peanut-ui?style=for-the-badge&labelColor=%23424242&color=%23FF9E80)
+
 A declarative, reactive UI framework for Roblox, written in Luau.
 
 > **Status:** early development. PeanutUI is not yet published for public use and is unfinished — expect bugs and incomplete features.
