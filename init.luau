@@ -55,6 +55,7 @@ local Components = table.freeze({
     If = ControlFlow.If,
     For = ControlFlow.For,
     ReactiveFor = ControlFlow.ReactiveFor,
+    Lazy = ControlFlow.Lazy,
     makeStory = require(script.Components.Stories).makeStory,
 })
 
