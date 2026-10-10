@@ -207,4 +207,22 @@ function ControlFlow.ReactiveFor<K, V>(
     return box
 end
 
+function ControlFlow.Lazy(
+    createFn: () -> Widget.WidgetLike
+)
+    local box, hooks = Box.new()
+    box._boxName = "lazy"
+
+    hooks.add("ObjectCreateScheduled", function()
+        local widget = createFn()
+
+        box.addChild(widget)
+        if widget.isImplemented("_createObject") then
+            (widget :: Widget.BaseInterface)._createObject()
+        end
+    end)
+
+    return box
+end
+
 return table.freeze(ControlFlow)
