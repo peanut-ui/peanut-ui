@@ -217,27 +217,18 @@ function ControlFlow.ReactiveFor<K, V>(
     return box
 end
 
-function ControlFlow.Lazy<A...>(
-    createFn: (A...) -> Widget.WidgetLike,
-    ...: A...
+function ControlFlow.Lazy<P>(
+    createFn: (P) -> Widget.WidgetLike,
+    props: P?
 )
     local box, hooks = Box.new()
     box._boxName = "lazy"
-
-    local args: {[number]: any, n: number}? = nil
-    if select("#", ...) > 0 then
-        args = table.pack(... :: any)
-    end
 
     local bucket = Context.getCurrentBucket() or false
 
     hooks.add("ObjectCreateScheduled", function()
         local ok, result = Context.withContextBucket(bucket :: any, function()
-            if args then
-                return createFn(table.unpack(args, 1, args.n))
-            else
-                return (createFn :: () -> Widget.WidgetLike)()
-            end
+            return createFn(props :: P)
         end)
 
         if not ok then
