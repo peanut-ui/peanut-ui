@@ -1,0 +1,265 @@
+--!strict
+--!optimize 2
+const Animation = require(script.Parent.Parent.Engines.Animation)
+const Oklab = require(script.Parent.Parent.Math.Oklab)
+const AnimationsType = require(script.Parent.Parent.Types.Animations)
+const Logging = require(script.Parent.Parent.Utils.Logging)
+
+local logger = Logging.getLogger("PeanutUI.Components.Animations")
+
+local Animations = {}
+
+local function makeAnimation(
+    step: AnimationsType.AnimationStep,
+    properties: {string},
+    createState: ((object: any, scale: ((value: any, getOriginal: boolean?) -> any)?) -> any)?,
+    expectType: string?
+): AnimationsType.Animation
+    local animation = {}
+    animation._typeName = "animation" :: "animation"
+
+    function animation.animate(object: Instance, scale: ((any, boolean?) -> any)?)
+        if expectType and (typeof(object) ~= "Instance" or not object:IsA(expectType)) then
+            logger.error("Got unexpected type")
+        end
+
+        Animation.start(object, step, createState and createState(object, scale))
+    end
+
+    function animation.stop(object: Instance)
+        Animation.stop(object, step)
+    end
+
+    function animation.isRunning(object: Instance)
+        return Animation.isRunning(object, step)
+    end
+
+    function animation.pause(object: Instance)
+        Animation.pause(object, step)
+    end
+
+    function animation.continue(object: Instance)
+        Animation.continue(object, step)
+    end
+
+    animation.properties = properties
+
+    table.freeze(animation)
+
+    return animation
+end
+
+local function makeUnresolved<A...>(
+    properties: {string},
+    fn: ({string}, A...) -> AnimationsType.Animation,
+    ...: A...
+): AnimationsType.UnresolvedAnimation
+    local unresolved = {}
+    unresolved._typeName = "unresolvedAnimation" :: "unresolvedAnimation"
+
+    local args = table.pack(... :: any)
+    function unresolved.resolve(propertiesMap: {[string]: string})
+        local newProperties = {}
+        for _, property in properties do
+            table.insert(newProperties, propertiesMap[property] or property)
+        end
+
+        return fn(newProperties, table.unpack(args, 1, args.n))
+    end
+
+    table.freeze(unresolved)
+
+    return unresolved
+end
+
+Animations.makeAnimation = makeAnimation
+
+function Animations.Spin(degreePerSecond: number): AnimationsType.Animation
+    local function step(object: GuiObject, dt: number, state: {number})
+        state[1] = (state[1] + degreePerSecond * dt) % 360
+        object.Rotation = state[1]
+    end
+
+    local function createState(obj: GuiObject)
+        return { obj.Rotation }
+    end
+
+    return makeAnimation(step, {"Rotation"}, createState, "GuiObject")
+end
+
+function Animations.Float(distancePx: number, cyclesPerSecond: number): AnimationsType.Animation
+    type State = { phase: number, position: UDim2, scale: ((any) -> any)? }
+
+    local function step(object: GuiObject, dt: number, state: State)
+        state.phase += cyclesPerSecond * math.pi * 2 * dt
+        local offset = math.sin(state.phase) * distancePx
+        local base = state.position
+
+        local pos = UDim2.new(
+            base.X.Scale,
+            base.X.Offset,
+            base.Y.Scale,
+            base.Y.Offset + offset
+        )
+
+        if state.scale then
+            pos = state.scale(pos)
+        end
+
+        object.Position = pos
+    end
+
+    local function createState(object: GuiObject, scale: (any) -> any): State
+        return {
+            phase = 0,
+            position = object.Position,
+            scale = scale
+        }
+    end
+
+    return makeAnimation(step, {"Position"}, createState, "GuiObject")
+end
+
+function Animations.Swing(degrees: number, cyclesPerSecond: number): AnimationsType.Animation
+    type State = { phase: number, rotation: number }
+
+    local function step(object: GuiObject, dt: number, state: State)
+        state.phase += cyclesPerSecond * math.pi * 2 * dt
+        object.Rotation = state.rotation + math.sin(state.phase) * degrees
+    end
+
+    local function createState(object: GuiObject): State
+        return {
+            phase = 0,
+            rotation = object.Rotation,
+        }
+    end
+
+    return makeAnimation(step, {"Rotation"}, createState, "GuiObject")
+end
+
+function Animations.PulseSize(scale: number, cyclesPerSecond: number): AnimationsType.Animation
+    type State = { phase: number, size: UDim2 }
+
+    local function step(object: GuiObject, dt: number, state: State)
+        state.phase += cyclesPerSecond * math.pi * 2 * dt
+        local multiplier = 1 + math.sin(state.phase) * scale
+        local base = state.size
+
+        object.Size = UDim2.new(
+            base.X.Scale * multiplier,
+            base.X.Offset * multiplier,
+            base.Y.Scale * multiplier,
+            base.Y.Offset * multiplier
+        )
+    end
+
+    local function createState(object: GuiObject): State
+        return {
+            phase = 0,
+            size = object.Size,
+        }
+    end
+
+    return makeAnimation(step, {"Size"}, createState, "GuiObject")
+end
+
+function Animations.PulseNumber(
+    property: string,
+    minimum: number,
+    maximum: number,
+    cyclesPerSecond: number
+): AnimationsType.UnresolvedAnimation
+    return makeUnresolved({property}, function(properties: {string}): AnimationsType.Animation
+        local property = properties[1]
+
+        local function step(object: GuiObject, dt: number, state: {number})
+            state[1] += cyclesPerSecond * math.pi * 2 * dt
+            local midpoint = (minimum + maximum) / 2
+            local amplitude = (maximum - minimum) / 2
+            (object :: any)[property] = midpoint + math.sin(state[1]) * amplitude
+        end
+
+        local function createState(object: GuiObject)
+            if typeof((object :: any)[property]) ~= "number" then
+                logger.error("Property %s is not a number, can't start animation", property)
+            end
+            return {0}
+        end
+
+        return makeAnimation(step, {property}, createState)
+    end)
+end
+
+function Animations.ColorCycle(
+    property: string,
+    cyclesPerSecond: number
+): AnimationsType.UnresolvedAnimation
+    type State = { hue: number, saturation: number, value: number }
+
+    return makeUnresolved({property}, function(properties: {string}): AnimationsType.Animation
+        local property = properties[0]
+
+        local function step(object: GuiObject, dt: number, state: State)
+            state.hue = (state.hue + cyclesPerSecond * dt) % 1
+            (object :: any)[property] = Color3.fromHSV(state.hue, state.saturation, state.value)
+        end
+
+        local function createState(object: GuiObject)
+            if typeof((object :: any)[property]) ~= "Color3" then
+                logger.error("Property %s is not a Color3, can't start animation", property)
+            end
+            local hue, saturation, value = (object :: any)[property]:ToHSV()
+
+            return {
+                hue = hue,
+                saturation = saturation,
+                value = value,
+            }
+        end
+
+        return makeAnimation(step, {property}, createState, "GuiObject")
+    end)
+end
+
+function Animations.ColorCycleOklch(
+    property: string,
+    cyclesPerSecond: number
+): AnimationsType.UnresolvedAnimation
+    type State = { lightness: number, chroma: number, hue: number }
+
+    return makeUnresolved({property}, function(properties: {string}): AnimationsType.Animation
+        local property = properties[1]
+
+        local function step(object: GuiObject, dt: number, state: State)
+            state.hue += cyclesPerSecond * math.pi * 2 * dt
+
+            local color = Oklab.oklchToRgb({
+                state.lightness,
+                state.chroma,
+                state.hue,
+            })
+            local target = object :: any
+            target[property] = color
+        end
+
+        local function createState(object: GuiObject): State
+            local value = (object :: any)[property]
+            if typeof(value) ~= "Color3" then
+                logger.error("Property %s is not a Color3, can't start animation", property)
+            end
+
+            local oklch = Oklab.rgbToOklch(value)
+
+            return {
+                lightness = oklch[1],
+                chroma = oklch[2],
+                hue = oklch[3],
+            }
+        end
+
+        return makeAnimation(step, {property}, createState, "GuiObject")
+    end)
+end
+
+return table.freeze(Animations)
