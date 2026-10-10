@@ -33,30 +33,23 @@ Most Roblox UI code is imperative: create an instance, set a property, listen fo
 
 PeanutUI is a library. Where it lives depends on how you install it:
 
-- **Manual install** — `ReplicatedStorage.PeanutUI`
-- **Wally install** — `ReplicatedStorage.Packages.PeanutUI`
-
 ```luau
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- Manual install
-local PeanutUI = require(ReplicatedStorage.PeanutUI)
-
--- Wally install
-local PeanutUI = require(ReplicatedStorage.Packages.PeanutUI)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const PeanutUI = require(ReplicatedStorage.PeanutUI)  -- Or wherever you put it
 ```
 
-## Quick start
+## Example components
 
+Gray square with "Hello, PeanutUI" text:
 ```luau
-local Component = PeanutUI.Component
-local Space = PeanutUI.Space
-local Widgets = PeanutUI.Widgets
-local Units = PeanutUI.Units
+const Component = PeanutUI.Component
+const Space = PeanutUI.Space
+const Widgets = PeanutUI.Widgets
+const Units = PeanutUI.Units
 
-local space = Space.createScreenSpace("Main")
+const space = Space.createScreenSpace("Main")
 
-local App = Component.defineComponent(function()
+const Square = Component.defineComponent(function()
     return Widgets.Frame {
         properties = {
             size = Units.Size(200, 200),
@@ -66,14 +59,54 @@ local App = Component.defineComponent(function()
             Widgets.TextLabel {
                 properties = {
                     text = "Hello, PeanutUI",
+                    textColor = Color3.new(1, 1, 1)
                 },
             },
         },
     }
 end)
 
-local app = App()
-app.setParent(space)
+const square = Square()
+square.setParent(space)  -- Or space.addChild(square)
+```
+
+Counter (as a tradition):
+```luau
+const Component, Space = PeanutUI.Component, PeanutUI.Space
+const Widgets, Units = PeanutUI.Widgets, PeanutUI.Units
+const ref, computed = PeanutUI.ref, PeanutUI.computed
+
+const space = Space.createScreenSpace("Main")
+
+const Counter = Component.defineComponent(function(initialValue: number)
+    const clickCount = ref(initialValue)
+
+    -- Good looking button :3
+    return Widgets.TextButton {
+        properties = {
+            backgroundColor = Color3.fromHex("#222629"),
+            textColor = Color3.fromHex("#e9f1f7"),
+            text = computed(function()
+                return "Clicks: " .. clickCount.value
+            end),
+            textSize = 16,
+            size = Units.Size(0, 40),
+            automaticSize = Enum.AutomaticSize.X
+        },
+        modifiers = {
+            cornerRadius = { all = Units.Unit(6) },
+            padding = { all = Units.Unit(3), left = Units.Unit(16), right = Units.Unit(16) }
+        },
+        events = {
+            Activated = function()
+                clickCount.value += 1
+            end
+        }
+    }
+end)
+
+const counter = Counter(1)
+counter.setParent(space)  -- Or space.addChild(square)
 ```
 
 ## Documentation
