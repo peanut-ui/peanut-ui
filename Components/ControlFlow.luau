@@ -174,22 +174,32 @@ function ControlFlow.ReactiveFor<K, V>(
 
     local widgets: {[any]: Widget.WidgetLike} = {}
 
+    local bucket = (Context.getCurrentBucket() or false) :: any
+
     local function populate()
         -- Key from keyFn -> array value
         local newKeys: {[any]: any} = {}
         for key, value in arrayRef.value do
             local k = keyFn(value, key)
             if newKeys[k] then
-                logger.warn("")
+                logger.warn("Detected key collision, latest value will be used. Key: %s", k)
             end
             newKeys[k] = value
         end
 
         for key, value in newKeys do
             if not widgets[key] then
-                local widget = createFn(value)
-                widgets[key] = widget
-                box.addChild(widget)
+                local ok, result = Context.withContextBucket(bucket, function()
+                    return createFn(value)
+                end)
+
+                if not ok then
+                    logger.warn("There was an error during ReactiveFor widget creation: %s", result)
+                    continue
+                end
+
+                widgets[key] = result
+                box.addChild(result)
             end
         end
 
@@ -207,18 +217,37 @@ function ControlFlow.ReactiveFor<K, V>(
     return box
 end
 
-function ControlFlow.Lazy(
-    createFn: () -> Widget.WidgetLike
+function ControlFlow.Lazy<A...>(
+    createFn: (A...) -> Widget.WidgetLike,
+    ...: A...
 )
     local box, hooks = Box.new()
     box._boxName = "lazy"
 
-    hooks.add("ObjectCreateScheduled", function()
-        local widget = createFn()
+    local args: {[number]: any, n: number}? = nil
+    if select("#", ...) > 0 then
+        args = table.pack(... :: any)
+    end
 
-        box.addChild(widget)
-        if widget.isImplemented("_createObject") then
-            (widget :: Widget.BaseInterface)._createObject()
+    local bucket = Context.getCurrentBucket() or false
+
+    hooks.add("ObjectCreateScheduled", function()
+        local ok, result = Context.withContextBucket(bucket :: any, function()
+            if args then
+                return createFn(table.unpack(args, 1, args.n))
+            else
+                return (createFn :: () -> Widget.WidgetLike)()
+            end
+        end)
+
+        if not ok then
+            logger.warn("There was an error during lazy widget creation: %s", result)
+            return
+        end
+
+        box.addChild(result)
+        if result.isImplemented("_createObject") then
+            (result :: Widget.BaseInterface)._createObject()
         end
     end)
 
