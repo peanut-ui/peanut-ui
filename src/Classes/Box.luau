@@ -20,7 +20,7 @@ local Box = {}
 
 local freezeAndClear = Helpers.freezeAndClear
 
-function Box.new(): WidgetType.Box
+function Box.new(): (WidgetType.Box, Utils.Hooks)
     local box = Widget.createEmptyWidget() :: WidgetType.Box
     box._typeName = "box"
     box._widgetLike = true
@@ -155,7 +155,7 @@ function Box.new(): WidgetType.Box
         end
     end)
 
-    return box
+    return box, hooks
 end
 
 return table.freeze(Box)
