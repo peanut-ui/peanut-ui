@@ -373,7 +373,7 @@ return {
             return Instance.new("CanvasGroup")
         end,
         {
-            groupColor = "GroupColor",
+            groupColor = "GroupColor3",
             groupTransparency = "GroupTransparency",
         }
     ) :: (CanvasGroupArgs?, Children?) -> CanvasGroup,
