@@ -1,5 +1,6 @@
 --!strict
 --!optimize 2
+const Space = require(script.Classes.Space)
 const Component = require(script.Components.Component)
 const ControlFlow = require(script.Components.ControlFlow)
 const Scaling = require(script.Components.Scaling)
@@ -64,7 +65,7 @@ return table.freeze {
     Scheduler = require(script.Utils.Scheduler),
 
     Widgets = Widgets,
-    Space = require(script.Classes.Space),
+    Space = Space,
 
     Component = Components,
 
@@ -77,6 +78,41 @@ return table.freeze {
     Ref = Ref,
     Units = require(script.Utils.Units),
     State = require(script.State),
+
+    -- Misc shortcuts
+    simpleScale = Scaling.simpleScale,
+
+    -- Space shortcuts
+    createBillboardSpace = Space.createBillboardSpace,
+    createScreenSpace = Space.createScreenSpace,
+    createSurfaceSpace = Space.createSurfaceSpace,
+    getBillboardSpace = Space.getBillboardSpace,
+    getScreenSpace = Space.getScreenSpace,
+    getSurfaceSpace = Space.getSurfaceSpace,
+
+    -- Widget shortcuts
+    Frame = Widgets.Frame,
+    CanvasGroup = Widgets.CanvasGroup,
+    ScrollingFrame = Widgets.ScrollingFrame,
+    ImageLabel = Widgets.ImageLabel,
+    ImageButton = Widgets.ImageButton,
+    TextLabel = Widgets.TextLabel,
+    TextButton = Widgets.TextButton,
+    TextBox = Widgets.TextBox,
+    ViewportFrame = Widgets.ViewportFrame,
+    VideoFrame = Widgets.VideoFrame,
+
+    -- Component shortcuts
+    defineComponent = Component.defineComponent,
+    onCreated = Component.onCreated,
+    onSetup = Component.onSetup,
+    onBeforeDestroyed = Component.onBeforeDestroyed,
+    onDestroyed = Component.onDestroyed,
+    If = ControlFlow.If,
+    For = ControlFlow.For,
+    ReactiveFor = ControlFlow.ReactiveFor,
+    Lazy = ControlFlow.Lazy,
+    makeStory = require(script.Components.Stories).makeStory,
 
     -- Info
     version = State.Version,
