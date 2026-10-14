@@ -1,8 +1,7 @@
 --!strict
 --!optimize 2
-const ReplicatedStorage = game:GetService("ReplicatedStorage")
-const Modifiers = require(ReplicatedStorage.PeanutUI.Classes.Modifiers)
-const Modifier = require(ReplicatedStorage.PeanutUI.Types.Modifier)
+const Modifiers = require(script.Parent.Parent.Classes.Modifiers)
+const Modifier = require(script.Parent.Parent.Types.Modifier)
 const Widget = require(script.Parent.Parent.Classes.Widget)
 const WidgetClass = require(script.Parent.Parent.Types.Widget)
 const RobloxTypes = require(script.Parent.Parent.Types.RobloxTypes)
