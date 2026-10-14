@@ -347,7 +347,7 @@ local function createBasicObject(
                     continue
                 end
 
-                if defaultProperties[key] then
+                if defaultProperties[key] or Widget.defaultProperties[key] then
                     if not properties then
                         properties = {}
                     end
@@ -365,6 +365,9 @@ local function createBasicObject(
                     continue
                 end
 
+                if not properties then
+                    properties = {}
+                end
                 properties[key] = value
             end
 

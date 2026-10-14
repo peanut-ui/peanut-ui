@@ -142,8 +142,8 @@ local defaultProperties: {[string]: any | () -> any} = {
 
     name = "Widget"
 }
-
 table.freeze(defaultProperties)
+WidgetClass.defaultProperties = defaultProperties
 
 local function scaleObject(widget: any, v: any)
     local space = widget.getSpace()
