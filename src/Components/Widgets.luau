@@ -128,8 +128,8 @@ export type VideoFrameEvents = Flatten<{
 } & WidgetClass.DefaultEvents>
 
 export type SimplifiedArgs<Props, Object, Events = WidgetClass.DefaultEvents> = WidgetClass.Args<Props, Object, Events>
-    & Props
-    & Events
+    & TypeFuncs.Partial<Props>
+    & TypeFuncs.Partial<Events>
     & Modifier.Modifiers
 
 export type Frame = WidgetClass.Interface<WidgetClass.DefaultProperties, RobloxTypes.FrameObject>
