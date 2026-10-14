@@ -347,15 +347,6 @@ local function createBasicObject(
                     continue
                 end
 
-                if defaultProperties[key] or Widget.defaultProperties[key] then
-                    if not properties then
-                        properties = {}
-                    end
-
-                    properties[key] = value
-                    continue
-                end
-
                 if Modifiers.components[key] then
                     if not modifiers then
                         modifiers = {}
