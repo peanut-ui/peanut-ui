@@ -11,6 +11,7 @@ const Utils = require(script.Types.Utils)
 const WidgetType = require(script.Types.Widget)
 const Ref = require(script.Utils.Ref)
 const Scheduler = require(script.Utils.Scheduler)
+const Units = require(script.Utils.Units)
 
 export type Widget = WidgetType.Interface
 export type BaseWidget = WidgetType.BaseInterface
@@ -62,7 +63,7 @@ local Components = table.freeze({
 
 return table.freeze {
     Logging = require(script.Utils.Logging),
-    Scheduler = require(script.Utils.Scheduler),
+    Scheduler = Scheduler,
 
     Widgets = Widgets,
     Space = Space,
@@ -76,8 +77,17 @@ return table.freeze {
     Undefined = require(script.Utils.Undefined),
 
     Ref = Ref,
-    Units = require(script.Utils.Units),
-    State = require(script.State),
+    Units = Units,
+    State = State,
+
+    -- Units shortcuts
+    Position = Units.Position,
+    Size = Units.Size,
+    Unit = Units.Unit,
+    PositionFromUDim2 = Units.PositionFromUDim2,
+    UnitFromUDim = Units.UnitFromUDim,
+    ToUDim2 = Units.ToUDim2,
+    ToUDim = Units.ToUDim,
 
     -- Misc shortcuts
     simpleScale = Scaling.simpleScale,
