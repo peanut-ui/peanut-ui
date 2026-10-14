@@ -139,28 +139,28 @@ export type CanvasGroup = WidgetClass.Interface<CanvasGroupProps, RobloxTypes.Ca
 export type CanvasGroupArgs = SimplifiedArgs<CanvasGroupProps, CanvasGroup>
 
 export type ImageLabel = WidgetClass.Interface<ImageProps, RobloxTypes.ImageLabelObject>
-export type ImageLabelArgs = WidgetClass.Args<ImageProps, ImageLabel>
+export type ImageLabelArgs = SimplifiedArgs<ImageProps, ImageLabel>
 
 export type ImageButton = WidgetClass.Interface<ImageButtonProps, RobloxTypes.ImageButtonObject, ButtonEvents>
-export type ImageButtonArgs = WidgetClass.Args<ImageButtonProps, ImageButton, ButtonEvents>
+export type ImageButtonArgs = SimplifiedArgs<ImageButtonProps, ImageButton, ButtonEvents>
 
 export type TextButton = WidgetClass.Interface<TextButtonProps, RobloxTypes.TextButtonObject, ButtonEvents>
-export type TextButtonArgs = WidgetClass.Args<TextButtonProps, TextButton, ButtonEvents>
+export type TextButtonArgs = SimplifiedArgs<TextButtonProps, TextButton, ButtonEvents>
 
 export type TextLabel = WidgetClass.Interface<TextProps, RobloxTypes.TextLabelObject>
-export type TextLabelArgs = WidgetClass.Args<TextProps, TextLabel>
+export type TextLabelArgs = SimplifiedArgs<TextProps, TextLabel>
 
 export type TextBox = WidgetClass.Interface<TextBoxProps, RobloxTypes.TextBoxObject>
-export type TextBoxArgs = WidgetClass.Args<TextBoxProps, TextBox>
+export type TextBoxArgs = SimplifiedArgs<TextBoxProps, TextBox>
 
 export type ScrollingFrame = WidgetClass.Interface<ScrollingFrameProps, RobloxTypes.ScrollingFrameObject>
-export type ScrollingFrameArgs = WidgetClass.Args<ScrollingFrameProps, ScrollingFrame>
+export type ScrollingFrameArgs = SimplifiedArgs<ScrollingFrameProps, ScrollingFrame>
 
 export type ViewportFrame = WidgetClass.Interface<ViewportFrameProps, RobloxTypes.ViewportFrameObject>
-export type ViewportFrameArgs = WidgetClass.Args<ViewportFrameProps, ViewportFrame>
+export type ViewportFrameArgs = SimplifiedArgs<ViewportFrameProps, ViewportFrame>
 
 export type VideoFrame = WidgetClass.Interface<VideoFrameProps, RobloxTypes.VideoFrameObject, VideoFrameEvents>
-export type VideoFrameArgs = WidgetClass.Args<VideoFrameProps, VideoFrame, VideoFrameEvents>
+export type VideoFrameArgs = SimplifiedArgs<VideoFrameProps, VideoFrame, VideoFrameEvents>
 
 export type Children = {WidgetClass.WidgetLike}
 
