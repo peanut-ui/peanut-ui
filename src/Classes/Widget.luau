@@ -1,6 +1,8 @@
 --!strict
 --!optimize 2
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+const TypeFuncs = require(ReplicatedStorage.PeanutUI.Types.TypeFuncs)
 const AnimationsType = require(script.Parent.Parent.Types.Animations)
 const Modifier = require(script.Parent.Parent.Types.Modifier)
 const Utils = require(script.Parent.Parent.Types.Utils)
@@ -34,6 +36,19 @@ end
 
 WidgetClass.unsupportedFn = unsupportedFn :: (...never) -> ...never
 WidgetClass.unsupportedList = unsupportedList
+
+local defaultEvents: {[number]: TypeFuncs.KeyOf<Widget.DefaultEvents>} = {
+    "InputBegan", "InputChanged", "InputEnded",
+    "MouseEnter", "MouseMoved", "MouseLeave",
+    "MouseWheelBackward", "MouseWheelForward",
+    "SelectionChanged", "SelectionGained", "SelectionLost",
+    "TouchLongPress", "TouchPan", "TouchPinch", "TouchTap",
+    "ChildAdded", "ChildRemoved", "ParentChanged",
+    "PropertyChanged", "ObjectCreated", "ObjectDestroying",
+    "Destroying", "Destroyed",
+    "BeforeObjectCreated"
+}
+WidgetClass.defaultEvents = defaultEvents
 
 local defaultWidget = {
     _typeName = "unknownWidget",
