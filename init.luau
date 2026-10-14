@@ -6,15 +6,29 @@ const ControlFlow = require(script.Components.ControlFlow)
 const Scaling = require(script.Components.Scaling)
 const Widgets = require(script.Components.Widgets)
 const State = require(script.State)
+const Animations = require(script.Types.Animations)
 const Modifier = require(script.Types.Modifier)
 const Utils = require(script.Types.Utils)
 const WidgetType = require(script.Types.Widget)
+const SpaceType = require(script.Types.Space)
 const Ref = require(script.Utils.Ref)
 const Scheduler = require(script.Utils.Scheduler)
 const Units = require(script.Utils.Units)
 
 export type Widget = WidgetType.Interface
 export type BaseWidget = WidgetType.BaseInterface
+export type WidgetLike = WidgetType.WidgetLike
+export type SpaceLike = WidgetType.SpaceLike
+
+export type ScreenSpace = SpaceType.ScreenSpace
+export type BillboardSpace = SpaceType.BillboardSpace
+export type SurfaceSpace = SpaceType.SurfaceSpace
+
+export type ScreenSpaceProps = SpaceType.ScreenSpaceProps
+export type BillboardSpaceProps = SpaceType.BillboardSpaceProps
+export type SurfaceSpaceProps = SpaceType.SurfaceSpaceProps
+
+export type SpaceEvents = SpaceType.SpaceEvents
 
 export type Frame = Widgets.Frame
 export type CanvasGroup = Widgets.CanvasGroup
@@ -26,6 +40,34 @@ export type TextBox = Widgets.TextBox
 export type ScrollingFrame = Widgets.ScrollingFrame
 export type ViewportFrame = Widgets.ViewportFrame
 export type VideoFrame = Widgets.VideoFrame
+
+export type FrameArgs = Widgets.FrameArgs
+export type CanvasGroupArgs = Widgets.CanvasGroupArgs
+export type ImageLabelArgs = Widgets.ImageLabelArgs
+export type ImageButtonArgs = Widgets.ImageButtonArgs
+export type TextButtonArgs = Widgets.TextButtonArgs
+export type TextLabelArgs = Widgets.TextLabelArgs
+export type TextBoxArgs = Widgets.TextBoxArgs
+export type ScrollingFrameArgs = Widgets.ScrollingFrameArgs
+export type ViewportFrameArgs = Widgets.ViewportFrameArgs
+export type VideoFrameArgs = Widgets.VideoFrameArgs
+
+export type FrameProps = WidgetType.DefaultProperties
+export type CanvasGroupProps = Widgets.CanvasGroupProps
+export type ImageLabelProps = Widgets.ImageProps
+export type ImageButtonProps = Widgets.ImageButtonProps
+export type TextButtonProps = Widgets.TextButtonProps
+export type TextLabelProps = Widgets.TextProps
+export type TextBoxProps = Widgets.TextBoxProps
+export type ScrollingFrameProps = Widgets.ScrollingFrameProps
+export type ViewportFrameProps = Widgets.ViewportFrameProps
+export type VideoFrameProps = Widgets.VideoFrameProps
+
+export type ButtonEvents = Widgets.ButtonEvents
+export type VideoFrameEvents = Widgets.VideoFrameEvents
+
+export type DefaultEvents = WidgetType.DefaultEvents
+export type WidgetEvents = WidgetType.WidgetEvents
 
 export type Flex = Modifier.FlexComponent
 export type CornerRadius = Modifier.CornerRadiusComponent
@@ -43,6 +85,18 @@ export type SizeConstraint = Modifier.SizeConstraintComponent
 export type TextSizeConstraint = Modifier.TextSizeConstraintComponent
 export type Scale = Modifier.ScaleComponent
 
+export type Modifiers = Modifier.Modifiers
+export type Components = Modifier.Components
+
+export type Animation = Animations.Animation
+export type Transition = Animations.Transition
+export type AnimationControl = Animations.AnimationControl
+export type AnimationStep = Animations.AnimationStep
+export type MaybeResolvedAnimation = Animations.MaybeResolvedAnimation
+export type UnresolvedAnimation = Animations.UnresolvedAnimation
+
+export type ProtectedRef<T> = Utils.ProtectedRef<T>
+export type SimpleRef<T> = Utils.SimpleRef<T>
 export type Ref<T> = Utils.Ref<T>
 export type Size = Utils.Size
 export type Position = Utils.Position
