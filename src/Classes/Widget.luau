@@ -1,8 +1,7 @@
 --!strict
 --!optimize 2
-const ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-const TypeFuncs = require(ReplicatedStorage.PeanutUI.Types.TypeFuncs)
+const TypeFuncs = require(script.Parent.Parent.Types.TypeFuncs)
 const AnimationsType = require(script.Parent.Parent.Types.Animations)
 const Modifier = require(script.Parent.Parent.Types.Modifier)
 const Utils = require(script.Parent.Parent.Types.Utils)
