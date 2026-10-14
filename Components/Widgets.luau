@@ -1,5 +1,8 @@
 --!strict
 --!optimize 2
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const Modifiers = require(ReplicatedStorage.PeanutUI.Classes.Modifiers)
+const Modifier = require(ReplicatedStorage.PeanutUI.Types.Modifier)
 const Widget = require(script.Parent.Parent.Classes.Widget)
 const WidgetClass = require(script.Parent.Parent.Types.Widget)
 const RobloxTypes = require(script.Parent.Parent.Types.RobloxTypes)
@@ -125,11 +128,16 @@ export type VideoFrameEvents = Flatten<{
     Played: VideoFrameEvent
 } & WidgetClass.DefaultEvents>
 
+export type SimplifiedArgs<Props, Object, Events = WidgetClass.DefaultEvents> = WidgetClass.Args<Props, Object, Events>
+    & Props
+    & Events
+    & Modifier.Modifiers
+
 export type Frame = WidgetClass.Interface<WidgetClass.DefaultProperties, RobloxTypes.FrameObject>
-export type FrameArgs = WidgetClass.Args<WidgetClass.DefaultProperties, Frame>
+export type FrameArgs = SimplifiedArgs<WidgetClass.DefaultProperties, Frame>
 
 export type CanvasGroup = WidgetClass.Interface<CanvasGroupProps, RobloxTypes.CanvasGroupObject>
-export type CanvasGroupArgs = WidgetClass.Args<CanvasGroupProps, CanvasGroup>
+export type CanvasGroupArgs = SimplifiedArgs<CanvasGroupProps, CanvasGroup>
 
 export type ImageLabel = WidgetClass.Interface<ImageProps, RobloxTypes.ImageLabelObject>
 export type ImageLabelArgs = WidgetClass.Args<ImageProps, ImageLabel>
@@ -255,6 +263,18 @@ local function constructSyncList(
     end
 end
 
+const ignoreFields = {
+    children = true,
+    properties = true,
+    events = true,
+    transitions = true,
+    modifiers = true,
+    animations = true,
+    onSetup = true,
+    defaultSetupOverride = true,
+    widgetName = true
+}
+
 local function createBasicObject(
     widgetName: string,
     defaultProperties: {[string]: any | () -> any},
@@ -287,8 +307,97 @@ local function createBasicObject(
     table.freeze(transformFnNew)
     table.freeze(redrawOnHooksNew)
 
+    local eventSet: {[string]: true} = {}
+
+    if linkEvents then
+        for _, name in linkEvents do
+            eventSet[name] = true
+        end
+    end
+
+    for _, name in Widget.defaultEvents do
+        eventSet[name] = true
+    end
+
+    table.freeze(eventSet)
+
     return function(args, children)
-        local argsCopy: WidgetClass.Args = args and table.clone(args) or {}
+        local argsCopy: WidgetClass.Args = {}
+
+        if args then
+            argsCopy.children = args.children
+            argsCopy.transitions = args.transitions
+            argsCopy.animations = args.animations
+            argsCopy.onSetup = args.onSetup
+            argsCopy.defaultSetupOverride = args.defaultSetupOverride
+            argsCopy.widgetName = args.widgetName
+
+            local events: {[any]: any} = nil :: any
+            local properties: {[any]: any} = nil :: any
+            local modifiers: {[any]: any} = nil :: any
+
+            for key, value in (args :: any) do
+                if ignoreFields[key] then continue end
+
+                if eventSet[key] then
+                    if not events then
+                        events = {}
+                    end
+
+                    events[key] = value
+                    continue
+                end
+
+                if defaultProperties[key] then
+                    if not properties then
+                        properties = {}
+                    end
+
+                    properties[key] = value
+                    continue
+                end
+
+                if Modifiers.components[key] then
+                    if not modifiers then
+                        modifiers = {}
+                    end
+
+                    modifiers[key] = value
+                    continue
+                end
+
+                properties[key] = value
+            end
+
+            if events and args.events then
+                for key, value in (args.events :: any) do
+                    events[key] = value
+                end
+            else
+                events = args.events :: any
+            end
+
+            if properties and args.properties then
+                for key, value in (args.properties :: any) do
+                    properties[key] = value
+                end
+            else
+                properties = args.properties :: any
+            end
+
+            if modifiers and args.modifiers then
+                for key, value in (args.modifiers :: any) do
+                    modifiers[key] = value
+                end
+            else
+                modifiers = args.modifiers :: any
+            end
+
+            argsCopy.modifiers = modifiers
+            argsCopy.events = events
+            argsCopy.properties = properties
+        end
+
         if children then
             if argsCopy.children then
                 logger.error("Cannot have args.children and children as second argument at the same time")
