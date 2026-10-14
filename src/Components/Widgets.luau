@@ -367,7 +367,7 @@ local function createBasicObject(
                     events[key] = value
                 end
             else
-                events = args.events :: any
+                events = events or args.events :: any
             end
 
             if properties and args.properties then
@@ -375,7 +375,7 @@ local function createBasicObject(
                     properties[key] = value
                 end
             else
-                properties = args.properties :: any
+                properties = properties or args.properties :: any
             end
 
             if modifiers and args.modifiers then
@@ -383,7 +383,7 @@ local function createBasicObject(
                     modifiers[key] = value
                 end
             else
-                modifiers = args.modifiers :: any
+                modifiers = modifiers or args.modifiers :: any
             end
 
             argsCopy.modifiers = modifiers
