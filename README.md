@@ -42,20 +42,14 @@ const PeanutUI = require(ReplicatedStorage.PeanutUI)  -- Or wherever you put it
 
 Gray square with "Hello, PeanutUI" text:
 ```luau
-const defineComponent = PeanutUI.defineComponent
-const createScreenSpace = PeanutUI.createScreenSpace
-const Frame = PeanutUI.Frame
-const TextLabel = PeanutUI.TextLabel
-const Size = PeanutUI.Size
+const space = PeanutUI.createScreenSpace("Main")
 
-const space = createScreenSpace("Main")
-
-const Square = defineComponent(function()
-    return Frame {
-        size = Size(200, 200),
+const Square = PeanutUI.defineComponent(function()
+    return PeanutUI.Frame {
+        size = PeanutUI.Size(200, 200),
         backgroundColor = Color3.fromRGB(30, 30, 30),
         children = {
-            TextLabel {
+            PeanutUI.TextLabel {
                 text = "Hello, PeanutUI",
                 textColor = Color3.new(1, 1, 1)
             },
@@ -69,32 +63,24 @@ square.setParent(space)  -- Or space.addChild(square)
 
 Counter (as a tradition):
 ```luau
-const defineComponent = PeanutUI.defineComponent
-const createScreenSpace = PeanutUI.createScreenSpace
-const TextButton = PeanutUI.TextButton
-const Size = PeanutUI.Size
-const Unit = PeanutUI.Unit
-const Ref = PeanutUI.Ref
-const Computed = PeanutUI.Computed
+const space = PeanutUI.createScreenSpace("Main")
 
-const space = createScreenSpace("Main")
-
-const Counter = defineComponent(function(initialValue: number)
-    const clickCount = Ref(initialValue)
+const Counter = PeanutUI.defineComponent(function(initialValue: number)
+    const clickCount = PeanutUI.Ref(initialValue)
 
     -- Good looking button :3
-    return TextButton {
+    return PeanutUI.TextButton {
         backgroundColor = Color3.fromHex("#222629"),
         textColor = Color3.fromHex("#e9f1f7"),
-        text = Computed(function()
+        text = PeanutUI.Computed(function()
             return "Clicks: " .. clickCount.value
         end),
         textSize = 16,
-        size = Size(0, 40),
+        size = PeanutUI.Size(0, 40),
         automaticSize = Enum.AutomaticSize.X,
 
-        cornerRadius = { all = Unit(6) },
-        padding = { all = Unit(3), left = Unit(16), right = Unit(16) },
+        cornerRadius = { all = PeanutUI.Unit(6) },
+        padding = { all = PeanutUI.Unit(3), left = PeanutUI.Unit(16), right = PeanutUI.Unit(16) },
 
         Activated = function()
             clickCount.value += 1
