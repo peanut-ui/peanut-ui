@@ -371,7 +371,10 @@ local function createBasicObject(
                         properties = {}
                     end
                     properties[key] = value
+                    continue
                 end
+
+                logger.warn("Unknown field was passed: %s", key)
             end
 
             argsCopy.modifiers = modifiers
