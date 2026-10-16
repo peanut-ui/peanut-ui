@@ -104,37 +104,16 @@ export type Size = Utils.Size
 export type Position = Utils.Position
 export type Unit = Utils.Unit
 
-local Components = table.freeze({
-    defineComponent = Component.defineComponent,
-    onCreated = Component.onCreated,
-    onSetup = Component.onSetup,
-    onBeforeDestroyed = Component.onBeforeDestroyed,
-    onDestroyed = Component.onDestroyed,
-    If = ControlFlow.If,
-    For = ControlFlow.For,
-    ReactiveFor = ControlFlow.ReactiveFor,
-    Lazy = ControlFlow.Lazy,
-    makeStory = require(script.Components.Stories).makeStory,
-})
-
 return table.freeze {
     Logging = require(script.Utils.Logging),
     Scheduler = Scheduler,
 
-    Widgets = Widgets,
     Space = Space,
-
-    Component = Components,
 
     Animations = require(script.Components.Animations),
     Transitions = require(script.Components.Transitions),
 
-    Scaling = Scaling,
     Undefined = require(script.Utils.Undefined),
-
-    Ref = Ref,
-    Units = Units,
-    State = State,
 
     -- Units shortcuts
     Position = Units.Position,
@@ -174,11 +153,13 @@ return table.freeze {
     onSetup = Component.onSetup,
     onBeforeDestroyed = Component.onBeforeDestroyed,
     onDestroyed = Component.onDestroyed,
+    makeStory = require(script.Components.Stories).makeStory,
+
+    -- ControlFlow shortcuts
     If = ControlFlow.If,
     For = ControlFlow.For,
     ReactiveFor = ControlFlow.ReactiveFor,
     Lazy = ControlFlow.Lazy,
-    makeStory = require(script.Components.Stories).makeStory,
 
     -- Info
     version = State.Version,
@@ -187,12 +168,13 @@ return table.freeze {
     globalSignals = State.signals,
 
     -- Ref shortcuts
-    ref = Ref.new,
-    computed = Ref.computed,
+    Ref = Ref.new,
+    Computed = Ref.computed,
+    Reactive = Ref.reactive,
+
     getRef = Ref.getRef,
     toRef = Ref.toRef,
     isRef = Ref.isRef,
-    reactive = Ref.reactive,
     isEqual = Ref.isEqual,
     unwrap = Ref.unwrap,
 
