@@ -955,6 +955,21 @@ function Ref.isShallow(proxy: Table): boolean
     return proxyIsShallow[proxy] == true
 end
 
+--- Unwrap a value
+---
+--- Check if value is a ref and gets its value.
+---
+--- Useful in computed when you want either track ref or just have the value:
+--- ```
+--- local someValue: ValueOrRef<number>  -- value from somewhere
+--- local value = computed(function()
+---     local value = unwrap(someValue)  -- Will track it if it's a ref
+---     return value * 2
+--- end)
+--- ```
+---
+--- @param valueOrRef Takes value or Ref
+--- @return A value from Ref if it was Ref or just plain value
 function Ref.unwrap<T>(valueOrRef: Utils.ValueOrRef<T>): T
     if Ref.isRef(valueOrRef) then
         return (valueOrRef :: Utils.Ref<T>).getValue()
