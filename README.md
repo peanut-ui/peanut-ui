@@ -14,18 +14,18 @@ A declarative, reactive UI framework for Roblox, written in Luau.
 
 Most Roblox UI code is imperative: create an instance, set a property, listen for a change, set it again. PeanutUI keeps that power but flips the default — you declare the UI, and reactivity keeps it in sync.
 
-- **Declarative and imperative are the same thing.** `Widgets.Frame { properties = { ... } }` is exactly equivalent to creating the widget and calling `setProperty` for each field. Use whichever reads better.
+- **Declarative and imperative are the same thing.** `PeanutUI.Frame { size = ... }` is exactly equivalent to creating the widget and calling `setProperty` for each field. Use whichever reads better.
 - **Reactive by default.** Reading a ref subscribes; writing one schedules dependents. You never wire up change listeners by hand.
 - **Deferred, not immediate.** Mutations flow through the Scheduler's stages instead of hitting instances synchronously, so updates batch cleanly.
 - **Stable by design.** The public API avoids breaking changes; features are deprecated, not removed.
 
 ## Features
 
-- **Declarative widgets** — compose UI with callable constructors like `Widgets.Frame { ... }`. No manual instance wiring.
+- **Declarative widgets** — compose UI with callable constructors like `PeanutUI.Frame { ... }`. No manual instance wiring.
 - **Reactive by default** — refs, computed values, and reactive tables drive your UI. Changes flow through the Scheduler, not straight to instances.
-- **Reactive units** — `Units.Size`, `Units.Position`, and `Units.Unit` replace `UDim2` and `UDim` with per-component scaling and ref-driven updates.
+- **Reactive units** — `PeanutUI.Size`, `PeanutUI.Position`, and `PeanutUI.Unit` replace `UDim2` and `UDim` with per-component scaling and ref-driven updates.
 - **Lazy instance creation** — widgets are created immediately, but their Roblox `Instance` is deferred. An invisible or unparented widget never builds its instance until it becomes visible and attached.
-- **Responsive scaling** — declare a reference resolution once and `Scaling` keeps the whole tree proportional on every screen.
+- **Responsive scaling** — declare a reference resolution once and `simpleScale` keeps the whole tree proportional on every screen.
 - **Animations & transitions** — continuous animations and on-change transitions, with a full library of easing curves and spring physics.
 - **Stable API** — the public surface avoids breaking changes where possible; features are deprecated rather than removed.
 
@@ -42,25 +42,22 @@ const PeanutUI = require(ReplicatedStorage.PeanutUI)  -- Or wherever you put it
 
 Gray square with "Hello, PeanutUI" text:
 ```luau
-const Component = PeanutUI.Component
-const Space = PeanutUI.Space
-const Widgets = PeanutUI.Widgets
-const Units = PeanutUI.Units
+const defineComponent = PeanutUI.defineComponent
+const createScreenSpace = PeanutUI.createScreenSpace
+const Frame = PeanutUI.Frame
+const TextLabel = PeanutUI.TextLabel
+const Size = PeanutUI.Size
 
-const space = Space.createScreenSpace("Main")
+const space = createScreenSpace("Main")
 
-const Square = Component.defineComponent(function()
-    return Widgets.Frame {
-        properties = {
-            size = Units.Size(200, 200),
-            backgroundColor = Color3.fromRGB(30, 30, 30),
-        },
+const Square = defineComponent(function()
+    return Frame {
+        size = Size(200, 200),
+        backgroundColor = Color3.fromRGB(30, 30, 30),
         children = {
-            Widgets.TextLabel {
-                properties = {
-                    text = "Hello, PeanutUI",
-                    textColor = Color3.new(1, 1, 1)
-                },
+            TextLabel {
+                text = "Hello, PeanutUI",
+                textColor = Color3.new(1, 1, 1)
             },
         },
     }
@@ -72,41 +69,41 @@ square.setParent(space)  -- Or space.addChild(square)
 
 Counter (as a tradition):
 ```luau
-const Component, Space = PeanutUI.Component, PeanutUI.Space
-const Widgets, Units = PeanutUI.Widgets, PeanutUI.Units
-const ref, computed = PeanutUI.ref, PeanutUI.computed
+const defineComponent = PeanutUI.defineComponent
+const createScreenSpace = PeanutUI.createScreenSpace
+const TextButton = PeanutUI.TextButton
+const Size = PeanutUI.Size
+const Unit = PeanutUI.Unit
+const Ref = PeanutUI.Ref
+const Computed = PeanutUI.Computed
 
-const space = Space.createScreenSpace("Main")
+const space = createScreenSpace("Main")
 
-const Counter = Component.defineComponent(function(initialValue: number)
-    const clickCount = ref(initialValue)
+const Counter = defineComponent(function(initialValue: number)
+    const clickCount = Ref(initialValue)
 
     -- Good looking button :3
-    return Widgets.TextButton {
-        properties = {
-            backgroundColor = Color3.fromHex("#222629"),
-            textColor = Color3.fromHex("#e9f1f7"),
-            text = computed(function()
-                return "Clicks: " .. clickCount.value
-            end),
-            textSize = 16,
-            size = Units.Size(0, 40),
-            automaticSize = Enum.AutomaticSize.X
-        },
-        modifiers = {
-            cornerRadius = { all = Units.Unit(6) },
-            padding = { all = Units.Unit(3), left = Units.Unit(16), right = Units.Unit(16) }
-        },
-        events = {
-            Activated = function()
-                clickCount.value += 1
-            end
-        }
+    return TextButton {
+        backgroundColor = Color3.fromHex("#222629"),
+        textColor = Color3.fromHex("#e9f1f7"),
+        text = Computed(function()
+            return "Clicks: " .. clickCount.value
+        end),
+        textSize = 16,
+        size = Size(0, 40),
+        automaticSize = Enum.AutomaticSize.X,
+
+        cornerRadius = { all = Unit(6) },
+        padding = { all = Unit(3), left = Unit(16), right = Unit(16) },
+
+        Activated = function()
+            clickCount.value += 1
+        end
     }
 end)
 
 const counter = Counter(1)
-counter.setParent(space)  -- Or space.addChild(square)
+counter.setParent(space)  -- Or space.addChild(counter)
 ```
 
 ## Documentation
