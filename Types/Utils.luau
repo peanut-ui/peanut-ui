@@ -24,6 +24,8 @@ export type Ref<T> = {
     read _addCleanup: (() -> ()) -> ()
 }
 
+export type ValueOrRef<T> = T | Ref<T>
+
 export type Gettable<T> = {
     read getValue: () -> T,
 }

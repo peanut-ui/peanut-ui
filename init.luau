@@ -15,6 +15,8 @@ const Ref = require(script.Utils.Ref)
 const Scheduler = require(script.Utils.Scheduler)
 const Units = require(script.Utils.Units)
 
+export type ValueOrRef<T> = Utils.ValueOrRef<T>
+
 export type Widget = WidgetType.Interface
 export type BaseWidget = WidgetType.BaseInterface
 export type WidgetLike = WidgetType.WidgetLike
@@ -192,6 +194,7 @@ return table.freeze {
     isRef = Ref.isRef,
     reactive = Ref.reactive,
     isEqual = Ref.isEqual,
+    unwrap = Ref.unwrap,
 
     -- Scheduler shortcuts
     defer = Scheduler.defer,
