@@ -955,6 +955,14 @@ function Ref.isShallow(proxy: Table): boolean
     return proxyIsShallow[proxy] == true
 end
 
+function Ref.unwrap<T>(valueOrRef: Utils.ValueOrRef<T>): T
+    if Ref.isRef(valueOrRef) then
+        return (valueOrRef :: Utils.Ref<T>).getValue()
+    else
+        return valueOrRef :: T
+    end
+end
+
 Ref.makeProtected = makeProtected
 
 return table.freeze(Ref)
