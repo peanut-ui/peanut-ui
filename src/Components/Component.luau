@@ -100,7 +100,7 @@ end
 --- local object = Test({ test = "Hello there." })
 --- ```
 function Component.defineComponent<T>(
-    fn: (props: T & {[string]: any}) -> any
+    fn: (props: T) -> any
 ): (props: T) -> WidgetType.Interface
     return function(props)
         local bucket = Context.createBucket("component", Hooks.new())
