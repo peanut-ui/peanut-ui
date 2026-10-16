@@ -1,5 +1,7 @@
 --!strict
 --!optimize 2
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const Animations = require(ReplicatedStorage.PeanutUI.Types.Animations)
 const Modifiers = require(script.Parent.Parent.Classes.Modifiers)
 const Modifier = require(script.Parent.Parent.Types.Modifier)
 const Widget = require(script.Parent.Parent.Classes.Widget)
@@ -127,10 +129,18 @@ export type VideoFrameEvents = Flatten<{
     Played: VideoFrameEvent
 } & WidgetClass.DefaultEvents>
 
-export type SimplifiedArgs<Props, Object, Events = WidgetClass.DefaultEvents> = WidgetClass.Args<Props, Object, Events>
+export type SimplifiedArgs<Props, Widget, Events = WidgetClass.DefaultEvents> =
     & TypeFuncs.Partial<Props>
     & TypeFuncs.Partial<Events>
     & Modifier.Modifiers
+    & {
+        children: {any}?,
+        transitions: {[keyof<Props>]: Animations.Transition}?,
+        animations: {[string]: Animations.Animation}?,
+        onSetup: (widget: Widget) -> ()?,
+        defaultSetupOverride: (Utils.Undefined | (widget: Widget, defaultFn: (widget: Widget) -> ()) -> ())?,
+        widgetName: string?
+    }
 
 export type Frame = WidgetClass.Interface<WidgetClass.DefaultProperties, RobloxTypes.FrameObject>
 export type FrameArgs = SimplifiedArgs<WidgetClass.DefaultProperties, Frame>
@@ -360,30 +370,6 @@ local function createBasicObject(
                     properties = {}
                 end
                 properties[key] = value
-            end
-
-            if events and args.events then
-                for key, value in (args.events :: any) do
-                    events[key] = value
-                end
-            else
-                events = events or args.events :: any
-            end
-
-            if properties and args.properties then
-                for key, value in (args.properties :: any) do
-                    properties[key] = value
-                end
-            else
-                properties = properties or args.properties :: any
-            end
-
-            if modifiers and args.modifiers then
-                for key, value in (args.modifiers :: any) do
-                    modifiers[key] = value
-                end
-            else
-                modifiers = modifiers or args.modifiers :: any
             end
 
             argsCopy.modifiers = modifiers
