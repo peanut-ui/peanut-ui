@@ -273,10 +273,7 @@ end
 
 const ignoreFields = {
     children = true,
-    properties = true,
-    events = true,
     transitions = true,
-    modifiers = true,
     animations = true,
     onSetup = true,
     defaultSetupOverride = true,
