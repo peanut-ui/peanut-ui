@@ -7,6 +7,7 @@ const Utils = require(script.Parent.Utils)
 export type KeyOf<Table> = TypeFuncs.KeyOf<Table>
 export type Resolve<Table, Key> = TypeFuncs.Resolve<Table, Key>
 export type Partial<Table> = TypeFuncs.Partial<Table>
+export type UnionProperties<T0, T1> = TypeFuncs.UnionProperties<T0, T1>
 
 -- Styling and shape
 export type Flex = {
@@ -160,7 +161,7 @@ export type Component<Props = JustList> = {
     read getComponent: () -> UIComponent?
 }
 
-type Setup<Modifier> = Partial<Modifier> & {
+type Setup<Modifier> = Partial<UnionProperties<Modifier, Utils.Ref<any>>> & {
     transitions: {[KeyOf<Modifier>]: Animations.Transition}?,
     animations: {[any]: Animations.Animation}?
 }
