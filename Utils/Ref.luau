@@ -11,6 +11,92 @@ const logger = Logging.getLogger("PeanutUI.Utils.Ref")
 
 local freezeAndClear = Helpers.freezeAndClear
 
+type function isRefType(t: type): boolean
+    if not t:is("table") then
+        return false
+    end
+
+    local name = t:readproperty(types.singleton("_typeName"))
+    if not name or not name:is("singleton") then
+        return false
+    end
+
+    return name:value() == "ref"
+end
+
+type function refValueOf(t: type): type?
+    if not t:is("table") then
+        return nil
+    end
+
+    local getValue = t:readproperty(types.singleton("getValue"))
+    if not getValue or not getValue:is("function") then
+        return nil
+    end
+
+    local returns = getValue:returns()
+    if not returns.head or returns.tail then
+        return nil
+    end
+
+    local head = returns.head
+    if #head ~= 1 then
+        return nil
+    end
+
+    return head[1]
+end
+
+export type function UnwrapRef(input: type): type
+    local kept: { type } = {}
+    local refs: { type } = {}
+
+    local function collect(current: type)
+        if current:is("union") then
+            for _, member in current:components() do
+                collect(member)
+            end
+            return
+        end
+
+        if isRefType(current) then
+            table.insert(refs, current)
+        else
+            table.insert(kept, current)
+        end
+    end
+
+    collect(input)
+
+    if #kept == 0 then
+        if #refs == 1 then
+            return refValueOf(refs[1]) or types.unknown
+        end
+
+        local values: { type } = {}
+        for _, ref in refs do
+            local value = refValueOf(ref)
+            if value then
+                table.insert(values, value)
+            end
+        end
+
+        if #values == 0 then
+            return types.unknown
+        elseif #values == 1 then
+            return values[1]
+        end
+
+        return types.unionof(table.unpack(values))
+    end
+
+    if #kept == 1 then
+        return kept[1]
+    end
+
+    return types.unionof(table.unpack(kept))
+end
+
 type ComputedInternal = {
     invalidate: () -> (),
     watch: (fn: () -> ...boolean?) -> (() -> ()),
@@ -977,7 +1063,7 @@ end
 ---
 --- @param valueOrRef Takes value or Ref
 --- @return A value from Ref if it was Ref or just plain value
-function Ref.unwrap<T>(valueOrRef: Utils.ValueOrRef<T>): T
+function Ref.unwrap<T>(valueOrRef: T): UnwrapRef<T>
     if Ref.isRef(valueOrRef) then
         return (valueOrRef :: Utils.Ref<T>).getValue()
     else
