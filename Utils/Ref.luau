@@ -127,8 +127,8 @@ local function getComputedBucket(
 ): Utils.Bucket<ComputedDeps>?
     local currentBucket = bucket or Context.getCurrentBucket()
     if not currentBucket
-        or currentBucket.contextName ~= "ref"
-        or (allowEffect and currentBucket.contextName ~= "refEffect")
+        or (currentBucket.contextName ~= "ref"
+        and not (allowEffect and currentBucket.contextName == "refEffect"))
     then
         return nil
     end
@@ -140,7 +140,7 @@ local function isInContext(allowEffect: boolean?)
     return getComputedBucket(nil, allowEffect) ~= nil
 end
 
-local function errorOnSideEffect(bucket: Utils.Bucket?)
+local function errorOnSideEffect(bucket: Utils.Bucket?, allowEffect: boolean?)
     if getComputedBucket(bucket) ~= nil then
         logger.error("Side effects are not allowed here!")
     end
@@ -248,7 +248,7 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
         end,
 
         __newindex = function(_, key, val)
-            errorOnSideEffect()
+            errorOnSideEffect(nil, true)
             local cleanVal = rawCache[val] or val
             if rawTarget[key] == cleanVal then return end
 
@@ -523,7 +523,7 @@ function Ref.new<T>(
 
     function ref.increaseValue(amount: number?)
         ensureNotDestroyed()
-        errorOnSideEffect()
+        errorOnSideEffect(nil, true)
 
         if typeof(currentValue) ~= "number" then
             logger.error("Cannot increase non-number")
@@ -540,7 +540,7 @@ function Ref.new<T>(
 
     function ref.setValue(newValue: T | Utils.SimpleRef<T>)
         ensureNotDestroyed()
-        errorOnSideEffect()
+        errorOnSideEffect(nil, true)
 
         local oldValue = currentValue
         if newValue == oldValue then
@@ -587,7 +587,7 @@ function Ref.new<T>(
 
     function ref.watch(fn: Utils.RefWatchFn<T>, params: Utils.WatchParams): (() -> (), number)
         ensureNotDestroyed()
-        errorOnSideEffect()
+        errorOnSideEffect(nil, true)
 
         local onUnwatch = params and params.onUnwatch
         local isSync = params and params.flush == "sync"
