@@ -344,7 +344,7 @@ local function createBasicObject(
             for key, value in (args :: any) do
                 if ignoreFields[key] then continue end
 
-                if eventSet[key] then
+                if eventSet[key] ~= nil then
                     if not events then
                         events = {}
                     end
@@ -353,7 +353,7 @@ local function createBasicObject(
                     continue
                 end
 
-                if Modifiers.components[key] then
+                if Modifiers.components[key] ~= nil then
                     if not modifiers then
                         modifiers = {}
                     end
@@ -362,7 +362,7 @@ local function createBasicObject(
                     continue
                 end
 
-                if defaultProperties[key] or Widget.defaultProperties[key] then
+                if defaultProperties[key] ~= nil or Widget.defaultProperties[key] ~= nil then
                     if not properties then
                         properties = {}
                     end
