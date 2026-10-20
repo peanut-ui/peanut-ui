@@ -470,7 +470,7 @@ return {
         "imageLabel",
         {
             name = "ImageLabel",
-            imageContent = Undefined,
+            imageContent = Content.none,
             imageColor = Color3.new(1, 1, 1),
             imageRectOffset = Vector2.zero,
             imageRectSize = Vector2.zero,
@@ -507,7 +507,7 @@ return {
         "imageButton",
         {
             name = "ImageButton",
-            imageContent = Undefined,
+            imageContent = Content.none,
             imageColor = Color3.new(1, 1, 1),
             imageTransparency = 0,
             resampleMode = Enum.ResamplerMode.Default,
