@@ -99,14 +99,14 @@ end
 --- end)
 --- local object = Test({ test = "Hello there." })
 --- ```
-function Component.defineComponent<T>(
-    fn: (props: T) -> any
-): (props: T) -> WidgetType.Interface
+function Component.defineComponent<T, W>(
+    fn: (props: T) -> W
+): (props: T) -> W
     return function(props)
         local bucket = Context.createBucket("component", Hooks.new())
 
         local ok, widget = Context.withContextBucket(bucket, function(props)
-            local widget = fn(props)
+            local widget = fn(props) :: W & WidgetType.Interface
 
             if not widget or not Widget.isWidget(widget) then
                 logger.error("Function in defineComponent has to return a widget!")
