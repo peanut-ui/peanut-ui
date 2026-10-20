@@ -177,6 +177,8 @@ return table.freeze {
     isRef = Ref.isRef,
     isEqual = Ref.isEqual,
     unwrap = Ref.unwrap,
+    watch = Ref.watch,
+    watchEffect = Ref.watchEffect,
 
     -- Scheduler shortcuts
     defer = Scheduler.defer,
