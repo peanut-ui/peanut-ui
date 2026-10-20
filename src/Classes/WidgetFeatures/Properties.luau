@@ -383,11 +383,13 @@ return function(
         freezeAndClear(protectedRefs)
     end)
 
-    if setProperties then
-        for key, value in pairs(setProperties) do
-            instance.setProperty(key, value)
+    hooks.add("OnSetup", function(...)
+        if setProperties then
+            for key, value in pairs(setProperties) do
+                instance.setProperty(key, value)
+            end
         end
-    end
+    end)
 
     return linkedProperties, linkedPropertiesMap, propertiesRefs, transitions, ensureRef
 end

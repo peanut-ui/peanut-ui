@@ -132,13 +132,15 @@ return function(
         end
     end)
 
-    if modifiers then
-        for key, modifierProps in pairs(modifiers) do
-            -- modifierProps can't be nil... Impossible! MAYBE
-            -- (And yea, linter was screaming at me AGAIN)
-            setModifier(key, modifierProps :: any)
+    hooks.add("OnSetup", function(...)
+        if modifiers then
+            for key, modifierProps in pairs(modifiers) do
+                -- modifierProps can't be nil... Impossible! MAYBE
+                -- (And yea, linter was screaming at me AGAIN)
+                setModifier(key, modifierProps :: any)
+            end
         end
-    end
+    end)
 
     return modifierComponents
 end
