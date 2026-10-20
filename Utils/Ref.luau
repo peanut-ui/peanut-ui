@@ -1101,8 +1101,8 @@ function Ref.watch<T>(
 ): (() -> (), number)
     if Ref.isRef(ref) then
         return ref.watch(callback, params)
-    elseif local ref = Ref.getRef(ref) then
-        return ref.watch(callback, params)
+    elseif Ref.getRef(ref) then
+        return Ref.getRef(ref).watch(callback, params)
     else
         logger.error("Unknown type was passed. It has to be either Ref or reactive table.")
         error(nil)
