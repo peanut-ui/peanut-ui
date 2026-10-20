@@ -158,6 +158,17 @@ function Module.withContextBucket<R, A...>(bucket: Utils.Bucket, fn: (A...) -> R
 end
 
 function Module.withNoContext<R, A...>(fn: (A...) -> R, ...: A...): (boolean, R)
+    if getCurrentBucket() == nil then
+        local ok, result = xpcall(fn, function(msg)
+            return debug.traceback(tostring(msg))
+        end, ...)
+
+        if not ok then
+            logger.warn("Call resulted in error:\n%s", result)
+        end
+        return ok, result :: R
+    end
+
     Module.pushNoContext()
 
     local ok, result = disableYielding(fn, ...)
