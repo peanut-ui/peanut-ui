@@ -35,17 +35,23 @@ Ref.Undefined = Undefined
 
 type ComputedDeps = {[Utils.SimpleRef<any>]: boolean}
 
-local function getComputedBucket(bucket: Utils.Bucket?): Utils.Bucket<ComputedDeps>?
+local function getComputedBucket(
+    bucket: Utils.Bucket?,
+    allowEffect: boolean?
+): Utils.Bucket<ComputedDeps>?
     local currentBucket = bucket or Context.getCurrentBucket()
-    if not currentBucket or currentBucket.contextName ~= "ref" then
+    if not currentBucket
+        or currentBucket.contextName ~= "ref"
+        or (allowEffect and currentBucket.contextName ~= "refEffect")
+    then
         return nil
     end
 
     return currentBucket
 end
 
-local function isInContext()
-    return getComputedBucket() ~= nil
+local function isInContext(allowEffect: boolean?)
+    return getComputedBucket(nil, allowEffect) ~= nil
 end
 
 local function errorOnSideEffect(bucket: Utils.Bucket?)
@@ -55,7 +61,7 @@ local function errorOnSideEffect(bucket: Utils.Bucket?)
 end
 
 local function track(ref: Utils.Ref<any>)
-    local bucket = getComputedBucket()
+    local bucket = getComputedBucket(nil, true)
     if not bucket then
         return
     end
@@ -137,7 +143,7 @@ local function createReactiveProxy(rawTarget: Table, isShallow: boolean?): any
         __index = function(_, key)
             local val = rawTarget[key]
 
-            if isInContext() then
+            if isInContext(true) then
                 track(getRef(key))
             end
 
@@ -743,6 +749,7 @@ function Ref.computed<R>(computeFn: () -> R): Utils.ProtectedRef<R>
             previousBucket.stop()
         end
         local bucket = Context.createBucket("ref", newComputeRefs)
+        previousBucket = bucket
 
         local ok, result = Context.withContextBucket(bucket, function()
             return computeFn()
@@ -976,6 +983,172 @@ function Ref.unwrap<T>(valueOrRef: Utils.ValueOrRef<T>): T
     else
         return valueOrRef :: T
     end
+end
+
+--- Watch Ref
+---
+--- Subscribes to changes of a Ref and calls `callback` with the new value whenever it changes.
+---
+--- By default the callback runs on the `watchers` scheduler stage, so it is deferred to the next
+--- tick and batched with other reactive updates. Pass `flush = "sync"` to run it immediately.
+---
+--- Returning `true` from the callback automatically unwatches it.
+---
+--- @param ref Ref to watch
+--- @param callback Called with the new value on every change; return `true` to unwatch
+--- @param params Optional watch parameters (`flush`, `onUnwatch`, `bucket`)
+--- @return Unwatch function and the watcher id
+---
+--- ### Example
+--- ```
+--- local count = Ref.new(0)
+--- local unwatch = Ref.watch(count, function(value)
+---     print("Count is now " .. value)
+--- end, {})
+--- count.value = 1 -- prints "Count is now 1"
+--- unwatch()
+--- ```
+function Ref.watch<T>(
+    ref: Utils.SimpleRef<T> | Table,
+    callback: (value: T) -> (),
+    params: Utils.WatchParams?
+): (() -> (), number)
+    if Ref.isRef(ref) then
+        return ref.watch(callback, params)
+    elseif local ref = Ref.getRef(ref) then
+        return ref.watch(callback, params)
+    else
+        logger.error("Unknown type was passed. It has to be either Ref or reactive table.")
+        error(nil)
+    end
+end
+
+--- Watch Effect
+---
+--- Runs `callback` immediately and re-runs it whenever any Ref read inside it changes.
+--- Dependencies are tracked automatically, so there is no explicit dependency list.
+---
+--- The callback receives `addCleanup` and `removeCleanup` for registering per-run cleanups.
+--- These cleanups are tied to the current run: when the effect re-runs, the previous run's
+--- cleanups are ran and removed before the callback runs again.
+---
+--- @param callback Effect body; receives `addCleanup` for the current run
+--- @param bucket_ (internal) Bucket to own the effect, put Undefined to make its ownership global
+--- @return Stop function that unwatches all dependencies and runs the final cleanups
+---
+--- ### Example
+--- ```
+--- local count = Ref.new(0)
+--- local stop = Ref.watchEffect(function(addCleanup)
+---     print("Count is " .. count.value)
+---     addCleanup(function()
+---         print("Cleaning up previous run")
+---     end)
+--- end)
+--- count.value = 1 -- prints "Cleaning up previous run" then "Count is 1"
+--- stop()
+--- ```
+function Ref.watchEffect<T>(
+    callback: (addCleanup: (() -> ()) -> any) -> (),
+    bucket_: (Utils.Bucket | Utils.Undefined)?
+): () -> ()
+    if not bucket_ then
+        bucket_ = Context.getCurrentBucket()
+    end
+    local bucket = Helpers.removeUndefined(bucket_) :: Utils.Bucket
+
+    local stopped = false
+    local isMyBucket = false
+    if not bucket then
+        isMyBucket = true
+        bucket = Context.createBucket("watchEffect")
+    end
+
+    local invalidate: () -> ()
+    local lastRefs: {[Utils.SimpleRef<any>]: () -> ()} = {}
+
+    local previousBucket: Utils.Bucket? = nil
+    local function runCallback()
+        if stopped then return end
+        local newComputeRefs = {} :: ComputedDeps
+
+        if previousBucket then
+            previousBucket.stop()
+        end
+        local bucket = Context.createBucket("refEffect", newComputeRefs)
+        previousBucket = bucket
+
+        local ok, result = Context.withContextBucket(bucket, function()
+            return callback(bucket.addCleanup) or nil
+        end)
+        if not ok then
+            logger.error(`Callback of watchEffect errored:\n{result}`)
+            error("")
+        end
+
+        local ok2, err = Context.withNoContext(function()
+            for ref, _ in newComputeRefs do
+                if lastRefs[ref] == nil then
+                    lastRefs[ref] = ref.watch(invalidate, { flush = "sync" })
+                end
+            end
+
+            return nil
+        end)
+        if not ok2 then
+            logger.error("There was an error:\n%s", tostring(err))
+            error("")
+        end
+
+        for ref, unwatch in pairs(lastRefs) do
+            if newComputeRefs[ref] == nil then
+                unwatch()
+                lastRefs[ref] = nil
+            end
+        end
+    end
+
+    local scheduled = false
+    invalidate = function()
+        if not scheduled then
+            scheduled = true
+            Scheduler.schedule("watchers", function()
+                scheduled = false
+                runCallback()
+            end)
+        end
+    end
+    runCallback()
+
+    local cleanupId: number? = nil
+    local function stop()
+        if stopped then return end
+        stopped = true
+        for ref, unwatch in lastRefs do
+            unwatch()
+            lastRefs[ref] = nil
+        end
+
+        table.freeze(lastRefs)
+
+        if cleanupId then
+            bucket.removeCleanup(cleanupId)
+            cleanupId = nil
+        end
+
+        if previousBucket then
+            previousBucket.stop()
+            previousBucket = nil
+        end
+
+        if isMyBucket then
+            bucket.stop()
+        end
+    end
+
+    cleanupId = bucket.addCleanup(stop)
+
+    return stop
 end
 
 Ref.makeProtected = makeProtected
