@@ -29,6 +29,7 @@ return function(
     local instance = widget :: WidgetType.BaseInterface
     local id = instance._uniqueId
 
+    local isSetup = false
     local inRedrawMode = false
     local stopped = false
 
@@ -66,7 +67,7 @@ return function(
 
         value = Helpers.removeUndefined(value)
 
-        if readonlyProperties[key] == true then
+        if not isSetup and readonlyProperties[key] == true then
             logger.error("Cannot set readonly property")
         end
 
@@ -385,9 +386,11 @@ return function(
 
     hooks.add("OnSetup", function(...)
         if setProperties then
+            isSetup = true
             for key, value in pairs(setProperties) do
                 instance.setProperty(key, value)
             end
+            isSetup = false
         end
     end)
 
