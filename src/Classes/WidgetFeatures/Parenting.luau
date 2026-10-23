@@ -130,8 +130,9 @@ return function(
 
     bucket.addCleanup(function()
         if parent then
+            local oldParent = parent
             parent = nil
-            parent.removeChild(instance)
+            oldParent.removeChild(instance)
         end
         if scaleChangedSignal then
             scaleChangedSignal()
