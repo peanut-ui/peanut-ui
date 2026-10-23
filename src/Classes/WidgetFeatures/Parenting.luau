@@ -92,11 +92,13 @@ return function(
     end
 
     function instance._setParent(newParent: WidgetType.WidgetLike?)
+        if parent == nil and newParent == nil then return end
+
         ensureNotDestroyed()
 
         parent = newParent :: any
 
-        if parent and parent._spaceLike then
+        if parent and (parent :: any)._spaceLike then
             instance._setSpace(parent :: any)
         elseif parent and parent.isImplemented("getSpace") then
             local parentSpace = parent.getSpace()
@@ -128,6 +130,7 @@ return function(
 
     bucket.addCleanup(function()
         if parent then
+            parent = nil
             parent.removeChild(instance)
         end
         if scaleChangedSignal then
