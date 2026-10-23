@@ -84,11 +84,6 @@ return function(
             logger.error("Cannot remove child that is not Widget!")
         end
 
-        local childParent = child.getParent()
-        if childParent and childParent._uniqueId ~= instance._uniqueId then
-            logger.error("Child had different parent!")
-        end
-
         logger.debug("[%s %d] Removing child: %s %d", instance._widgetName, id, child._widgetName, child._uniqueId)
         -- Swap and pop!!!
         local index = childrenIndex[child]
