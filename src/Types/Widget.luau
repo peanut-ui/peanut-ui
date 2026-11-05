@@ -87,8 +87,8 @@ export type DefaultProperties = {
     absolutePosition: Vector2,
     absoluteRotation: number,
 
-    actualSize: Vector2,
-    actualPosition: Vector2,
+    screenSize: Vector2,
+    screenPosition: Vector2,
 
     inputSink: Enum.InputSink,
 
