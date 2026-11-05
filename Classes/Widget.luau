@@ -134,8 +134,8 @@ local defaultProperties: {[string]: any | () -> any} = {
     absoluteSize = Vector2.zero,
     absoluteRotation = 0,
 
-    actualPosition = Vector2.zero,
-    actualSize = Vector2.zero,
+    screenPosition = Vector2.zero,
+    screenSize = Vector2.zero,
 
     inputSink = Enum.InputSink.None,
 
@@ -219,8 +219,8 @@ local function defaultSetup(widget: Widget.BaseInterface)
         link("absolutePosition", "AbsolutePosition", nil, scaleObject, true, {"ScaleChanged"})
         link("absoluteRotation", "AbsoluteRotation", nil, nil, true)
 
-        link("actualSize", "AbsoluteSize")
-        link("actualPosition", "AbsolutePosition")
+        link("screenSize", "AbsoluteSize")
+        link("screenPosition", "AbsolutePosition")
 
         setProperty("layoutOrder", widget._propertiesRefs.autoLayoutOrder or 0)
 
