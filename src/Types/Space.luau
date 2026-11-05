@@ -17,6 +17,8 @@ export type SpaceProps = {
     absoluteSize: Vector2,
     absolutePosition: Vector2,
     absoluteRotation: number,
+    actualSize: Vector2,
+    actualPosition: Vector2,
 }
 
 export type ScreenSpaceProps = Flatten<SpaceProps & {
