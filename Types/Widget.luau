@@ -87,6 +87,9 @@ export type DefaultProperties = {
     absolutePosition: Vector2,
     absoluteRotation: number,
 
+    actualSize: Vector2,
+    actualPosition: Vector2,
+
     inputSink: Enum.InputSink,
 
     borderColor: Color3,

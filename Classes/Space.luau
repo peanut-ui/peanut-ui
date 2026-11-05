@@ -198,6 +198,9 @@ local function newSpace(
             end, true)
             link("absoluteRotation" :: "absoluteRotation", "AbsoluteRotation", nil, nil, true)
 
+            link("actualSize", "AbsoluteSize")
+            link("actualPosition", "AbsolutePosition")
+
             widget._redraw()
         end
     -- Idk why but linter says it's { [string]: any } and not args which is weird

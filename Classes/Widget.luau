@@ -134,6 +134,9 @@ local defaultProperties: {[string]: any | () -> any} = {
     absoluteSize = Vector2.zero,
     absoluteRotation = 0,
 
+    actualPosition = Vector2.zero,
+    actualSize = Vector2.zero,
+
     inputSink = Enum.InputSink.None,
 
     borderColor = Color3.new(0, 0, 0),
@@ -215,6 +218,9 @@ local function defaultSetup(widget: Widget.BaseInterface)
         link("absoluteSize", "AbsoluteSize", nil, scaleObject, true, {"ScaleChanged"})
         link("absolutePosition", "AbsolutePosition", nil, scaleObject, true, {"ScaleChanged"})
         link("absoluteRotation", "AbsoluteRotation", nil, nil, true)
+
+        link("actualSize", "AbsoluteSize")
+        link("actualPosition", "AbsolutePosition")
 
         setProperty("layoutOrder", widget._propertiesRefs.autoLayoutOrder or 0)
 
