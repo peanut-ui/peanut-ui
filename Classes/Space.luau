@@ -196,10 +196,10 @@ local function newSpace(
             link("absolutePosition", "AbsolutePosition", nil, function(_, v)
                 return scaleObject(v, true)
             end, true)
-            link("absoluteRotation" :: "absoluteRotation", "AbsoluteRotation", nil, nil, true)
+            link("absoluteRotation" :: "absoluteRotation", "AbsoluteRotation", nil, true, true)
 
-            link("screenSize", "AbsoluteSize")
-            link("screenPosition", "AbsolutePosition")
+            link("screenSize", "AbsoluteSize", nil, true, true)
+            link("screenPosition", "AbsolutePosition", nil, true, true)
 
             widget._redraw()
         end

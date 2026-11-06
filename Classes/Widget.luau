@@ -217,10 +217,10 @@ local function defaultSetup(widget: Widget.BaseInterface)
 
         link("absoluteSize", "AbsoluteSize", nil, scaleObject, true, {"ScaleChanged"})
         link("absolutePosition", "AbsolutePosition", nil, scaleObject, true, {"ScaleChanged"})
-        link("absoluteRotation", "AbsoluteRotation", nil, nil, true)
+        link("absoluteRotation", "AbsoluteRotation", nil, true, true)
 
-        link("screenSize", "AbsoluteSize")
-        link("screenPosition", "AbsolutePosition")
+        link("screenSize", "AbsoluteSize", nil, true, true)
+        link("screenPosition", "AbsolutePosition", nil, true, true)
 
         setProperty("layoutOrder", widget._propertiesRefs.autoLayoutOrder or 0)
 
