@@ -619,7 +619,7 @@ function Ref.new<T>(
         end
 
         bucket = params and params.bucket or Context.getCurrentBucket()
-        if bucket then
+        if bucket and Helpers.removeUndefined(bucket) then
             bucketCleanupId = bucket.addCleanup(function()
                 if isDestroyed then return end
 
