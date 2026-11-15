@@ -134,7 +134,7 @@ export type SimplifiedArgs<Props, Widget, Events = WidgetClass.DefaultEvents> =
     & Modifier.Modifiers
     & {
         children: {any}?,
-        transitions: {[keyof<Props>]: Animations.Transition}?,
+        transitions: {[TypeFuncs.KeyOf<Props>]: Animations.Transition}?,
         animations: {[string]: Animations.Animation}?,
         onSetup: (widget: Widget) -> ()?,
         defaultSetupOverride: (Utils.Undefined | (widget: Widget, defaultFn: (widget: Widget) -> ()) -> ())?,
