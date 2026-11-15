@@ -97,8 +97,8 @@ export type Interface<Props = SpaceProps, Object = LayerCollector, Events = Spac
     observe: <K>(key: K & KeyOf<Props>, callback: (newValue: Resolve<Props, K>) -> boolean?) -> (() -> ()),
     listen: <K>(name: K & KeyOf<Events>, callback: Resolve<Events, K>) -> (() -> ()),
 
-    addChild: (child: Widget.Interface) -> (),
-    removeChild: (child: Widget.Interface, andDestroy: boolean?) -> (),
+    addChild: (child: Widget.WidgetLike) -> (),
+    removeChild: (child: Widget.WidgetLike, andDestroy: boolean?) -> (),
     clearChildren: () -> (),
     children: {Widget.Interface},
 }
