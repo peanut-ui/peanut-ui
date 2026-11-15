@@ -296,7 +296,7 @@ export type Args<Props = DefaultProperties, Widget = Interface, Events = Default
     children: {any}?,
     properties: Partial<UnionProperties<Props, Utils.SimpleRef<any>>>?,
     events: Partial<Events>?,
-    transitions: {[keyof<Props>]: Animations.Transition}?,
+    transitions: {[KeyOf<Props>]: Animations.Transition}?,
     modifiers: Modifier.Modifiers?,
     animations: {[string]: Animations.Animation}?,
     onSetup: (widget: Widget) -> ()?,
