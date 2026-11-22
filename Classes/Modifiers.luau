@@ -1119,8 +1119,8 @@ Modifiers.components = {
             DominantAxis = useEnum(Enum.DominantAxis, "dominantAxis")
         }
     ),
-    sizeConstraint = createConstructor(
-        "sizeConstraint",
+    sizeConstraintModifier = createConstructor(
+        "sizeConstraintModifier",
         "UISizeConstraint",
         {
             max = Vector2.zero,
