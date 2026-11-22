@@ -63,7 +63,10 @@ export type Shadow = {
     offset: Utils.Position,
     spread: Utils.Size,
     transparency: number,
-    zIndex: number
+    zIndex: number,
+    mode: "Shape" | "Text",
+    showBehindParent: boolean,
+    inset: boolean,
 }
 
 -- Layouts

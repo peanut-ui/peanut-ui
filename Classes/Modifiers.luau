@@ -941,7 +941,11 @@ Modifiers.components = {
             offset = function() return Units.Position() end,
             spread = function() return Units.Size() end,
             transparency = 0,
-            zIndex = 0
+            zIndex = 0,
+
+            mode = "Shape",
+            showBehindParent = true,
+            inset = false
         },
         {
             Enabled = "enabled",
