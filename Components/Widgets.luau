@@ -128,6 +128,12 @@ export type VideoFrameEvents = Flatten<{
     Played: VideoFrameEvent
 } & WidgetClass.DefaultEvents>
 
+export type TextBoxEvents = Flatten<{
+    Focused: () -> ...boolean?,
+    FocusLost: (enterPressed: boolean, inputThatCausedFocusLoss: InputObject) -> ...boolean?,
+    ReturnPressedFromOnScreenKeyboard: () -> ...boolean?
+} & WidgetClass.DefaultEvents>
+
 export type SimplifiedArgs<Props, Widget, Events = WidgetClass.DefaultEvents> =
     & TypeFuncs.Partial<Props>
     & TypeFuncs.Partial<Events>
@@ -159,8 +165,8 @@ export type TextButtonArgs = SimplifiedArgs<TextButtonProps, TextButton, ButtonE
 export type TextLabel = WidgetClass.Interface<TextProps, RobloxTypes.TextLabelObject>
 export type TextLabelArgs = SimplifiedArgs<TextProps, TextLabel>
 
-export type TextBox = WidgetClass.Interface<TextBoxProps, RobloxTypes.TextBoxObject>
-export type TextBoxArgs = SimplifiedArgs<TextBoxProps, TextBox>
+export type TextBox = WidgetClass.Interface<TextBoxProps, RobloxTypes.TextBoxObject, TextBoxEvents>
+export type TextBoxArgs = SimplifiedArgs<TextBoxProps, TextBox, TextBoxEvents>
 
 export type ScrollingFrame = WidgetClass.Interface<ScrollingFrameProps, RobloxTypes.ScrollingFrameObject>
 export type ScrollingFrameArgs = SimplifiedArgs<ScrollingFrameProps, ScrollingFrame>
@@ -751,11 +757,12 @@ return {
             cursorPosition = "CursorPosition",
             selectionStart = "SelectionStart",
         },
-        nil,
+        {"Focused", "FocusLost", "ReturnPressedFromOnScreenKeyboard"},
         {
             textSize = "scale",
         },
         {
+            text = true,
             cursorPosition = true,
             selectionStart = true
         }

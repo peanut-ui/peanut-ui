@@ -67,6 +67,7 @@ export type VideoFrameProps = Widgets.VideoFrameProps
 
 export type ButtonEvents = Widgets.ButtonEvents
 export type VideoFrameEvents = Widgets.VideoFrameEvents
+export type TextBoxEvents = Widgets.TextBoxEvents
 
 export type DefaultEvents = WidgetType.DefaultEvents
 export type WidgetEvents = WidgetType.WidgetEvents
