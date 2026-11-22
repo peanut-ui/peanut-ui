@@ -954,12 +954,16 @@ Modifiers.components = {
             Offset = "offset",
             Spread = "spread",
             Transparency = "transparency",
-            ZIndex = "zIndex"
+            ZIndex = "zIndex",
+            Mode = "mode",
+            ShowBehindParent = "showBehindParent",
+            Inset = "inset"
         },
         {
             BlurRadius = useUDim("blurRadius"),
             Offset = useUDim2("offset"),
-            Spread = useUDim2("spread")
+            Spread = useUDim2("spread"),
+            Mode = useEnum(Enum.ApplyShadowMode, "mode")
         },
         {  -- Scale dependant :3
             "BlurRadius", "Offset", "Spread"
